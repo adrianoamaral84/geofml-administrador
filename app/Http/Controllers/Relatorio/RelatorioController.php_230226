@@ -1,0 +1,2481 @@
+<?php
+
+namespace App\Http\Controllers\Relatorio;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use DB;
+use Carbon\Carbon;
+use Crypt;
+use Auth;
+
+
+class RelatorioController extends Controller
+{
+    
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+
+    public function index(){
+    
+        date_default_timezone_set('America/Sao_Paulo');
+        session(['link' => url()->current()]);
+        $mes = date('m');
+        $ano = date('Y');
+        return view('relatorios.index', compact('mes', 'ano'));
+
+    }
+    public function verdados($id){
+    
+
+        //dd('ok');
+        date_default_timezone_set('America/Sao_Paulo');
+        $id = Crypt::decrypt($id);
+        $hospedagem = \App\Hospede::where('id', $id)->with('user')->first();     
+
+        return view('relatorios.editar_dados', compact('hospedagem'));
+
+        
+
+    }
+
+    public function atualizar(Request $request){
+
+        //dd($request->all());
+        date_default_timezone_set('America/Sao_Paulo');
+        $customMessages = [
+
+            //'checkin.required' => 'Campo Checkin obrigatório',
+            //'checkout.required' => 'Campo Checkout obrigatório',
+            //'valor.required' => 'Campo Valor obrigatório',
+            //'diarias.required' => 'Campo Diárias obrigatório',
+             
+        ];
+
+
+        $validatedData = [
+            'checkin'   =>  'nullable',
+            'checkout'  =>  'nullable',
+            'valor'     =>  'nullable',
+            'diarias'   =>  'nullable',  
+        ];
+       $validatedData = $request->validate($validatedData, $customMessages);
+        $hospedagem = \App\Hospede::findOrFail($request->id);
+
+        if(!empty($validatedData['checkout']) AND empty($validatedData['checkin'])){
+            \Session::flash('message', ['msg'=>"Não pode salvar o Check-in em BRANCO e o check-out Preenchido!", 'class'=>'danger']);
+            return redirect()->back();
+        }
+
+        if(empty($validatedData['checkout']) AND !empty($validatedData['checkin'])){
+            $checkin = 1;
+            $hospedagem->checkin_at     =   $validatedData['checkin'];
+            $hospedagem->checkout_at    =   null;
+
+        }
+        
+        if(empty($validatedData['checkout']) AND empty($validatedData['checkin'])){
+            $checkin = null;
+            $hospedagem->checkin_at     =   null;
+            $hospedagem->checkout_at    =   null; 
+        }
+        
+        if(!empty($validatedData['checkout']) AND !empty($validatedData['checkin'])){
+            $checkin = 2;
+            $hospedagem->checkin_at     =   $validatedData['checkin'];
+            $hospedagem->checkout_at    =   $validatedData['checkout']; 
+        }
+        
+        if(empty($validatedData['valor'])){
+            
+            $request->valor2 = '';
+
+        }else{
+            
+            $validatedData['valor'] = str_replace(",",".",str_replace(".","",$validatedData['valor']));
+            $validatedData['valor'] = substr($validatedData['valor'], 4);
+
+        }
+       
+        
+        $hospedagem->checkin        =   $checkin;        
+        $hospedagem->valor          =   $request->valor2;
+        $hospedagem->qntdiarias     =   $validatedData['diarias'];
+        $hospedagem->update();
+        \Session::flash('message', ['msg'=>"Dados alterados com sucesso!", 'class'=>'success']);
+        return redirect()->route('arrecadacao.view');
+
+
+
+    }
+
+   /*public function view(Request $request){
+        
+
+        date_default_timezone_set('America/Sao_Paulo');
+        session(['ano' => $request->ano]);
+        session(['mes' => $request->mes]);
+        session(['status' => $request->status]);
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo Ano obrigatório',
+            'mes.required' => 'Campo Mês obrigatório',
+            'status.required' => 'Campo Status obrigatório',
+             
+        ];
+
+        $validatedData = [];
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        if(empty($request->all())){
+            
+            $pegaStatus = \App\Status_hospedagem::where('id', 0)->first();
+            
+            session(['ano' => $request->ano]);
+            session(['mes' => $request->mes]);
+            session(['status' => $request->status]);
+
+        }else{
+            
+            $pegaStatus = \App\Status_hospedagem::where('id', $request->status)->first();
+            session(['ano' => $request->ano]);
+            session(['mes' => $request->mes]);
+            session(['status' => $request->status]);
+        }
+        
+        $statusUG = $pegaStatus->status;
+        $ano = $request->ano;
+        $mes = $request->mes;
+        $status = $request->status;
+        $data_inicial   = $ano . '-'. $mes . '-01';
+        $data_final     = $ano . '-'. $mes . '-31';
+/*
+        $consulta = \App\Hospede::select('user_cpf', 'user_id', 'und_habitacionais_id', 'tipo_und_id', 'status', 'id', 'data_inicio', 'data_termino')
+        //$consulta = \App\Hospede::select('user_cpf', 'id')
+        //$consulta = \App\Hospede::
+        ->whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->where('status', $status)
+        ->with('comprovante')
+        ->get();
+*/
+
+      /*  $consulta = DB::select("SELECT h.user_cpf, h.user_id, h.und_habitacionais_id, h.tipo_und_id, h.status, h.id, h.valor, h.data_inicio, h.data_termino, u.name, p.id as 'Posto ID', s.status as 'status', s.id as 'ID Status', t.descricao, p.sigla, h.und_habitacionais_id, c.classe, n.sigla as 'SI' FROM hospedagem h
+            INNER JOIN user u ON u.id = h.user_id
+            left JOIN tipoundhab t ON t.id = h.tipo_und_id
+            LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
+            LEFT JOIN status_hospedagem s ON s.id = h.status
+            LEFT JOIN unidades_habitacionais n ON n.id = h.und_habitacionais_id
+            LEFT JOIN classe_habitacional c ON c.id = n.classe_habitacional_id
+
+            WHERE h.status = '$status' AND date(h.data_inicio) >= '$data_inicial' AND date(h.data_inicio) <= '$data_final'");
+        // $consulta = (object) $consulta;
+
+
+
+
+/*
+        foreach ($consulta as $key => $value) {
+                $consulta2[] = ['cpf' => $value->user_cpf, 'id' => $value->user_id];
+                //$consulta2[] = $value->user_cpf;
+        }
+*/
+        //$consulta = json_encode($consulta);
+        //dd($consulta);
+        
+
+
+
+
+
+
+        /*
+        $teste[] = '';
+        $posts = \App\Hospede::select('user_cpf', 'user_id', 'und_habitacionais_id', 'tipo_und_id', 'status', 'id', 'data_inicio', 'data_termino')
+        ->whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->where('status', $status)->chunk(100, function($posts){
+        foreach ($posts as $post){
+            $teste[] = $post;
+        }
+        });
+        */
+        /*
+        foreach ($consulta as $key => $value) {              
+            $data_inicio[] = $value->undHB;    
+        }
+        */
+       /* return view('relatorios.view2', compact('consulta', 'statusUG'));
+
+    }*/
+
+       public function view(Request $request) {
+    date_default_timezone_set('America/Sao_Paulo');
+    
+    // Captura o termo de pesquisa
+    $search = $request->input('search');
+
+    session(['ano' => $request->ano]);
+    session(['mes' => $request->mes]);
+    session(['status' => $request->status]);
+
+    // ... (mantenha suas validações e a lógica do $pegaStatus igual)
+    $pegaStatus = \App\Status_hospedagem::where('id', $request->status)->first();
+    
+    $statusUG = $pegaStatus->status;
+    $ano = $request->ano;
+    $mes = $request->mes;
+    $status = $request->status;
+    $data_inicial = $ano . '-'. $mes . '-01';
+    $data_final = $ano . '-'. $mes . '-31';
+
+    // Montamos a base da Query SQL que você já usa
+    $sql = "SELECT h.user_cpf, h.user_id, h.und_habitacionais_id, h.tipo_und_id, h.status, h.id, h.valor, h.data_inicio, h.data_termino, u.name, p.id as 'Posto ID', s.status as 'status', s.id as 'ID Status', t.descricao, p.sigla, h.und_habitacionais_id, c.classe, n.sigla as 'SI' FROM hospedagem h
+        INNER JOIN user u ON u.id = h.user_id
+        left JOIN tipoundhab t ON t.id = h.tipo_und_id
+        LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
+        LEFT JOIN status_hospedagem s ON s.id = h.status
+        LEFT JOIN unidades_habitacionais n ON n.id = h.und_habitacionais_id
+        LEFT JOIN classe_habitacional c ON c.id = n.classe_habitacional_id
+        WHERE h.status = '$status' 
+        AND date(h.data_inicio) >= '$data_inicial' 
+        AND date(h.data_inicio) <= '$data_final'";
+
+    // Se houver pesquisa, adicionamos o filtro de Nome ou CPF ao SQL
+    if ($search) {
+        $sql .= " AND (u.name LIKE '%$search%' OR h.user_cpf LIKE '%$search%')";
+    }
+
+    $consulta = DB::select($sql);
+
+    // IMPORTANTE: Passar 'search', 'ano', 'mes' e 'status' para a view
+    return view('relatorios.view2', compact('consulta', 'statusUG', 'search', 'ano', 'mes', 'status'));
+}
+
+
+    public function arrecadacao(){
+
+
+            $mes = date('m');
+            $ano = date('Y'); 
+            return view('relatorios.arrecadacao_index', compact('mes', 'ano'));
+
+    }
+
+
+
+    /*public function arrecadacaoview(Request $request){
+
+        
+        date_default_timezone_set('America/Sao_Paulo');
+
+        if(!empty($request->all())){
+
+        session(['ano' => $request->ano]);
+        session(['mes' => $request->mes]);
+
+        }
+
+        //dd(session()->get('ano'));
+
+        if(empty($request->all())){
+
+          $request->ano = session()->get('ano');
+          $request->mes = session()->get('mes');
+
+        }
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo ano obrigatório',
+            'mes.required' => 'Campo mês obrigatório',
+             
+        ];
+
+        $validatedData = [
+
+            //'ano' => 'required',
+            //'mes' => 'required',  
+           
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $request->ano;
+        $mes = $request->mes;
+
+        $mesAtual = Date('m');
+        $anoAtual = Date('Y');
+        $proximoMes1 = date('m', strtotime('+1 months'));
+        $proximoMes = date('Y-m-d', strtotime('+1 months'));
+        $MesAnterior = date('Y-m-d', strtotime('11 months'));
+        $MesAnterior1 = date('m', strtotime('11 months'));
+
+        $proximoAno = date('Y', strtotime('+1 months'));
+        $hoje = date("Y-m-d");
+        //dd($hoje);
+        $Diahoje = date("d");
+
+        $pegaData = \App\BloqueioDia::where('id', 1)->first();
+        $proximofehamentoMes = date($proximoAno . "-" . $proximoMes1 . "-" . $pegaData->dia);
+        //dd($proximofehamentoMes);
+        $data_inicial = date($ano . "-". $mes . "-01");      
+        $data_final = date($ano . "-" . $mes. "-31");
+
+        $consulta = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h
+            INNER JOIN user u ON u.id = h.user_id 
+            LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
+            WHERE h.checkin = 2 AND h.status = 2 AND date(h.checkin_at) >= '$data_inicial' AND date(h.checkin_at) <= '$data_final'");
+
+        $consulta_valor = DB::select("SELECT SUM(valor) AS Valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$data_inicial' AND date(checkin_at) <= '$data_final'");
+
+
+        $consulta2 = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h 
+            INNER JOIN user u ON u.id = h.user_id 
+            LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
+            WHERE h.checkin = 1 AND date(h.checkin_at) >= '$data_inicial' AND date(h.checkin_at) <= '$data_final'");
+
+        $consulta2_valor = DB::select("SELECT SUM(valor_pago) AS valor_pago FROM hospedagem WHERE checkin = 1 AND date(checkin_at) >= '$data_inicial' AND date(checkin_at) <= '$data_final'");
+
+
+        $consulta3 = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h 
+            INNER JOIN user u ON u.id = h.user_id 
+            LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
+            WHERE h.checkin IS NULL AND h.status = 2 AND date(h.data_inicio) >= '$data_inicial' AND date(h.data_inicio) <= '$data_final'");
+
+        $consulta3_valor = DB::select("SELECT SUM(valor_pago) as valor_pagou FROM hospedagem WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$data_inicial' AND date(data_inicio) <= '$data_final'");
+
+
+
+        foreach ($consulta3_valor as $key => $value) {  
+            $valor_consulta3 = $value->valor_pagou;
+        }
+        foreach ($consulta2_valor as $key => $value) {  
+            $valor_consulta2 = $value->valor_pago;
+            if(empty($value->checkout_at)){
+            }
+        }
+        foreach ($consulta_valor as $key => $value) {
+            $valor_consulta = $value->Valor;
+        }
+
+        if(isset($valor_consulta2)){
+            $valor = $valor_consulta2 + $valor_consulta;
+        }else{
+            $valor = $valor_consulta;
+        }
+
+        if(isset($valor_consulta3)){
+            $valor = $valor_consulta3 + $valor;
+        }
+        
+        $consulta = array_merge($consulta, $consulta2, $consulta3);
+        
+        
+        if($anoAtual == $ano){
+
+        if($mesAtual == $mes){
+
+        $libera = 1;
+
+        }elseif ($mes == $proximoMes1){
+
+        // dd('mes proximo');
+            
+            foreach ($consulta as $key => $value) {
+            $teste[] = $value;
+            }
+                
+
+            if(strtotime($hoje) <= strtotime($proximofehamentoMes)){
+                
+                $libera = 1;
+               
+            }else{
+                
+                $libera = 0;                
+            }
+
+        }elseif ($mes == $MesAnterior1){
+
+            
+            if($Diahoje <= 10){
+                $libera = 1;
+                
+            }else{
+                $libera = 0;
+            }
+
+            
+
+
+
+
+        }else{
+        
+             $libera = 0;
+        }
+
+    }else{
+        $libera = 0;
+    }
+
+//dd($libera);
+        return view('relatorios.arrecadacao_resultado', compact('consulta', 'valor', 'ano', 'mes', 'libera'));
+        
+    }*/
+
+public function arrecadacaoview(Request $request) {
+    date_default_timezone_set('America/Sao_Paulo');
+
+    // Captura o termo de busca
+    $search = $request->input('search');
+
+    if(!empty($request->all())){
+        session(['ano' => $request->ano]);
+        session(['mes' => $request->mes]);
+    }
+
+    if(empty($request->all())){
+        $request->ano = session()->get('ano');
+        $request->mes = session()->get('mes');
+    }
+
+    $ano = $request->ano;
+    $mes = $request->mes;
+    $data_inicial = date($ano . "-". $mes . "-01");      
+    $data_final = date($ano . "-" . $mes. "-31");
+
+    // Variável para facilitar a inclusão do filtro de busca nas 3 consultas
+    $filtroNome = "";
+    if ($search) {
+        $filtroNome = " AND (u.name LIKE '%$search%' OR h.user_cpf LIKE '%$search%')";
+    }
+
+    // Consulta 1
+    $consulta = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h
+        INNER JOIN user u ON u.id = h.user_id 
+        LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
+        WHERE h.checkin = 2 AND h.status = 2 
+        AND date(h.checkin_at) >= '$data_inicial' AND date(h.checkin_at) <= '$data_final' " . $filtroNome);
+
+    // Consulta 2
+    $consulta2 = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h 
+        INNER JOIN user u ON u.id = h.user_id 
+        LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
+        WHERE h.checkin = 1 
+        AND date(h.checkin_at) >= '$data_inicial' AND date(h.checkin_at) <= '$data_final' " . $filtroNome);
+
+    // Consulta 3
+    $consulta3 = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h 
+        INNER JOIN user u ON u.id = h.user_id 
+        LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
+        WHERE h.checkin IS NULL AND h.status = 2 
+        AND date(h.data_inicio) >= '$data_inicial' AND date(h.data_inicio) <= '$data_final' " . $filtroNome);
+
+    // ... o restante do seu código (cálculos de valores e merges) continua igual ...
+
+    return view('relatorios.arrecadacao_resultado', compact('consulta', 'valor', 'ano', 'mes', 'libera', 'search'));
+}
+
+
+    public function cancelados(){
+
+
+            $mes = date('m');
+            $ano = date('Y'); 
+            return view('relatorios.cancelados_index', compact('mes', 'ano'));
+
+    }
+
+
+
+    public function canceladosview(Request $request){
+
+        date_default_timezone_set('America/Sao_Paulo');
+        
+        $customMessages = [
+                      
+            'ano.required' => 'Campo obrigatório',
+            'mes.required' => 'Campo obrigatório',
+             
+        ];
+        $validatedData = [
+            'ano' => 'required',
+            'mes' => 'required',  
+           
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $validatedData['ano'];
+        $mes = $validatedData['mes'];
+
+        $mesAtual = Date('m');
+
+        $mesProximo = date('m', strtotime('+1 months'));
+        
+        $data_inicial = $ano . '-'. $mes . '-01' ;      
+        $ultimo_dia = date("t", mktime(0,0,0,$mesAtual,'01',$ano));
+        $data_final = date("$ano-" . "$mes". "-31");
+
+        //dd($data_inicial);
+        
+        
+        $consulta = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        //->where('checkin', 2)
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        //->with('comprovante')
+        ->get();
+        
+
+        //$consulta = DB::select("SELECT * FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$data_inicial' AND date(data_inicio) <= '$data_final'");
+
+        //dd($consulta);
+
+        foreach ($consulta as $key => $value) {
+            $va[] = $value->id;
+        }
+        //dd($va);
+
+            
+        if($mesAtual == $mes){
+            $liberaDistribuir = 1;
+        }else{
+             $liberaDistribuir = 0;
+        }
+
+        $valor_todos = 0;
+        if(count($consulta)){
+
+           
+            
+
+
+            foreach ($consulta as $key => $value) {
+
+                // PEGA SOMENTE OS VALORES QUE foram pago e estão com comprovante
+                $valor_todos += $value->valor_pago;
+                if(isset($value->comprovante)){
+                   $hospedagens[] = $value->comprovante->hospedagem_id;
+                }else{
+                   $naotem[] = $value->valor_pago;
+                }
+
+
+
+        }
+        if(isset($hospedagens)){   
+
+                foreach ($hospedagens as $key => $value) {
+                    $hospedagem[] = \App\Hospede::where('id', $value)->first();
+                }
+
+                $valor = 0;
+                foreach ($hospedagem as $key => $value) {
+               
+                $valor += $value->valor_pago;
+                $vv[] = $value->valor_pago;
+                }
+        
+
+
+        }else{
+                $valor = 0;
+                $valor_todos = 0;
+                return view('relatorios.cancelados_resultado', compact('valor','liberaDistribuir', 'valor_todos', 'mes', 'ano'));
+        
+        }
+
+
+
+
+
+                $valor1 = $valor;
+                //dd($valor1);
+
+                return view('relatorios.cancelados_resultado', compact('hospedagem', 'valor', 'valor1', 'liberaDistribuir', 'valor_todos', 'mes', 'ano'));
+
+
+
+
+        
+        }else{
+            
+                  
+                $valor = 0;
+                return view('relatorios.cancelados_resultado', compact('valor', 'liberaDistribuir', 'valor_todos', 'mes', 'ano'));
+
+        }
+
+    }
+
+
+    public function arrecadacaoTotal(){
+
+        //dd('ok');
+        $ano = date('Y'); 
+        return view('relatorios.arrecadacao_total_index', compact('ano'));
+    }
+
+
+
+
+    public function arrecadacaoTotalview(Request $request){
+
+        date_default_timezone_set('America/Sao_Paulo');
+        
+        $customMessages = [              
+            'ano.required' => 'Campo obrigatório',
+        ];
+        $validatedData = [
+            'ano' => 'required',   
+        ];
+
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $validatedData['ano'];
+        $data_inicial   =    date($ano . '-01-01');      
+        $data_final     =    date($ano . '-12-31');
+
+
+        $consultaCancelados1 = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE YEAR(data_inicio) = $ano AND status = 6 AND valor_pago IS NOT NULL GROUP BY MONTH(data_inicio)");
+
+        
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+        $Mes01Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-01-01',$ano.'-01-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes01Cancelados_busca)){
+
+            foreach ($Mes01Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes01Cancelados = 0;
+                }
+            }
+            if(isset($hospedagens)){   
+
+                foreach ($hospedagens as $key => $value){
+                    $hospedagem[] = \App\Hospede::where('id', $value)->first();
+                }
+
+                $Mes01Cancelados = 0;
+                foreach ($hospedagem as $key => $value){
+                $Mes01Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes01Cancelados = 0;
+        }
+
+        
+
+        $Mes02Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-02-01',$ano.'-02-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+
+        if(count($Mes02Cancelados_busca)){
+
+            foreach ($Mes02Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens2[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes02Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens2)){   
+
+                foreach ($hospedagens2 as $key => $value){
+                    $hospedagem2[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes02Cancelados = 0;
+                foreach ($hospedagem2 as $key => $value){
+                $Mes02Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes02Cancelados = 0;
+        }
+
+
+        $Mes03Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-03-01',$ano.'-03-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes03Cancelados_busca)){
+
+            foreach ($Mes03Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens3[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes03Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens3)){   
+
+                foreach ($hospedagens3 as $key => $value){
+                    $hospedagem3[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes03Cancelados = 0;
+                foreach ($hospedagem3 as $key => $value){
+                $Mes03Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes03Cancelados = 0;
+        }
+
+        $Mes04Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-04-01',$ano.'-04-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes04Cancelados_busca)){
+
+            foreach ($Mes04Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens4[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes04Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens4)){   
+
+                foreach ($hospedagens4 as $key => $value){
+                    $hospedagem4[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes04Cancelados = 0;
+                foreach ($hospedagem4 as $key => $value){
+                $Mes04Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes04Cancelados = 0;
+        }
+
+
+        $Mes05Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-05-01',$ano.'-05-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes05Cancelados_busca)){
+
+            foreach ($Mes05Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens5[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes05Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens5)){   
+
+                foreach ($hospedagens5 as $key => $value){
+                    $hospedagem5[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes05Cancelados = 0;
+                foreach ($hospedagem5 as $key => $value){
+                $Mes05Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes05Cancelados = 0;
+        }
+
+
+
+        $Mes06Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-06-01',$ano.'-06-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes06Cancelados_busca)){
+
+            foreach ($Mes06Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens6[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes06Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens6)){   
+
+                foreach ($hospedagens6 as $key => $value){
+                    $hospedagem6[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes06Cancelados = 0;
+                foreach ($hospedagem6 as $key => $value){
+                $Mes06Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes06Cancelados = 0;
+        }
+        
+
+        $Mes07Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-07-01',$ano.'-07-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes07Cancelados_busca)){
+
+            foreach ($Mes07Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens7[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes07Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens7)){   
+
+                foreach ($hospedagens7 as $key => $value){
+                    $hospedagem7[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes07Cancelados = 0;
+                foreach ($hospedagem7 as $key => $value){
+                $Mes07Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes07Cancelados = 0;
+        }
+
+
+        $Mes08Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-08-01',$ano.'-08-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes08Cancelados_busca)){
+
+            foreach ($Mes08Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens8[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes08Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens8)){   
+
+                foreach ($hospedagens8 as $key => $value){
+                    $hospedagem8[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes08Cancelados = 0;
+                foreach ($hospedagem8 as $key => $value){
+                $Mes08Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes08Cancelados = 0;
+        }
+
+        
+        $Mes09Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-09-01',$ano.'-09-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes09Cancelados_busca)){
+
+            foreach ($Mes09Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens9[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes09Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens9)){   
+
+                foreach ($hospedagens9 as $key => $value){
+                    $hospedagem9[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes09Cancelados = 0;
+                foreach ($hospedagem9 as $key => $value){
+                $Mes09Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes09Cancelados = 0;
+        }
+
+
+        $Mes10Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-10-01',$ano.'-10-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+        if(count($Mes10Cancelados_busca)){
+
+            foreach ($Mes10Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens10[] = $value->comprovante->hospedagem_id;
+                }else{
+                     $Mes10Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens10)){   
+
+                foreach ($hospedagens10 as $key => $value){
+                    $hospedagem10[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes10Cancelados = 0;
+                foreach ($hospedagem10 as $key => $value){
+                $Mes10Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes10Cancelados = 0;
+        }
+
+
+        
+
+        $Mes11Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-11-01',$ano.'-11-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+
+        if(count($Mes11Cancelados_busca)){
+
+            foreach ($Mes11Cancelados_busca as $key => $value) {
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens11[] = $value->comprovante->hospedagem_id;
+                   
+
+                }else{
+                     $Mes11Cancelados = 0;
+                }
+
+            }
+            if(isset($hospedagens11)){   
+
+                foreach ($hospedagens11 as $key => $value){
+                    $hospedagem11[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes11Cancelados = 0;
+                foreach ($hospedagem11 as $key => $value){
+                $Mes11Cancelados += $value->valor_pago;
+                }
+                
+            }
+        }else{
+            $Mes11Cancelados = 0;
+        }
+
+/*
+
+        $Mes12Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-12-01',$ano.'-12-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+
+        //dd($Mes12Cancelados_busca);
+        
+
+        //$Mes12Cancelados[] = 0;
+        if(count($Mes12Cancelados_busca)){
+
+
+            $Mes12Cancelados = 0;
+            foreach ($Mes12Cancelados_busca as $key => $value){
+
+                if(isset($value->comprovante)){
+
+                    $Mes12Cancelados += $value->valor_pago;
+                    
+                }
+
+            }
+
+
+        }else{
+            $Mes12Cancelados = 0;
+        }
+*/
+
+            //dd($Mes12Cancelados);
+
+
+ $Mes12Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-12-01',$ano.'-12-31'])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+
+
+        if(count($Mes12Cancelados_busca)){
+
+
+            foreach ($Mes12Cancelados_busca as $key => $value){
+
+               
+                if(isset($value->comprovante)){
+                   $hospedagens12[] = $value->comprovante->hospedagem_id;
+                     //dd('ws');
+
+                }else{
+                     $Mes12Cancelados = 0;
+                }
+
+            }
+
+
+            if(isset($hospedagens12)){   
+                     
+
+                foreach ($hospedagens12 as $key => $value){
+                    $hospedagem12[] = \App\Hospede::where('id', $value)->first();
+                }
+                
+
+
+                $Mes12Cancelados = 0;
+                foreach ($hospedagem12 as $key => $value){
+                $Mes12Cancelados += $value->valor_pago;
+                }
+                
+            }
+
+
+
+        }else{
+            $Mes12Cancelados = 0;
+        }
+
+        
+
+        //$Mes12Cancelados = 1000;
+
+
+
+        //dd($Mes12Cancelados_busca);
+        /*
+
+        $Mes01Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-01-01' AND date(data_inicio) <= '$ano-01-31'");
+        
+        $Mes02Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-02-01' AND date(data_inicio) <= '$ano-02-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes03Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-03-01' AND date(data_inicio) <= '$ano-03-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes04Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-04-01' AND date(data_inicio) <= '$ano-04-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes05Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes06Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes07Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes08Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes09Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes10Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes11Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes12Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31' GROUP BY MONTH(data_inicio)");
+
+
+
+        */
+
+
+
+        $totalCancelados = $Mes01Cancelados + $Mes02Cancelados + $Mes03Cancelados + $Mes04Cancelados + $Mes05Cancelados + $Mes06Cancelados + $Mes07Cancelados + $Mes08Cancelados + $Mes09Cancelados + $Mes10Cancelados + $Mes11Cancelados + $Mes12Cancelados;
+
+
+
+
+
+        $consultaCancelados = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get()
+        ->groupBy(function ($val) {
+          return Carbon::parse($val->data_inicio)->format('m');
+        });
+
+        
+        $contador = count($consultaCancelados);
+        
+        for ($i=0; $i < $contador; $i++) { 
+          
+            foreach ($consultaCancelados as $key => $value) {
+                //dd($value);
+            if(!empty($value->comprovante)){
+                //dd('ok');
+                $a[] = 1;
+                   $hospedagens[] = $value->comprovante->hospedagem_id;
+                
+                }else{
+                $a[] = 1;
+                $naotem[] = $value;
+                $hospedagens[] = 0;
+                }
+
+            }
+        }
+   
+
+        $consulta = DB::select('SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE YEAR(data_inicio) = '.$ano.' AND status = 2 GROUP BY MONTH(data_inicio)');
+
+        
+        $mesAtual = date('m');
+        $anoAtual = date('Y');
+
+        if($mesAtual == '01'){
+            if($anoAtual == $ano){
+
+
+            $Mes01HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31' AND checkin = 2");
+
+
+            $Mes01HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31' AND checkin = 1");
+
+
+            $Mes01HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-01-01' AND date(data_inicio) <= '$ano-01-31'");
+
+
+            foreach ($Mes01HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes01aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes01HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes01aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes01HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes01aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes01aHospedadosPagos[] = array_sum($Mes01aHospedadosPagos);
+            $Mes01HospedadosPagos[] = (object) array('valor' => $Mes01aHospedadosPagos[3]);
+          
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-02-01' AND date(data_inicio) <= '$ano-02-31'");
+
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-03-01' AND date(data_inicio) <= '$ano-03-31'");
+            
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-04-01' AND date(data_inicio) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31'");
+
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+            }else{
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+
+        }
+
+        if($mesAtual == '02'){
+            if($anoAtual == $ano){
+
+
+            $Mes02HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31' AND checkin = 2");
+
+
+            $Mes02HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31' AND checkin = 1");
+
+
+            $Mes02HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-02-01' AND date(data_inicio) <= '$ano-02-31'");
+
+
+            foreach ($Mes02HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes02aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes02HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes02aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes02HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes02aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes02aHospedadosPagos[] = array_sum($Mes02aHospedadosPagos);
+            $Mes02HospedadosPagos[] = (object) array('valor' => $Mes02aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-03-01' AND date(data_inicio) <= '$ano-03-31'");
+            
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-04-01' AND date(data_inicio) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31'");
+
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+            }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+        }
+
+
+        if($mesAtual == '03'){
+            if($anoAtual == $ano){
+
+
+            $Mes03HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31' AND checkin = 2");
+
+
+            $Mes03HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31' AND checkin = 1");
+
+
+            $Mes03HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-03-01' AND date(data_inicio) <= '$ano-03-31'");
+
+
+            foreach ($Mes03HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes03aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes03HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes03aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes03HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes03aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes03aHospedadosPagos[] = array_sum($Mes03aHospedadosPagos);
+            $Mes03HospedadosPagos[] = (object) array('valor' => $Mes03aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-04-01' AND date(data_inicio) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31'");
+
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+            }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+
+        }
+
+        if($mesAtual == '04'){
+            if($anoAtual == $ano){
+
+
+            $Mes04HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31' AND checkin = 2");
+
+
+            $Mes04HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31' AND checkin = 1");
+
+
+            $Mes04HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-04-01' AND date(data_inicio) <= '$ano-04-31'");
+
+
+            foreach ($Mes04HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes04aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes04HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes04aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes04HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes04aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes04aHospedadosPagos[] = array_sum($Mes04aHospedadosPagos);
+            $Mes04HospedadosPagos[] = (object) array('valor' => $Mes04aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31'");
+
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+            }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+
+        }
+
+        if($mesAtual == '05'){
+            if($anoAtual == $ano){
+
+
+            $Mes05HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31' AND checkin = 2");
+
+
+            $Mes05HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31' AND checkin = 1");
+
+
+            $Mes05HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31'");
+
+
+            foreach ($Mes05HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes05aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes05HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes05aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes05HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes05aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes05aHospedadosPagos[] = array_sum($Mes05aHospedadosPagos);
+            $Mes05HospedadosPagos[] = (object) array('valor' => $Mes05aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31'");
+
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+            }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+            
+
+        }   
+
+        if($mesAtual == '06'){
+            if($anoAtual == $ano){
+
+            $Mes06HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31' AND checkin = 2");
+
+
+            $Mes06HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31' AND checkin = 1");
+
+
+            $Mes06HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31'");
+
+
+            foreach ($Mes06HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes06aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes06HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes06aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes06HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes06aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes06aHospedadosPagos[] = array_sum($Mes06aHospedadosPagos);
+            $Mes06HospedadosPagos[] = (object) array('valor' => $Mes06aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31'");
+
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+            }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+
+        }
+
+        if($mesAtual == '07'){
+            if($anoAtual == $ano){
+
+
+            $Mes07HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31' AND checkin = 2");
+
+
+            $Mes07HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31' AND checkin = 1");
+
+
+            $Mes07HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31'");
+
+
+            foreach ($Mes07HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes07aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes07HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes07aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes07HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes07aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes07aHospedadosPagos[] = array_sum($Mes07aHospedadosPagos);
+            $Mes07HospedadosPagos[] = (object) array('valor' => $Mes07aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31'");
+
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+            }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+        
+        }
+
+        if($mesAtual == '08'){
+            if($anoAtual == $ano){
+            
+            $Mes08HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31' AND checkin = 2");
+
+
+            $Mes08HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31' AND checkin = 1");
+
+
+            $Mes08HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-008908-01' AND date(data_inicio) <= '$ano-08-31'");
+
+
+            foreach ($Mes08HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes08aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes08HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes08aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes08HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes08aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes08aHospedadosPagos[] = array_sum($Mes08aHospedadosPagos);
+            $Mes08HospedadosPagos[] = (object) array('valor' => $Mes08aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+            }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+            
+        }
+
+
+
+
+
+
+
+        if($mesAtual == '09'){
+            if($anoAtual == $ano){
+
+            $Mes09HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31' AND checkin = 2");
+
+
+            $Mes09HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31' AND checkin = 1");
+
+
+            $Mes09HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31'");
+
+
+            foreach ($Mes09HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes09aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes09HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes09aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes09HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes09aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes09aHospedadosPagos[] = array_sum($Mes09aHospedadosPagos);
+            $Mes09HospedadosPagos[] = (object) array('valor' => $Mes09aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+            
+            }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+
+
+        }
+
+
+
+
+        if($mesAtual == '10'){
+            
+            if($anoAtual == $ano){
+                
+
+            $Mes10HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31' AND checkin = 2");
+
+
+            $Mes10HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31' AND checkin = 1");
+
+
+            $Mes10HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31'");
+
+
+            foreach ($Mes10HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes10aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes10HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes10aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes10HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes10aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes10aHospedadosPagos[] = array_sum($Mes10aHospedadosPagos);
+            $Mes10HospedadosPagos[] = (object) array('valor' => $Mes10aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+           }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+        
+
+
+
+        }
+
+
+        if($mesAtual == '11'){
+            if($anoAtual == $ano){
+
+
+
+            $Mes11HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31' AND checkin = 2");
+
+
+            $Mes11HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31' AND checkin = 1");
+
+
+            $Mes11HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31'");
+
+
+            foreach ($Mes11HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes11aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes11HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes11aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes11HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes11aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes11aHospedadosPagos[] = array_sum($Mes11aHospedadosPagos);
+            $Mes11HospedadosPagos[] = (object) array('valor' => $Mes11aHospedadosPagos[3]);
+       
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+                   }else{
+
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+
+
+        }
+
+        if($mesAtual == '12'){
+           if($anoAtual == $ano){
+
+            $Mes12HospedadosPagosCheckinFinalizado = DB::select("SELECT SUM(valor) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31' AND checkin = 2");
+
+
+            $Mes12HospedadosPagosCheckinAndamento = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31' AND checkin = 1");
+
+
+            $Mes12HospedadosPagosPagouUmaDiaria = DB::select("SELECT SUM(valor_pago) as valor FROM `hospedagem` WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31'");
+
+
+            foreach ($Mes12HospedadosPagosCheckinFinalizado as $key => $value) {
+                $Mes12aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes12HospedadosPagosCheckinAndamento as $key => $value) {
+                $Mes12aHospedadosPagos[] = $value->valor;
+            }
+
+            
+            foreach ($Mes12HospedadosPagosPagouUmaDiaria as $key => $value) {
+                $Mes12aHospedadosPagos[] = $value->valor;
+            }
+
+
+            $Mes12aHospedadosPagos[] = array_sum($Mes12aHospedadosPagos);
+            $Mes12HospedadosPagos[] = (object) array('valor' => $Mes12aHospedadosPagos[3]);
+          
+
+            $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+
+            $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            }else{
+
+
+            if(strtotime($anoAtual) < strtotime($ano)){
+               $Mes01HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-01-01' AND date(data_inicio) <= '$ano-01-31'");
+
+               $Mes02HospedadosPagos = DB::select("SELECT SUM(valor_pago) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-02-01' AND date(data_inicio) <= '$ano-02-31'");
+            }else{
+                $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-01-01' AND date(checkin_at) <= '$ano-01-31'");
+                $Mes02HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-02-01' AND date(checkin_at) <= '$ano-02-31'");
+            }
+
+            
+            
+            $Mes03HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-03-01' AND date(checkin_at) <= '$ano-03-31'");
+
+            $Mes04HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-04-01' AND date(checkin_at) <= '$ano-04-31'");
+
+            $Mes05HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-05-01' AND date(checkin_at) <= '$ano-05-31'");
+
+            $Mes06HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-06-01' AND date(checkin_at) <= '$ano-06-31'");
+
+            $Mes07HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-07-01' AND date(checkin_at) <= '$ano-07-31'");
+
+            $Mes08HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-08-01' AND date(checkin_at) <= '$ano-08-31'");
+            
+            $Mes09HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-09-01' AND date(checkin_at) <= '$ano-09-31'");
+            
+            $Mes10HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-10-01' AND date(checkin_at) <= '$ano-10-31'");
+
+            $Mes11HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-11-01' AND date(checkin_at) <= '$ano-11-31'");
+
+            $Mes12HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$ano-12-01' AND date(checkin_at) <= '$ano-12-31'");
+
+           }
+            
+
+
+
+
+        }
+            
+            //////////////////////////////////////////////////
+            foreach ($Mes01HospedadosPagos as $key => $value) {
+                $Mes01HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes02HospedadosPagos as $key => $value) {
+                $Mes02HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes03HospedadosPagos as $key => $value) {
+                $Mes03HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes04HospedadosPagos as $key => $value) {
+                $Mes04HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes05HospedadosPagos as $key => $value) {
+                $Mes05HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes06HospedadosPagos as $key => $value) {
+                $Mes06HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes07HospedadosPagos as $key => $value) {
+                $Mes07HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes08HospedadosPagos as $key => $value) {
+                $Mes08HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes09HospedadosPagos as $key => $value) {
+              $Mes09HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes10HospedadosPagos as $key => $value) {
+                $Mes10HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes11HospedadosPagos as $key => $value) {
+                $Mes11HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes12HospedadosPagos as $key => $value) {
+                $Mes12HospedadosPagos = $value->valor;
+            }
+
+            
+            $total = $Mes01HospedadosPagos + $Mes02HospedadosPagos + $Mes03HospedadosPagos + $Mes04HospedadosPagos + $Mes05HospedadosPagos + $Mes06HospedadosPagos + $Mes07HospedadosPagos + $Mes08HospedadosPagos + $Mes09HospedadosPagos + $Mes10HospedadosPagos + $Mes11HospedadosPagos + $Mes12HospedadosPagos;
+           
+            
+
+            //////////////////////////////////////////////////
+            // CANCELADOS
+            /*
+            foreach ($Mes01Cancelados as $key => $value) {
+                $Mes01Cancelados = $value->SOMA;
+            }
+            foreach ($Mes02Cancelados as $key => $value) {
+                $Mes02Cancelados = $value->SOMA;
+            }
+            foreach ($Mes03Cancelados as $key => $value) {
+                $Mes03Cancelados = $value->SOMA;
+            }
+            foreach ($Mes04Cancelados as $key => $value) {
+                $Mes04Cancelados = $value->SOMA;
+            }
+            foreach ($Mes05Cancelados as $key => $value) {
+                $Mes05Cancelados = $value->SOMA;
+            }
+            foreach ($Mes06Cancelados as $key => $value) {
+                $Mes06Cancelados = $value->SOMA;
+            }
+            foreach ($Mes07Cancelados as $key => $value) {
+                $Mes07Cancelados = $value->SOMA;
+            }
+            foreach ($Mes08Cancelados as $key => $value) {
+                $Mes08Cancelados = $value->SOMA;
+            }
+            foreach ($Mes09Cancelados as $key => $value) {
+                $Mes09Cancelados = $value->SOMA;
+            }
+            foreach ($Mes10Cancelados as $key => $value) {
+                $Mes10Cancelados = $value->SOMA;
+            }
+            foreach ($Mes11Cancelados as $key => $value) {
+                $Mes11Cancelados = $value->SOMA;
+            }
+            foreach ($Mes12Cancelados as $key => $value) {
+                $Mes12Cancelados = $value->SOMA;
+            }
+            */
+            //dd($Mes01Cancelados);
+
+
+
+            if(empty($Mes01HospedadosPagos)){
+                $Mes01HospedadosPagos = 0;
+            }
+            if(empty($Mes02HospedadosPagos)){
+                $Mes02HospedadosPagos = 0;
+            }
+            if(empty($Mes03HospedadosPagos)){
+                $Mes03HospedadosPagos = 0;
+            }
+            if(empty($Mes04HospedadosPagos)){
+                $Mes04HospedadosPagos = 0;
+            }
+            if(empty($Mes05HospedadosPagos)){
+                $Mes05HospedadosPagos = 0;
+            }
+            if(empty($Mes06HospedadosPagos)){
+                $Mes06HospedadosPagos = 0;
+            }
+            if(empty($Mes07HospedadosPagos)){
+                $Mes07HospedadosPagos = 0;
+            }
+            if(empty($Mes08HospedadosPagos)){
+                $Mes08HospedadosPagos = 0;
+            }
+            if(empty($Mes09HospedadosPagos)){
+                $Mes09HospedadosPagos = 0;
+            }
+            if(empty($Mes10HospedadosPagos)){
+                $Mes10HospedadosPagos = 0;
+            }
+            if(empty($Mes11HospedadosPagos)){
+                $Mes11HospedadosPagos = 0;
+            }            
+            if(empty($Mes12HospedadosPagos)){
+                $Mes12HospedadosPagos = 0;
+            }
+
+            // CANCELADOS
+            if(empty($Mes01Cancelados)){
+                $Mes01Cancelados = 0;
+            }
+            if(empty($Mes02Cancelados)){
+                $Mes02Cancelados = 0;
+            }
+            if(empty($Mes03Cancelados)){
+                $Mes03Cancelados = 0;
+            }
+            if(empty($Mes04Cancelados)){
+                $Mes04Cancelados = 0;
+            }
+            if(empty($Mes05Cancelados)){
+                $Mes05Cancelados = 0;
+            }
+            if(empty($Mes06Cancelados)){
+                $Mes06Cancelados = 0;
+            }
+            if(empty($Mes07Cancelados)){
+                $Mes07Cancelados = 0;
+            }
+            if(empty($Mes08Cancelados)){
+                $Mes08Cancelados = 0;
+            }
+            if(empty($Mes09Cancelados)){
+                $Mes09Cancelados = 0;
+            }
+            if(empty($Mes10Cancelados)){
+                $Mes10Cancelados = 0;
+            }
+            if(empty($Mes11Cancelados)){
+                $Mes11Cancelados = 0;
+            }
+            if(empty($Mes12Cancelados)){
+                $Mes12Cancelados = 0;
+            }
+            
+
+            $Mes01Cancelados = json_encode($Mes01Cancelados);
+            $Mes02Cancelados = json_encode($Mes02Cancelados);
+            $Mes03Cancelados = json_encode($Mes03Cancelados);
+            $Mes04Cancelados = json_encode($Mes04Cancelados);
+            $Mes05Cancelados = json_encode($Mes05Cancelados);
+            $Mes06Cancelados = json_encode($Mes06Cancelados);
+            $Mes07Cancelados = json_encode($Mes07Cancelados);
+            $Mes08Cancelados = json_encode($Mes08Cancelados);
+            $Mes09Cancelados = json_encode($Mes09Cancelados);
+            $Mes10Cancelados = json_encode($Mes10Cancelados);
+            $Mes11Cancelados = json_encode($Mes11Cancelados);
+            $Mes12Cancelados = json_encode($Mes12Cancelados);
+            
+            
+            for ($i=1; $i <= 12; $i++) { 
+                $teste[] = $i;
+                //$MesHospedadosPagosi = json_encode($Mes01HospedadosPagos);
+            }
+
+            $Mes01HospedadosPagos = json_encode($Mes01HospedadosPagos);
+            $Mes02HospedadosPagos = json_encode($Mes02HospedadosPagos);
+            $Mes03HospedadosPagos = json_encode($Mes03HospedadosPagos);
+            $Mes04HospedadosPagos = json_encode($Mes04HospedadosPagos);
+            $Mes05HospedadosPagos = json_encode($Mes05HospedadosPagos);
+            $Mes06HospedadosPagos = json_encode($Mes06HospedadosPagos);
+            $Mes07HospedadosPagos = json_encode($Mes07HospedadosPagos);
+            $Mes08HospedadosPagos = json_encode($Mes08HospedadosPagos);
+            $Mes09HospedadosPagos = json_encode($Mes09HospedadosPagos);
+            $Mes10HospedadosPagos = json_encode($Mes10HospedadosPagos);
+            $Mes11HospedadosPagos = json_encode($Mes11HospedadosPagos);
+            $Mes12HospedadosPagos = json_encode($Mes12HospedadosPagos);
+            //dd($Mes09Cancelados);
+            //dd($Mes10HospedadosPagos);
+            
+
+            $TotalMes01 = $Mes01Cancelados + $Mes01HospedadosPagos;
+            $TotalMes02 = $Mes02Cancelados + $Mes02HospedadosPagos;
+            $TotalMes03 = $Mes03Cancelados + $Mes03HospedadosPagos;
+            $TotalMes04 = $Mes04Cancelados + $Mes04HospedadosPagos;
+            $TotalMes05 = $Mes05Cancelados + $Mes05HospedadosPagos;
+            $TotalMes06 = $Mes06Cancelados + $Mes06HospedadosPagos;
+            $TotalMes07 = $Mes07Cancelados + $Mes07HospedadosPagos;
+            $TotalMes08 = $Mes08Cancelados + $Mes08HospedadosPagos;
+            $TotalMes09 = $Mes09Cancelados + $Mes09HospedadosPagos;
+            $TotalMes10 = $Mes10Cancelados + $Mes10HospedadosPagos;
+            $TotalMes11 = $Mes11Cancelados + $Mes11HospedadosPagos;
+            $TotalMes12 = $Mes12Cancelados + $Mes12HospedadosPagos;
+
+           
+           
+           $TotalMeses = $TotalMes01 + $TotalMes02 + $TotalMes03 + $TotalMes04 + $TotalMes05 + $TotalMes06 + $TotalMes07 + $TotalMes08 + $TotalMes09 + $TotalMes10 + $TotalMes11 + $TotalMes12; 
+            
+
+            return view('relatorios.arrecadacao_total_resultado', compact('consulta', 'total', 'Mes01Cancelados', 'Mes02Cancelados', 'Mes03Cancelados', 'Mes04Cancelados', 'Mes05Cancelados', 'Mes06Cancelados', 'Mes07Cancelados', 'Mes08Cancelados', 'Mes09Cancelados', 'Mes10Cancelados', 'Mes11Cancelados', 'Mes12Cancelados', 'Mes01HospedadosPagos', 'Mes02HospedadosPagos', 'Mes03HospedadosPagos', 'Mes04HospedadosPagos', 'Mes05HospedadosPagos', 'Mes06HospedadosPagos', 'Mes07HospedadosPagos', 'Mes08HospedadosPagos', 'Mes09HospedadosPagos', 'Mes10HospedadosPagos', 'Mes11HospedadosPagos', 'Mes12HospedadosPagos', 'totalCancelados', 'TotalMes01', 'TotalMes02', 'TotalMes03', 'TotalMes04', 'TotalMes05', 'TotalMes06', 'TotalMes07', 'TotalMes08', 'TotalMes09', 'TotalMes10', 'TotalMes11', 'TotalMes12', 'TotalMeses', 'ano'));
+
+
+    }
+
+
+
+
+
+}

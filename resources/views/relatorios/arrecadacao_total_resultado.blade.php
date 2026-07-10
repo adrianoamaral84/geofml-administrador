@@ -1,0 +1,517 @@
+@extends('layouts.app')
+
+@section('content')
+<article class="items-list-page">
+    <div class="title-search-block">
+        <div class="title-block">
+            <div class="row">
+                <div class="col-md-6">
+                    <h3 class="title"> Relatório de Arrecadação Total {{$ano}}</h3> 
+                    <small>Lista de arrecadação total do ano!</small>
+                </div>
+            </div>
+        </div>
+        <div class="items-search">
+           
+        </div>
+    </div>
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-block">
+                        <section class="example">
+                            <div class="table-flip-scroll">
+                                <table class="table table-striped table-bordered table-hover flip-content" id="tabela">
+                                    <thead class="flip-header">
+                                        <tr>
+                                          
+                                            
+                                            <th width="25%" style="text-align: center;">Mês</th>
+                                            <th width="25%" style="text-align: center;">Hospedados Pagos</th>
+                                            <th width="25%" style="text-align: center;">Cancelados Pagos</th>
+                                            <th width="25%" style="text-align: center;">Total</th>
+                                            
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>                                        
+                                            
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Janeiro</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                   
+                                                         R$ {{ number_format($Mes01HospedadosPagos, 2, ',', '.' )}}  
+                                                    
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                    
+                                                         R$ {{ number_format($Mes01Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes01, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Fevereiro</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;">                                                    
+                                                         R$ {{ number_format($Mes02HospedadosPagos, 2, ',', '.' )}}
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                     
+                                                         R$ {{ number_format($Mes02Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes02, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Março</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                    
+                                                         R$ {{ number_format($Mes03HospedadosPagos, 2, ',', '.' )}}  
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                    
+                                                         R$ {{ number_format($Mes03Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes03, 2, ',', '.' )}}  
+                                                            
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Abril</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                    
+                                                         R$ {{ number_format($Mes04HospedadosPagos, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                    
+                                                         R$ {{ number_format($Mes04Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes04, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Maio</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                          R$ {{ number_format($Mes05HospedadosPagos, 2, ',', '.' )}}  
+                                                    
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                     
+                                                         R$ {{ number_format($Mes05Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes05, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Junho</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                         R$ {{ number_format($Mes06HospedadosPagos, 2, ',', '.' )}}  
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                     
+                                                         R$ {{ number_format($Mes06Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes06, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Julho</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                         R$ {{ number_format($Mes07HospedadosPagos, 2, ',', '.' )}}  
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                     
+                                                         R$ {{ number_format($Mes07Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes07, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Agosto</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                          R$ {{ number_format($Mes08HospedadosPagos, 2, ',', '.' )}}  
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                     
+                                                         R$ {{ number_format($Mes08Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes08, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Setembro</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                         R$ {{ number_format($Mes09HospedadosPagos, 2, ',', '.' )}}  
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                     
+                                                         R$ {{ number_format($Mes09Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes09, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Outubro</b>
+                                                     
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                         R$ {{ number_format($Mes10HospedadosPagos, 2, ',', '.' )}}  
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                     
+                                                         R$ {{ number_format($Mes10Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes10, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Novembro</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                         R$ {{ number_format($Mes11HospedadosPagos, 2, ',', '.' )}}  
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                     
+                                                         R$ {{ number_format($Mes11Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes11, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                            <tr>
+
+                                                <td style="text-align: center;"><b>Dezembro</b>
+                                                    
+
+
+                                                </td>
+                                                <td style="text-align: center;"> 
+                                                         R$ {{ number_format($Mes12HospedadosPagos, 2, ',', '.' )}}  
+                                                        
+                                                    
+                                                </td>
+                                               
+                                                <td style="text-align: center;">
+                                                    
+                                                         R$ {{ number_format($Mes12Cancelados, 2, ',', '.' )}}  
+                                                    
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                         R$ {{ number_format($TotalMes12, 2, ',', '.' )}}  
+                                                        
+                                                </td>
+                                        
+                                            </tr>
+
+                                    </tbody>
+                                    <tfoot>
+                                    <tr>
+                                        <th  style="text-align:right"></th>
+                                        <th  style="text-align:center">R$ {{ number_format( $total, 2, ',', '.' )}}</th>
+                                        <th  style="text-align:center">R$ {{ number_format( $totalCancelados, 2, ',', '.' )}}</th>
+                                        <th style="text-align:center"> R$ {{ number_format( $TotalMeses, 2, ',', '.' )}}</th>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                                
+
+
+
+                                <div class="modal fade" id="DeleteModal">
+                                    <div class="modal-dialog" role="document">
+                                        <form action="" id="deletearea" method="get">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h4 class="modal-title"><i class="fa fa-warning"></i> Atenção</h4>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    {{ csrf_field() }}  
+                                                    {{ method_field('DELETE') }}
+                                                    <p>Tem certeza que deseja deletar ?</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="formSubmit()">Sim</button>
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Não</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                               
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-sm-10 col-sm-offset-2">
+                                   
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</article>
+@push('javascript')
+<script type="text/javascript">
+     function deleteData(id)
+     {
+         var id = id;
+         var url = '{{ route("configurarhospedagem.destroy", ":id") }}';
+         url = url.replace(':id', id);
+         $("#deletearea").attr('action', url);
+     }
+
+     function formSubmit()
+     {
+         $("#deletearea").submit();
+     }
+
+$(document).ready(function() {
+    var table = $('#tabela').DataTable({
+    ordering: false,
+    paging: false,
+    lengthChange: false,
+    searching: false,
+    buttons: [
+
+            {
+                extend: 'excelHtml5',              
+                title: 'GEOFML - Relatório Arrecadacao Total',
+                footer: true,
+            },
+            {
+                extend: 'pdfHtml5',
+                title: 'GEOFML - Relatório Arrecadacao Total',
+                footer: true,
+            },
+            {
+                    extend: 'print',
+                    text: 'Print',
+                    footer: true,
+            }
+            
+    ],
+    select: false,
+    "processing": true,
+    
+    stateSave: true,
+
+    language: {          
+    "sEmptyTable": "Nenhum registro encontrado",
+    "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+    "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
+    "sInfoFiltered": "(Filtrados de _MAX_ registros)",
+    "sInfoPostFix": "",
+    "sInfoThousands": ".",
+    "sLengthMenu": "_MENU_ resultados por página",
+    "sLoadingRecords": "Carregando...",
+    "sProcessing": "Processando...",
+    "sZeroRecords": "Nenhum registro encontrado",
+    
+    "oPaginate": {
+        "sNext": "Próximo",
+        "sPrevious": "Anterior",
+        "sFirst": "Primeiro",
+        "sLast": "Último"
+    },
+    "oAria": {
+        "sSortAscending": ": Ordenar colunas de forma ascendente",
+        "sSortDescending": ": Ordenar colunas de forma descendente"
+    },
+    "select": {
+        "rows": {
+            "_": " Selecionado %d linhas",
+            "0": " Nenhuma linha selecionada",
+            "1": " Selecionado 1 linha"
+        }
+    },
+    "buttons": {
+        "copy": "Copiar para a área de transferência",
+        "copyTitle": "Cópia bem sucedida",
+        "copySuccess": {
+            "1": "Uma linha copiada com sucesso",
+            "_": "%d linhas copiadas com sucesso"
+        }
+    }
+
+
+    }
+    });
+    table.buttons().container().appendTo( '#tabela_wrapper .col-md-6:eq(0)' );
+    } );
+     
+</script>
+
+   <script src="{{ asset('js/DataTables/datatables.min.js') }}" ></script>  
+    <script src="{{ asset('js/DataTables/DataTables-1.10.22/js/dataTables.bootstrap4.min.js') }}" ></script>  
+    <script src="{{ asset('js/DataTables/Buttons-1.6.5/js/dataTables.select.min.js') }}" ></script>
+    <script src="{{ asset('js/DataTables/Buttons-1.6.5/js/buttons.bootstrap4.min.js') }}" ></script>
+    <script src="{{ asset('js/DataTables/Buttons-1.6.5/js/dataTables.buttons.min.js') }}" ></script>
+    <script src="{{ asset('js/DataTables/Buttons-1.6.5/js/buttons.colVis.min.js') }}" ></script>
+    <script src="{{ asset('js/DataTables/Buttons-1.6.5/js/buttons.html5.min.js') }}" ></script>
+    <script src="{{ asset('js/DataTables/Select-1.3.1/js/select.bootstrap4.min.js') }}" ></script>  
+    
+    <script type="text/javascript">
+
+        $(document).ready(function() {
+        
+    
+
+
+            //alert('ok');
+
+
+    } ); 
+    </script>
+@endpush
+@endsection

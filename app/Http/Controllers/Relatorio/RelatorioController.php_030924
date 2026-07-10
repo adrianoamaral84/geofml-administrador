@@ -1,0 +1,727 @@
+<?php
+
+namespace App\Http\Controllers\Relatorio;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use DB;
+use Carbon\Carbon;
+use Crypt;
+use Auth;
+
+class RelatorioController extends Controller
+{
+    
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+
+    public function index(){
+    
+        date_default_timezone_set('America/Sao_Paulo');
+        session(['link' => url()->current()]);
+        $mes = date('m');
+        $ano = date('Y');
+        return view('relatorios.index', compact('mes', 'ano'));
+
+    }
+    public function verdados($id){
+    
+
+
+        date_default_timezone_set('America/Sao_Paulo');
+        $id = Crypt::decrypt($id);
+        $hospedagem = \App\Hospede::where('id', $id)->with('user')->first();     
+
+        return view('relatorios.editar_dados', compact('hospedagem'));
+
+        
+
+    }
+
+    public function atualizar(Request $request){
+
+        
+        $customMessages = [
+
+            'checkin.required' => 'Campo Checkin obrigatório',
+            'checkout.required' => 'Campo Checkout obrigatório',
+            'valor.required' => 'Campo Valor obrigatório',
+            'diarias.required' => 'Campo Diárias obrigatório',
+             
+        ];
+
+        $validatedData = [
+            'checkin' => 'required',
+            'checkout' => 'required',
+            'valor' => 'required',
+            'diarias' => 'required',
+            
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+        $validatedData['valor'] = str_replace(",",".",str_replace(".","",$validatedData['valor']));
+        $validatedData['valor'] = substr($validatedData['valor'], 4);
+        //dd($validatedData['valor']);
+
+        $hospedagem = \App\Hospede::findOrFail($request->id);
+        
+        $hospedagem->checkin_at     =   $validatedData['checkin'];
+        $hospedagem->checkout_at    =   $validatedData['checkout'];  
+        $hospedagem->valor          =   $request->valor2;
+        $hospedagem->qntdiarias     =   $validatedData['diarias'];
+        $hospedagem->update();
+        \Session::flash('message', ['msg'=>"Dados alterados com sucesso!", 'class'=>'success']);
+        return redirect()->route('arrecadacao.view');
+
+
+
+    }
+
+   public function view(Request $request){
+        
+        
+        session(['ano' => $request->ano]);
+        session(['mes' => $request->mes]);
+        session(['status' => $request->status]);
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo Ano obrigatório',
+            'mes.required' => 'Campo Mês obrigatório',
+            'status.required' => 'Campo Status obrigatório',
+             
+        ];
+
+        $validatedData = [];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        if(empty($request->all())){
+            
+            $pegaStatus = \App\Status_hospedagem::where('id', 0)->first();
+            
+            session(['ano' => $request->ano]);
+            session(['mes' => $request->mes]);
+            session(['status' => $request->status]);
+
+        }else{
+            
+            $pegaStatus = \App\Status_hospedagem::where('id', $request->status)->first();
+            session(['ano' => $request->ano]);
+            session(['mes' => $request->mes]);
+            session(['status' => $request->status]);
+        }
+        
+        $statusUG = $pegaStatus->status;
+        
+
+      
+        $ano = $request->ano;
+        $mes = $request->mes;
+        $status = $request->status;
+        
+        
+        $data_inicial   = $ano . '-'. $mes . '-01';      
+        $data_final     = $ano . '-'. $mes . '-31';
+        
+        $consulta = \App\Hospede::select('user_cpf', 'user_id', 'und_habitacionais_id', 'tipo_und_id', 'status', 'id', 'data_inicio', 'data_termino')
+        ->whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->where('status', $status)
+        ->get();
+
+
+            $teste[] = '';
+            $posts = \App\Hospede::select('user_cpf', 'user_id', 'und_habitacionais_id', 'tipo_und_id', 'status', 'id', 'data_inicio', 'data_termino')
+            ->whereBetween('data_inicio', [$data_inicial,$data_final])
+            ->where('status', $status)->chunk(100, function($posts){
+            foreach ($posts as $post){
+                $teste[] = $post;
+            }
+            });
+
+      
+        foreach ($consulta as $key => $value) {
+              
+            $data_inicio[] = $value->undHB;    
+
+        }
+
+      
+
+
+        return view('relatorios.view', compact('consulta', 'statusUG'));
+
+    	
+
+    }
+
+
+    public function arrecadacao(){
+
+
+            $mes = date('m');
+            $ano = date('Y'); 
+            return view('relatorios.arrecadacao_index', compact('mes', 'ano'));
+
+    }
+
+
+
+    public function arrecadacaoview(Request $request){
+
+        
+        if(!empty($request->all())){
+
+        session(['ano' => $request->ano]);
+        session(['mes' => $request->mes]);
+
+        }
+
+        //dd(session()->get('ano'));
+
+        if(empty($request->all())){
+
+          $request->ano = session()->get('ano');
+          $request->mes = session()->get('mes');
+
+        }
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo ano obrigatório',
+            'mes.required' => 'Campo mês obrigatório',
+             
+        ];
+
+        $validatedData = [
+
+            //'ano' => 'required',
+            //'mes' => 'required',  
+           
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $request->ano;
+        $mes = $request->mes;
+
+        $data_inicial = $ano . "-". $mes . '-01' ;      
+        $data_final = date($ano . "-" . $mes. "-31");
+        $consulta = \App\Hospede::whereBetween('checkin_at', [$data_inicial,$data_final])
+        ->where('checkin', 2)
+        ->where('status', 2)
+        ->with('user')
+        ->get();
+
+        $valor = 0;
+        foreach ($consulta as $key => $value) {
+            $a[] = $value;
+            $valor += $value->valor;
+        }
+        //$aa = json_encode($a);
+        //dd($valor);
+
+        //dd(Auth::user()->hasRole('administrador_geral'));
+
+        return view('relatorios.arrecadacao_resultado', compact('consulta', 'valor'));
+        
+    }
+
+     public function cancelados(){
+
+
+            $mes = date('m');
+            $ano = date('Y'); 
+            return view('relatorios.cancelados_index', compact('mes', 'ano'));
+
+    }
+
+    public function canceladosview(Request $request){
+
+        
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo obrigatório',
+            'mes.required' => 'Campo obrigatório',
+             
+        ];
+        $validatedData = [
+            'ano' => 'required',
+            'mes' => 'required',  
+           
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $validatedData['ano'];
+        $mes = $validatedData['mes'];
+
+        $mesAtual = Date('m');
+
+
+        $mesProximo = date('m', strtotime('+1 months'));
+        
+        $data_inicial = $ano . '-'. $mes . '-01' ;      
+        $ultimo_dia = date("t", mktime(0,0,0,'09','01',$ano));
+        $data_final = date("$ano-" . "$mes". "-".$ultimo_dia);
+        
+        //dd($data_final);
+
+        //dd($ultimo_dia);
+        //dd($data_final);
+        $consulta = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        //->where('checkin', 2)
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+
+        //dd($consulta);
+
+            
+        if($mesAtual == $mes){
+            $liberaDistribuir = 1;
+        }else{
+             $liberaDistribuir = 0;
+        }
+
+        //dd($liberaDistribuir);
+
+     if(count($consulta)){
+           
+            foreach ($consulta as $key => $value) {
+
+            
+                if(isset($value->comprovante)){
+                   $hospedagens[] = $value->comprovante->hospedagem_id;
+                }else{
+                   $naotem[] = $value;
+                }
+
+
+
+        }
+    
+        //dd($hospedagens);
+
+        if(isset($hospedagens)){
+            
+
+                foreach ($hospedagens as $key => $value) {
+                    $hospedagem[] = \App\Hospede::where('id', $value)->first();
+                }
+
+                $valor = 0;
+                foreach ($hospedagem as $key => $value) {
+                $valor += $value->valortarifa;
+                }
+
+
+        }else{
+            
+                $valor = 0;
+                return view('relatorios.cancelados_resultado', compact('valor','liberaDistribuir'));
+        
+        }
+        
+
+                return view('relatorios.cancelados_resultado', compact('hospedagem', 'valor', 'liberaDistribuir'));
+
+        
+        }else{
+            
+                  
+                $valor = 0;
+                return view('relatorios.cancelados_resultado', compact('valor', 'liberaDistribuir'));
+
+        }
+
+    }
+
+
+    public function arrecadacaoTotal(){
+
+        $ano = date('Y'); 
+        return view('relatorios.arrecadacao_total_index', compact('ano'));
+    }
+
+
+
+
+    public function arrecadacaoTotalview(Request $request){
+
+
+        
+        $customMessages = [              
+            'ano.required' => 'Campo obrigatório',
+        ];
+        $validatedData = [
+            'ano' => 'required',   
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $validatedData['ano'];
+
+        $data_inicial = $ano . '-01-01';      
+        $data_final = date($ano . '-12-31');
+
+       
+
+        $consultaCancelados1 = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE YEAR(data_inicio) = $ano AND status = 6 AND valor_pago IS NOT NULL GROUP BY MONTH(data_inicio)");
+
+
+        $Mes01Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-01-01' AND date(data_inicio) <= '$ano-01-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes02Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-02-01' AND date(data_inicio) <= '$ano-02-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes03Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-03-01' AND date(data_inicio) <= '$ano-03-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes04Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-04-01' AND date(data_inicio) <= '$ano-04-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes05Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes06Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes07Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes08Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes09Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes10Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes11Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes12Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31' GROUP BY MONTH(data_inicio)");
+
+
+        $consultaCancelados = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get()
+        ->groupBy(function ($val) {
+          return Carbon::parse($val->data_inicio)->format('m');
+        });
+
+        
+        $contador = count($consultaCancelados);
+        
+        for ($i=0; $i < $contador; $i++) { 
+          
+            foreach ($consultaCancelados as $key => $value) {
+                //dd($value);
+            if(!empty($value->comprovante)){
+                //dd('ok');
+                $a[] = 1;
+                   $hospedagens[] = $value->comprovante->hospedagem_id;
+                
+                }else{
+                $a[] = 1;
+
+                $naotem[] = $value;
+                $hospedagens[] = 0;
+                }
+
+            }
+        }
+   
+
+       
+
+        $consulta = DB::select('SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE YEAR(data_inicio) = '.$ano.' AND status = 2 GROUP BY MONTH(data_inicio)');
+
+        
+        $Mes01HospedadosPagos = DB::select("SELECT SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-01-01' AND date(data_inicio) <= '$ano-01-31' GROUP BY MONTH(data_inicio)");
+
+        $Mes02HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-02-01' AND date(data_inicio) <= '$ano-02-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes03HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-03-01' AND date(data_inicio) <= '$ano-03-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes04HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-04-01' AND date(data_inicio) <= '$ano-04-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes05HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes06HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes07HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes08HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes09HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes10HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes11HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31' GROUP BY MONTH(data_inicio)");
+        
+        $Mes12HospedadosPagos = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE status = 2 AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31' GROUP BY MONTH(data_inicio)");
+        
+        
+        
+        
+        
+
+        
+        // CALCULA TOTAL CANCELADOSS
+        foreach ($consultaCancelados1 as $key => $value) {
+
+            $totalCancelados[] = $value->SOMA;
+        
+            }
+            $totalCancelados = array_sum($totalCancelados);
+            
+
+            foreach ($consulta as $key => $value) {
+                
+               
+            if($value->mes == 1){
+                $value->mes = 'Janeiro';
+            }
+            if($value->mes == 2){
+                $value->mes = 'Fevereiro';
+            }
+            if($value->mes == 3){
+                $value->mes = 'Março';
+            }
+            if($value->mes == 4){
+                $value->mes = 'Abril';
+            }
+            if($value->mes == 5){
+                $value->mes = 'Maio';
+            }
+            if($value->mes == 6){
+                $value->mes = 'Junho';
+            }
+            if($value->mes == 7){
+                $value->mes = 'Julho';
+            }
+            if($value->mes == 8){
+                $value->mes = 'Agosto';
+            }
+            if($value->mes == 9){
+                $value->mes = 'Setembro';
+            }
+            if($value->mes == 10){
+                $value->mes = 'Outubro';
+            }
+            if($value->mes == 11){
+                $value->mes = 'Novembro';
+            }
+            if($value->mes == 12){
+                $value->mes = 'Dezembro';
+            }
+            $total[] = $value->valor;
+            }  
+                
+            $total = array_sum($total);
+
+
+
+            foreach ($Mes01HospedadosPagos as $key => $value) {
+                $Mes01HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes02HospedadosPagos as $key => $value) {
+                $Mes02HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes03HospedadosPagos as $key => $value) {
+                $Mes03HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes04HospedadosPagos as $key => $value) {
+                $Mes04HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes05HospedadosPagos as $key => $value) {
+                $Mes05HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes06HospedadosPagos as $key => $value) {
+                $Mes06HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes07HospedadosPagos as $key => $value) {
+                $Mes07HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes08HospedadosPagos as $key => $value) {
+                $Mes08HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes09HospedadosPagos as $key => $value) {
+                $Mes09HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes10HospedadosPagos as $key => $value) {
+                $Mes10HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes11HospedadosPagos as $key => $value) {
+                $Mes11HospedadosPagos = $value->valor;
+            }
+            foreach ($Mes12HospedadosPagos as $key => $value) {
+                $Mes12HospedadosPagos = $value->valor;
+            }
+
+
+            foreach ($Mes01Cancelados as $key => $value) {
+                $Mes01Cancelados = $value->SOMA;
+            }
+            foreach ($Mes02Cancelados as $key => $value) {
+                $Mes02Cancelados = $value->SOMA;
+            }
+            foreach ($Mes03Cancelados as $key => $value) {
+                $Mes03Cancelados = $value->SOMA;
+            }
+            foreach ($Mes04Cancelados as $key => $value) {
+                $Mes04Cancelados = $value->SOMA;
+            }
+            foreach ($Mes05Cancelados as $key => $value) {
+                $Mes05Cancelados = $value->SOMA;
+            }
+            foreach ($Mes06Cancelados as $key => $value) {
+                $Mes06Cancelados = $value->SOMA;
+            }
+            foreach ($Mes07Cancelados as $key => $value) {
+                $Mes07Cancelados = $value->SOMA;
+            }
+            foreach ($Mes08Cancelados as $key => $value) {
+                $Mes08Cancelados = $value->SOMA;
+            }
+            foreach ($Mes09Cancelados as $key => $value) {
+                $Mes09Cancelados = $value->SOMA;
+            }
+            foreach ($Mes10Cancelados as $key => $value) {
+                $Mes10Cancelados = $value->SOMA;
+            }
+            foreach ($Mes11Cancelados as $key => $value) {
+                $Mes11Cancelados = $value->SOMA;
+            }
+            foreach ($Mes12Cancelados as $key => $value) {
+                $Mes12Cancelados = $value->SOMA;
+            }
+            
+            //dd($Mes02HospedadosPagos);   
+            if(empty($Mes01HospedadosPagos)){
+                $Mes01HospedadosPagos = 0;
+            }
+            if(empty($Mes02HospedadosPagos)){
+                $Mes02HospedadosPagos = 0;
+            }
+            if(empty($Mes03HospedadosPagos)){
+                $Mes03HospedadosPagos = 0;
+            }
+            if(empty($Mes04HospedadosPagos)){
+                $Mes04HospedadosPagos = 0;
+            }
+            if(empty($Mes05HospedadosPagos)){
+                $Mes05HospedadosPagos = 0;
+            }
+            if(empty($Mes06HospedadosPagos)){
+                $Mes06HospedadosPagos = 0;
+            }
+            if(empty($Mes07HospedadosPagos)){
+                $Mes07HospedadosPagos = 0;
+            }
+            if(empty($Mes08HospedadosPagos)){
+                $Mes08HospedadosPagos = 0;
+            }
+            if(empty($Mes09HospedadosPagos)){
+                $Mes09HospedadosPagos = 0;
+            }
+            if(empty($Mes10HospedadosPagos)){
+                $Mes10HospedadosPagos = 0;
+            }
+            if(empty($Mes11HospedadosPagos)){
+                $Mes11HospedadosPagos = 0;
+            }
+            if(empty($Mes12HospedadosPagos)){
+                $Mes12HospedadosPagos = 0;
+            }
+
+            // CANCELADOS
+            if(empty($Mes01Cancelados)){
+                $Mes01Cancelados = 0;
+            }
+            if(empty($Mes02Cancelados)){
+                $Mes02Cancelados = 0;
+            }
+            if(empty($Mes03Cancelados)){
+                $Mes03Cancelados = 0;
+            }
+            if(empty($Mes04Cancelados)){
+                $Mes04Cancelados = 0;
+            }
+            if(empty($Mes05Cancelados)){
+                $Mes05Cancelados = 0;
+            }
+            if(empty($Mes06Cancelados)){
+                $Mes06Cancelados = 0;
+            }
+            if(empty($Mes07Cancelados)){
+                $Mes07Cancelados = 0;
+            }
+            if(empty($Mes08Cancelados)){
+                $Mes08Cancelados = 0;
+            }
+            if(empty($Mes09Cancelados)){
+                $Mes09Cancelados = 0;
+            }
+            if(empty($Mes10Cancelados)){
+                $Mes10Cancelados = 0;
+            }
+            if(empty($Mes11Cancelados)){
+                $Mes11Cancelados = 0;
+            }
+            if(empty($Mes12Cancelados)){
+                $Mes12Cancelados = 0;
+            }
+            
+            $Mes01Cancelados = json_encode($Mes01Cancelados);
+            $Mes02Cancelados = json_encode($Mes02Cancelados);
+            $Mes03Cancelados = json_encode($Mes03Cancelados);
+            $Mes04Cancelados = json_encode($Mes04Cancelados);
+            $Mes05Cancelados = json_encode($Mes05Cancelados);
+            $Mes06Cancelados = json_encode($Mes06Cancelados);
+            $Mes07Cancelados = json_encode($Mes07Cancelados);
+            $Mes08Cancelados = json_encode($Mes08Cancelados);
+            $Mes09Cancelados = json_encode($Mes09Cancelados);
+            $Mes10Cancelados = json_encode($Mes10Cancelados);
+            $Mes11Cancelados = json_encode($Mes11Cancelados);
+            $Mes12Cancelados = json_encode($Mes12Cancelados);
+            
+            $Mes01HospedadosPagos = json_encode($Mes01HospedadosPagos);
+            $Mes02HospedadosPagos = json_encode($Mes02HospedadosPagos);
+            $Mes03HospedadosPagos = json_encode($Mes03HospedadosPagos);
+            $Mes04HospedadosPagos = json_encode($Mes04HospedadosPagos);
+            $Mes05HospedadosPagos = json_encode($Mes05HospedadosPagos);
+            $Mes06HospedadosPagos = json_encode($Mes06HospedadosPagos);
+            $Mes07HospedadosPagos = json_encode($Mes07HospedadosPagos);
+            $Mes08HospedadosPagos = json_encode($Mes08HospedadosPagos);
+            $Mes09HospedadosPagos = json_encode($Mes09HospedadosPagos);
+            $Mes10HospedadosPagos = json_encode($Mes10HospedadosPagos);
+            $Mes11HospedadosPagos = json_encode($Mes11HospedadosPagos);
+            $Mes12HospedadosPagos = json_encode($Mes12HospedadosPagos);
+            //dd($Mes04HospedadosPagos);
+            
+            $TotalMes01 = $Mes01Cancelados + $Mes01HospedadosPagos;
+            $TotalMes02 = $Mes02Cancelados + $Mes02HospedadosPagos;
+            $TotalMes03 = $Mes03Cancelados + $Mes03HospedadosPagos;
+            $TotalMes04 = $Mes04Cancelados + $Mes04HospedadosPagos;
+            $TotalMes05 = $Mes05Cancelados + $Mes05HospedadosPagos;
+            $TotalMes06 = $Mes06Cancelados + $Mes06HospedadosPagos;
+            $TotalMes07 = $Mes07Cancelados + $Mes07HospedadosPagos;
+            $TotalMes08 = $Mes08Cancelados + $Mes08HospedadosPagos;
+            $TotalMes09 = $Mes09Cancelados + $Mes09HospedadosPagos;
+            $TotalMes10 = $Mes10Cancelados + $Mes10HospedadosPagos;
+            $TotalMes11 = $Mes11Cancelados + $Mes11HospedadosPagos;
+            $TotalMes12 = $Mes12Cancelados + $Mes12HospedadosPagos;
+           
+           $TotalMeses = $TotalMes01 + $TotalMes02 + $TotalMes03 + $TotalMes04 + $TotalMes05 + $TotalMes06 + $TotalMes07 + $TotalMes08 + $TotalMes09 + $TotalMes10 + $TotalMes11 + $TotalMes12; 
+            
+            return view('relatorios.arrecadacao_total_resultado', compact('consulta', 'total', 'Mes01Cancelados', 'Mes02Cancelados', 'Mes03Cancelados', 'Mes04Cancelados', 'Mes05Cancelados', 'Mes06Cancelados', 'Mes07Cancelados', 'Mes08Cancelados', 'Mes09Cancelados', 'Mes10Cancelados', 'Mes11Cancelados', 'Mes12Cancelados', 'Mes01HospedadosPagos', 'Mes02HospedadosPagos', 'Mes03HospedadosPagos', 'Mes04HospedadosPagos', 'Mes05HospedadosPagos', 'Mes06HospedadosPagos', 'Mes07HospedadosPagos', 'Mes08HospedadosPagos', 'Mes09HospedadosPagos', 'Mes10HospedadosPagos', 'Mes11HospedadosPagos', 'Mes12HospedadosPagos', 'totalCancelados', 'TotalMes01', 'TotalMes02', 'TotalMes03', 'TotalMes04', 'TotalMes05', 'TotalMes06', 'TotalMes07', 'TotalMes08', 'TotalMes09', 'TotalMes10', 'TotalMes11', 'TotalMes12', 'TotalMeses'));
+
+
+    }
+
+
+
+
+
+}

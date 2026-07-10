@@ -1,0 +1,158 @@
+<?php
+
+namespace App\Http\Controllers\Uf;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+Use \App\Uf;
+use \Crypt;
+use Auth;
+
+class UfController extends Controller
+{   
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    public function index(Request $request)
+    {
+
+        /*
+        if(!\Gate::allows('isadministrador')){
+            abort(403, "Desculpa, você não tem autorização!");
+        }
+        */
+        if(!Auth::user()->hasRole('administrador_geral')){
+            abort(403, "Desculpa, você não tem autorização!");
+        }
+        
+        $search = isset($request->search) && $request->search != null ? $request->search : null;
+        //$consulta = \App\Uf::listAll($search);
+
+    	$consulta = \App\Uf::all();
+        $menuAtivo = "administracao";
+
+    	//dd($consulta);
+    	return view('uf.index', compact('menuAtivo','search', 'consulta'));
+    }
+
+    public function deleteUf($id)
+    {
+    	$consulta = \App\Uf::find($id);
+        //dd($consulta);
+        
+        $consulta->delete();
+        $menuAtivo = "administracao";
+        return redirect()->route('indexuf', compact('menuAtivo'));
+    }
+
+
+    public function cadastruf(Request $request)
+    {	
+    	$customMessages = [
+            'nome.max' => 'Campo Nome deve ter no max 20 caracteres',
+            'nome.min' => 'Campo Nome deve ter no min 3 caracteres',
+            'nome.required' => 'Campo obrigatório',
+
+            'silga.max' => 'Campo Sigla deve ter no max 3 caracteres',
+            'sigla.required' => 'Campo obrigatório',  
+
+        ];
+
+        $validatedData = [
+            'nome' => 'required|min:3|max:20',
+            'sigla' => 'required|max:3',
+
+        ];
+        $validatedData = $request->validate($validatedData, $customMessages); 
+        //dd($validatedData['nome']);
+        $consulta = \App\Uf::where('sigla', $validatedData['sigla'])->count();
+        $consulta1 = \App\Uf::where('descricao', $validatedData['nome'])->count();
+        //dd($consulta1);
+        //dd($request->all('id'));
+
+
+        if($consulta1 >= 1){
+
+        \Session::flash('message', ['msg'=>'Existe Descrição com esse nome!', 'class'=>'danger']);
+        $id = Crypt::encrypt($request->id);
+        return redirect()->route('uf.create');
+        }
+
+        if($consulta == 1){
+
+        \Session::flash('message', ['msg'=>'Existe Sigla com esse nome!', 'class'=>'danger']);
+        $id = Crypt::encrypt($request->id);
+        return redirect()->route('uf.create');
+        }
+
+        
+        $uf = new Uf;  
+    	$uf->sigla = $validatedData['sigla'];   	 	
+    	$uf->descricao = $validatedData['nome'];
+    	$uf->save();
+        $menuAtivo = "administracao";
+
+    	//dd($area);
+    	\Session::flash('message', ['msg'=>'Cadastrado com sucesso!', 'class'=>'success']);
+        return redirect()->route('indexuf', compact('menuAtivo'));
+    }
+
+    public function ufcreate()
+    {	
+    	$menuAtivo = "administracao";
+    	return view('uf.create', compact('menuAtivo'));
+    }
+
+    public function edituf($id)
+    {	
+
+
+    	$id = Crypt::decrypt($id);        
+        $consulta = \App\Uf::find($id);
+        $menuAtivo = "administracao";
+        //dd($consulta);
+    	return view('uf.edit', compact('menuAtivo','consulta'));
+    }
+
+    public function ufupdate(Request $request)
+    {
+    	$customMessages = [
+            'nome.max' => 'Campo Nome deve ter no max 20 caracteres',
+            'nome.min' => 'Campo Nome deve ter no min 3 caracteres',
+            'nome.required' => 'Campo obrigatório',
+            'silga.max' => 'Campo Sigla deve ter no max 3 caracteres',
+            'sigla.required' => 'Campo obrigatório',  
+        ];
+        $validatedData = [
+            'nome' => 'required|min:3|max:20',
+            'sigla' => 'required|max:3',
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);   
+        $consulta = \App\Uf::where('sigla', $validatedData['sigla'])->count();
+        $consulta1 = \App\Uf::where('descricao', $validatedData['nome'])->count();
+
+
+        if($consulta == 1 or $consulta1 == 1){
+        \Session::flash('message', ['msg'=>'Existe registro com Sigla e/ou Estado com esse nome!', 'class'=>'danger']);
+        
+        $consulta = \App\Uf::find($request->id);
+        $id = Crypt::encrypt($request->id);
+
+        return redirect()->route('edituf', compact('id'));
+        }
+
+        $consulta = \App\Uf::find($request->id);     
+        $consulta->descricao = $validatedData['nome'];
+        $consulta->sigla = $validatedData['sigla'];        
+        $consulta->update();
+        
+        $menuAtivo = "administracao"; 
+        \Session::flash('message', ['msg'=>'Atualizado com sucesso!', 'class'=>'success']);
+        return redirect()->route('indexuf', compact('menuAtivo'));
+
+    	//return view('indexuf');
+    }
+
+}

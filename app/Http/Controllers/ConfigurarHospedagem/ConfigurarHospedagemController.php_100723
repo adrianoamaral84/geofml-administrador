@@ -1,0 +1,171 @@
+<?php
+
+namespace App\Http\Controllers\ConfigurarHospedagem;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use \Crypt;
+use Carbon\Carbon;
+
+class ConfigurarHospedagemController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function index(){
+
+    	$consulta = \App\LockDays::paginate(10);
+        $diaBloqueado = \App\BloqueioDia::where('id', 1)->first();
+    	return view('bloqueardias.index', compact('consulta', 'diaBloqueado'));
+    }
+
+
+    public function createDia($id){
+
+        //$consulta = \App\LockDays::paginate(10);
+        $id = Crypt::decrypt($id);
+        $bloqueioDia = \App\BloqueioDia::where('id', $id)->first();
+        //dd($id);
+
+        //$diaBloqueado = \App\BloqueioDia::where('id', 1)->first();
+        return view('bloqueardias.create_dia', compact('bloqueioDia'));
+    }
+
+    public function createDiaPost(Request $request){
+
+
+        //dd($request->all());
+
+
+        $customMessages = [
+                      
+            'dia.required' => 'Campo Dia obrigatório',             
+         
+        ];
+
+        $validatedData = [
+
+            'dia' => 'required', 
+
+        ];
+
+
+        $validatedData = $request->validate($validatedData, $customMessages); 
+
+        $consulta = \App\BloqueioDia::where('id', $request->id)->first();
+        //dd($consulta);
+        //consulta = new \App\BloqueioDia();
+        $consulta->dia = $validatedData['dia'];
+        $consulta->update();
+        \Session::flash('message', ['msg'=>"Cadastrado com sucesso!", 'class'=>'success']);
+        return redirect()->route('configurarhospedagem.index');
+
+    }
+    public function create(){
+
+        $bloquearDias = \App\LockDays::where('tipo', 1)->get();
+        $a = [];
+        foreach ($bloquearDias as $key => $value) {
+            
+            $a[] = [
+                $value->data_inicio, 
+                $value->data_fim
+            ];
+            //print($a);
+        }
+        $a2 = [];
+        $bloquearDias2 = \App\LockDays::where('tipo', 2)->get();
+        //dd($bloquearDias2);
+        foreach ($bloquearDias2 as $key => $value1) {
+            
+            $a[] = $value1->data_inicio;
+            //print($a);
+        }
+        $a= json_encode($a);
+        //dd($a);
+
+        $minDate = Carbon::now()->format('Y-m-d');            
+           
+    	return view('bloqueardias.create', compact('a', 'minDate'));
+	}
+
+    
+
+
+    public function store(Request $request){
+
+    	
+        $request->dataini = Carbon::createFromFormat('d-m-Y', $request->dataini)->format('Y-m-d'); 
+        $request->datater = Carbon::createFromFormat('d-m-Y', $request->datater)->format('Y-m-d');
+       
+
+    	if($request->situacao == 2){
+    		$request->datater = null;
+    	}
+
+
+
+    	if($request->datater){
+    	if(strtotime($request->dataini) > strtotime($request->datater))
+    	{
+    		\Session::flash('message', ['msg'=>"Erro: Data Término maior que data inicial!", 'class'=>'danger']);
+        		return redirect()->back();
+    	}
+    					}
+    	$customMessages = [
+                      
+            'situacao.required' => 'Campo Tipo obrigatório',
+            'dataini.required' => 'Campo Data obrigatório',
+            'datater.required' => 'Campo obrigatório',
+            'motivo.required' => 'Campo Motivo obrigatório',
+           
+         
+        ];
+
+        $validatedData = [
+            'situacao' => 'required',
+            'dataini' => 'required',
+            'motivo' => 'required',            
+            'datater' => 'nullable',
+            
+           
+        ];
+
+
+        $validatedData = $request->validate($validatedData, $customMessages); 
+
+        $consulta = new \App\LockDays();
+        $consulta->tipo = $validatedData['situacao'];
+        $consulta->data_inicio  = $request->dataini;
+        if($request->situacao == 2){
+        	//dd($validatedData['datater']);
+    	//$consulta->data_fim = null;
+    	}else{
+        $consulta->data_fim  = $request->datater;
+        }
+        $consulta->motivo  = $validatedData['motivo'];
+        $consulta->save();
+
+    	//dd($request->datater);
+        \Session::flash('message', ['msg'=>"Cadastrado com sucesso!", 'class'=>'success']);
+        return redirect()->route('configurarhospedagem.index');
+      
+    }
+
+    public function destroy($id){
+
+    	$id = Crypt::decrypt($id);
+    	//dd($id);
+    	$consulta = \App\LockDays::find($id);
+
+        $consulta->delete();
+
+        \Session::flash('message', ['msg'=>'Deletado com sucesso!', 'class'=>'success']);
+        
+        return redirect()->route('configurarhospedagem.index');
+
+    }
+
+}

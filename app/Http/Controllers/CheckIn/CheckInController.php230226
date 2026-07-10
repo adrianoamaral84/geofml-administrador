@@ -1,0 +1,267 @@
+<?php
+
+namespace App\Http\Controllers\CheckIn;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Crypt;
+use Auth;
+
+class CheckInController extends Controller
+{
+   
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    
+
+    public function atendente(){
+
+        
+
+        return redirect()->route('checkIn');
+        
+
+
+    }
+
+	public function checkIn(){
+
+        $hoje = Carbon::now()->toDateString();
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1)->toDateString();     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+        //dd($umMes);
+    	$consulta = \App\Hospede::where('status', 2)
+    	->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+        ->where('checkin', null)
+    	->orderBy('data_inicio', 'ASC')
+	->with('undHB')
+    	->get();
+        
+        //dd($consulta);
+
+    	return view('atendente.index', compact('consulta'));
+  	
+    }
+
+
+
+
+
+
+    public function adicionarProdutoHospedagem($id){
+
+        $id = Crypt::decrypt($id);
+        $hospedagem = \App\Hospede::findOrFail($id);
+        
+        $produtos = \App\TarifaExtra::all();
+        $carrinho = \App\CheckOut::where('hospedagem_id', $id)
+        ->where('usuario_id', $hospedagem->user_id)
+        ->OrderBy('id', 'DESC')
+        ->get();
+
+        foreach ($carrinho as $key => $value) {
+            $valores[] = $value->valor;  
+                     
+        }
+
+
+        if(isset($valores)){
+            $total = array_sum($valores);
+        }else
+        {
+            $total = 0;
+        }
+       
+       
+        
+    return view('atendente.adicionar', compact('hospedagem', 'produtos', 'carrinho', 'total'));
+
+        
+    }
+
+    public function cadastrarProdutoCarrinho(Request $request){
+
+      
+       $customMessages = [
+           
+            'produto.required' => 'Campo obrigatório', 
+            'quantidade.required' => 'Campo obrigatório', 
+
+          
+        ];
+
+        $validatedData = [
+            'produto' => 'required',
+            'quantidade' => 'required',
+            
+        ];
+        
+
+
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+        
+        //CALCULA VALOR 
+        $produto = \App\TarifaExtra::findOrFail($validatedData['produto']);
+        $valor = $produto->valor * $validatedData['quantidade'];
+         //
+        
+
+
+        $consulta = new \App\CheckOut();
+        $consulta->tarifa_id = $validatedData['produto'];
+        $consulta->quantidade = $validatedData['quantidade'];
+        $consulta->usuario_id = $request->user_id;
+        $consulta->hospedagem_id = $request->id;
+        $consulta->atendente_id = Auth::user()->id;
+
+        $consulta->valor = $valor;
+
+        $consulta->save();
+
+        \Session::flash('message', ['msg'=>"Produto Adicionado ao carrinho com sucesso!", 'class'=>'success']);
+        return redirect()->back();
+                
+
+
+
+    }
+
+
+    public function checkOut(){
+
+    	$hoje = Carbon::now()->toDateString();
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1);     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+        //dd($hoje);
+        $consulta = \App\Hospede::where('status', 2)
+        ->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+        ->where('checkin', 1)
+        //->where('checkout', null)
+        ->orderBy('data_inicio', 'ASC')
+	->with('undHB')
+        ->get();
+
+        return view('atendente.checkout', compact('consulta'));
+
+    }
+
+    
+
+
+    public function buscar(){
+
+    	//$consulta = \App\Hospede::where('user_cpf', $cpf)->get();
+    	return view('atendente.buscar');
+
+    }
+
+    public function buscahospedagem(Request $request){
+
+
+    	if(strlen($request->cpf) > 11){
+    		\Session::flash('message', ['msg'=>"CPF inválido!", 'class'=>'danger']);
+        return redirect()->route('buscar');
+    	}
+    	
+
+    	$consulta = \App\Hospede::where('user_cpf', $request->cpf)
+    	->where('status', 2)
+    	->get();
+
+
+    	return view('atendente.index', compact('consulta'));
+
+
+    }
+
+    public function finalizarCarrinho(Request $request){
+
+
+        
+            $hospedagem     =   \App\Hospede::findOrFail($request->id);
+            $pagtesouro     =   \App\pagtesouro::where('id', 2)->first();
+            $jsonEnvio      =   $this->prepareJson($request->all());
+            $data_string    =   json_encode($jsonEnvio);
+            $timeout = 20;
+
+            $ch = curl_init($pagtesouro->url);            
+            
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+            //curl_setopt($ch, CURLOPT_PROXY_SSL_VERIFYPEER, 0);
+            //curl_setopt($ch, CURLOPT_PROXYUSERPWD, "adriano-badmap5de:brasil@2019");
+            //curl_setopt($ch, CURLOPT_PROXY, "http://proxy.11ct.eb.mil.br:3128");
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Authorization: Bearer ' . $pagtesouro->token));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+            
+            if(curl_exec($ch) === false)
+            {
+                \Session::flash('message', ['msg'=>"Houve um erro ao enviar os dados para a APi do PagTesouro!", 'class'=>'danger']);                
+                return redirect()->back();
+            }
+          
+            $result = curl_exec($ch);
+            curl_close($ch);
+            $result = json_decode($result);
+            
+            if(isset($result->codigo)){
+                     \Session::flash('message', ['msg'=>$result->descricao, 'class'=>'danger']);                
+               return redirect()->back();
+            }        
+            
+            $sessao = str_replace('https://pagtesouro.tesouro.gov.br/#/pagamento?idSessao=', '', $result->proximaUrl);
+            return redirect()->to($result->proximaUrl);
+
+    }
+
+    public function prepareJson($dados)
+    {
+        
+        $dados = (object) $dados;
+        $usuario = \App\User::findOrFail($dados->user_id);
+        $codigo = \App\PagTesouro::all()->first();
+
+        return array(
+            "codigoServico" => $codigo->codservico,
+            "referencia" => "",
+            "competencia" => "",
+            "vencimento" => "",
+            "cnpjCpf" => $usuario->cpf, // colocar o cpf do militar cadastrado
+            "nomeContribuinte" =>  $usuario->name, // Colocar o nome do militar 
+            "valorPrincipal" =>  $dados->total,
+            "valorDescontos" => "",
+            "valorOutrasDeducoes" => "",
+            "valorMulta" => "",
+            "valorJuros" => "",
+            "valorOutrosAcrescimos" => "",
+            "tipos" => [
+
+             "CARTAO_CREDITO"
+
+            ],
+            "modoNavegacao" => "2",
+            "urlNotificacao" => "https://valpagtesouro.tesouro.gov.br/api/simulador/ug/notificacao"
+        );
+        
+    }
+
+    public function deletarItem($id){
+
+        //dd('ok');
+        $id = Crypt::decrypt($id);
+        $deletar = \App\CheckOut::findOrFail($id);
+        $deletar->delete();
+        \Session::flash('message', ['msg'=>"Deletado com sucesso!", 'class'=>'success']);
+        return redirect()->back();
+       //dd($deletar);
+
+    }
+}

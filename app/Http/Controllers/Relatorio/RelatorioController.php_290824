@@ -1,0 +1,469 @@
+<?php
+
+namespace App\Http\Controllers\Relatorio;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use DB;
+use Carbon\Carbon;
+use Crypt;
+
+class RelatorioController extends Controller
+{
+    
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+
+    public function index(){
+    
+        date_default_timezone_set('America/Sao_Paulo');
+        session(['link' => url()->current()]);
+        $mes = date('m');
+        $ano = date('Y');
+        return view('relatorios.index', compact('mes', 'ano'));
+
+    }
+    public function verdados($id){
+    
+
+
+        date_default_timezone_set('America/Sao_Paulo');
+        $id = Crypt::decrypt($id);
+        $hospedagem = \App\Hospede::where('id', $id)->with('user')->first();     
+
+        return view('relatorios.editar_dados', compact('hospedagem'));
+
+        
+
+    }
+
+    public function atualizar(Request $request){
+
+        
+        $customMessages = [
+
+            'checkin.required' => 'Campo Checkin obrigatório',
+            'checkout.required' => 'Campo Checkout obrigatório',
+            'valor.required' => 'Campo Valor obrigatório',
+            'diarias.required' => 'Campo Diárias obrigatório',
+             
+        ];
+
+        $validatedData = [
+            'checkin' => 'required',
+            'checkout' => 'required',
+            'valor' => 'required',
+            'diarias' => 'required',
+            
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+        $validatedData['valor'] = str_replace(",",".",str_replace(".","",$validatedData['valor']));
+        $validatedData['valor'] = substr($validatedData['valor'], 4);
+        //dd($validatedData['valor']);
+
+        $hospedagem = \App\Hospede::findOrFail($request->id);
+        
+        $hospedagem->checkin_at     =   $validatedData['checkin'];
+        $hospedagem->checkout_at    =   $validatedData['checkout'];  
+        $hospedagem->valor          =   $request->valor2;
+        $hospedagem->qntdiarias     =   $validatedData['diarias'];
+        $hospedagem->update();
+        \Session::flash('message', ['msg'=>"Dados alterados com sucesso!", 'class'=>'success']);
+        return redirect()->route('arrecadacao.view');
+
+
+
+    }
+
+   public function view(Request $request){
+        
+        
+        session(['ano' => $request->ano]);
+        session(['mes' => $request->mes]);
+        session(['status' => $request->status]);
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo Ano obrigatório',
+            'mes.required' => 'Campo Mês obrigatório',
+            'status.required' => 'Campo Status obrigatório',
+             
+        ];
+
+        $validatedData = [];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        if(empty($request->all())){
+            
+            $pegaStatus = \App\Status_hospedagem::where('id', 0)->first();
+            
+            session(['ano' => $request->ano]);
+            session(['mes' => $request->mes]);
+            session(['status' => $request->status]);
+
+        }else{
+            
+            $pegaStatus = \App\Status_hospedagem::where('id', $request->status)->first();
+            session(['ano' => $request->ano]);
+            session(['mes' => $request->mes]);
+            session(['status' => $request->status]);
+        }
+        
+        $statusUG = $pegaStatus->status;
+        
+
+      
+        $ano = $request->ano;
+        $mes = $request->mes;
+        $status = $request->status;
+        
+        
+        $data_inicial   = $ano . '-'. $mes . '-01';      
+        $data_final     = $ano . '-'. $mes . '-31';
+        
+        $consulta = \App\Hospede::select('user_cpf', 'user_id', 'und_habitacionais_id', 'tipo_und_id', 'status', 'id', 'data_inicio', 'data_termino')
+        ->whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->where('status', $status)
+        ->get();
+
+
+            $teste[] = '';
+            $posts = \App\Hospede::select('user_cpf', 'user_id', 'und_habitacionais_id', 'tipo_und_id', 'status', 'id', 'data_inicio', 'data_termino')
+            ->whereBetween('data_inicio', [$data_inicial,$data_final])
+            ->where('status', $status)->chunk(100, function($posts){
+            foreach ($posts as $post){
+                $teste[] = $post;
+            }
+            });
+
+      
+        foreach ($consulta as $key => $value) {
+              
+            $data_inicio[] = $value->undHB;    
+
+        }
+
+      
+
+
+        return view('relatorios.view', compact('consulta', 'statusUG'));
+
+    	
+
+    }
+
+
+    public function arrecadacao(){
+
+
+            $mes = date('m');
+            $ano = date('Y'); 
+            return view('relatorios.arrecadacao_index', compact('mes', 'ano'));
+
+    }
+
+
+
+    public function arrecadacaoview(Request $request){
+
+        
+        if(!empty($request->all())){
+
+        session(['ano' => $request->ano]);
+        session(['mes' => $request->mes]);
+
+        }
+
+        //dd(session()->get('ano'));
+
+        if(empty($request->all())){
+
+          $request->ano = session()->get('ano');
+          $request->mes = session()->get('mes');
+
+        }
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo ano obrigatório',
+            'mes.required' => 'Campo mês obrigatório',
+             
+        ];
+
+        $validatedData = [
+
+            //'ano' => 'required',
+            //'mes' => 'required',  
+           
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $request->ano;
+        $mes = $request->mes;
+
+        $data_inicial = $ano . '-'. $mes . '-01' ;      
+        $data_final = date("$ano-" . "$mes". "-31");
+        $consulta = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->where('checkin', 2)
+        ->where('status', 2)
+        ->get();
+        $valor = 0;
+        foreach ($consulta as $key => $value) {
+            $valor += $value->valor;
+        }
+
+        return view('relatorios.arrecadacao_resultado', compact('consulta', 'valor'));
+        
+    }
+
+     public function cancelados(){
+
+
+            $mes = date('m');
+            $ano = date('Y'); 
+            return view('relatorios.cancelados_index', compact('mes', 'ano'));
+
+    }
+
+    public function canceladosview(Request $request){
+
+        
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo obrigatório',
+            'mes.required' => 'Campo obrigatório',
+             
+        ];
+        $validatedData = [
+            'ano' => 'required',
+            'mes' => 'required',  
+           
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $validatedData['ano'];
+        $mes = $validatedData['mes'];
+
+        $mesAtual = Date('m');
+
+
+        $mesProximo = date('m', strtotime('+1 months'));
+        
+        $data_inicial = $ano . '-'. $mes . '-01' ;      
+        $ultimo_dia = date("t", mktime(0,0,0,'09','01',$ano));
+        $data_final = date("$ano-" . "$mes". "-".$ultimo_dia);
+        
+        //dd($data_final);
+
+        //dd($ultimo_dia);
+        //dd($data_final);
+        $consulta = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        //->where('checkin', 2)
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get();
+
+        //dd($consulta);
+
+            
+        if($mesAtual == $mes){
+            $liberaDistribuir = 1;
+        }else{
+             $liberaDistribuir = 0;
+        }
+
+        //dd($liberaDistribuir);
+
+     if(count($consulta)){
+           
+            foreach ($consulta as $key => $value) {
+
+            
+                if(isset($value->comprovante)){
+                   $hospedagens[] = $value->comprovante->hospedagem_id;
+                }else{
+                   $naotem[] = $value;
+                }
+
+
+
+        }
+    
+        //dd($hospedagens);
+
+        if(isset($hospedagens)){
+            
+
+                foreach ($hospedagens as $key => $value) {
+                    $hospedagem[] = \App\Hospede::where('id', $value)->first();
+                }
+
+                $valor = 0;
+                foreach ($hospedagem as $key => $value) {
+                $valor += $value->valortarifa;
+                }
+
+
+        }else{
+            
+                $valor = 0;
+                return view('relatorios.cancelados_resultado', compact('valor','liberaDistribuir'));
+        
+        }
+        
+
+                return view('relatorios.cancelados_resultado', compact('hospedagem', 'valor', 'liberaDistribuir'));
+
+        
+        }else{
+            
+                  
+                $valor = 0;
+                return view('relatorios.cancelados_resultado', compact('valor', 'liberaDistribuir'));
+
+        }
+
+    }
+
+
+    public function arrecadacaoTotal(){
+
+        $ano = date('Y'); 
+        return view('relatorios.arrecadacao_total_index', compact('ano'));
+    }
+
+
+
+
+    public function arrecadacaoTotalview(Request $request){
+
+
+
+        $customMessages = [
+                      
+            'ano.required' => 'Campo obrigatório',
+             
+        ];
+        $validatedData = [
+            'ano' => 'required',   
+        ];
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $validatedData['ano'];
+        //dd($ano);
+        $data_inicial = $ano . '-01-01';      
+        $data_final = date($ano . '-12-31');
+        
+        $consultaCancelados = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->whereNotNull('valor_pago')
+        ->where('status', 6)
+        ->with('comprovante')
+        ->get()
+        ->groupBy(function ($val) {
+        return Carbon::parse($val->data_inicio)->format('m');
+        });
+
+        $contador = count($consultaCancelados);
+        //dd($contador);
+        for ($i=0; $i < $contador; $i++) { 
+          
+            foreach ($consultaCancelados as $key => $value) {
+                //dd($value);
+            if(!empty($value->comprovante)){
+                //dd('ok');
+                $a[] = 1;
+                   $hospedagens[] = $value->comprovante->hospedagem_id;
+                
+                }else{
+                $a[] = 1;
+
+                $naotem[] = $value;
+                $hospedagens[] = 0;
+                }
+
+        }
+
+
+
+        }
+        
+        //dd(json_encode($a));
+
+        /*
+        $visitors = \App\Hospede::select(DB::raw('sum(id) as `valor`'),DB::raw('YEAR(data_inicio) year, MONTH(data_inicio) month'))
+            ->where('status', 2)
+            ->groupby('year','month')
+            ->get();
+        */
+        $consulta = DB::select('SELECT MONTH(data_inicio) as mes, SUM(valor) as valor FROM hospedagem WHERE YEAR(data_inicio) = '.$ano.' AND status = 2 GROUP BY MONTH(data_inicio) ORDER BY data_inicio ASC');
+        
+        //$total[] = '';
+        foreach ($consulta as $key => $value) {
+            
+            if($value->mes == 1){
+                $value->mes = 'Janeiro';
+            }
+            if($value->mes == 2){
+                $value->mes = 'Fevereiro';
+            }
+            if($value->mes == 3){
+                $value->mes = 'Março';
+            }
+            if($value->mes == 4){
+                $value->mes = 'Abril';
+            }
+            if($value->mes == 5){
+                $value->mes = 'Maio';
+            }
+            if($value->mes == 6){
+                $value->mes = 'Junho';
+            }
+            if($value->mes == 7){
+                $value->mes = 'Julho';
+            }
+            if($value->mes == 8){
+                $value->mes = 'Agosto';
+            }
+            if($value->mes == 9){
+                $value->mes = 'Setembro';
+            }
+            if($value->mes == 10){
+                $value->mes = 'Outubro';
+            }
+            if($value->mes == 11){
+                $value->mes = 'Novembro';
+            }
+            if($value->mes == 12){
+                $value->mes = 'Dezembro';
+            }
+            $total[] = $value->valor;
+            
+        }  
+
+
+        $total = array_sum($total);
+            
+            //dd($total);
+        //dd($consulta);
+
+
+        return view('relatorios.arrecadacao_total_resultado', compact('consulta', 'total'));
+
+
+    }
+
+
+
+
+
+}

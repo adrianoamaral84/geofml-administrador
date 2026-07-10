@@ -1,0 +1,185 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Crypt;
+use Auth;
+use Session;
+
+class Controller extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /*// LISTAGEM DE ENTRADA (ATENDENTE)
+    public function atendente(Request $request)
+    {
+        $search = $request->input('search');
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1)->toDateString();     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+        
+        $query = \App\Hospede::where('status', 2)
+            ->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+            ->whereNull('checkin') 
+            ->orderBy('data_inicio', 'ASC')
+            ->with('undHB', 'user');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function($u) use ($search) {
+                    $u->where('name', 'LIKE', "%$search%");
+                })->orWhere('user_cpf', 'LIKE', "%$search%");
+            });
+        }
+
+        $consulta = $query->get();
+        return view('atendente.index', compact('consulta', 'search'));
+    }
+
+        // LISTAGEM DE SAÍDA (CHECKOUT)
+    public function checkOut(Request $request)
+    {
+        $search = $request->input('search');
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1)->toDateString();     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+        
+        $query = \App\Hospede::where('status', 2)
+            ->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+            ->orderBy('data_inicio', 'ASC')
+            ->with('undHB', 'user');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function($u) use ($search) {
+                    $u->where('name', 'LIKE', "%$search%");
+                })->orWhere('user_cpf', 'LIKE', "%$search%");
+            });
+        }
+
+        $consulta = $query->get();
+        return view('atendente.checkout', compact('consulta', 'search'));
+    }*/
+
+// LISTAGEM DE ENTRADA (ATENDENTE)
+   public function atendente(Request $request)
+    {
+        $search = $request->input('search');
+
+        // Definindo datas
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1)->toDateString();     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+        
+        // Query ultra-segura
+        $query = \App\Hospede::where('status', 2)
+            ->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+            ->orderBy('data_inicio', 'ASC');
+
+        // Só adiciona o 'with' e o filtro se a busca for acionada
+        if ($search) {
+            $query->with('user')->where(function($q) use ($search) {
+                $q->whereHas('user', function($u) use ($search) {
+                    $u->where('name', 'LIKE', "%$search%");
+                })->orWhere('user_cpf', 'LIKE', "%$search%");
+            });
+        } else {
+            // Se não houver busca, apenas carrega os dados básicos
+            $query->with('undHB', 'user');
+        }
+
+        $consulta = $query->get();
+
+        return view('atendente.index', compact('consulta', 'search'));
+    }
+
+    // LISTAGEM DE SAÍDA (CHECK-OUT)
+    public function checkOut(Request $request)
+    {
+        $search = $request->input('search');
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1)->toDateString();     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+        
+        $query = \App\Hospede::where('status', 2)
+            ->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+            ->orderBy('data_inicio', 'ASC')
+            ->with('undHB', 'user');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function($u) use ($search) {
+                    $u->where('name', 'LIKE', "%$search%");
+                })->orWhere('user_cpf', 'LIKE', "%$search%");
+            });
+        }
+
+        $consulta = $query->get();
+        return view('atendente.checkout', compact('consulta', 'search'));
+    }
+
+
+    public function adicionarProdutoHospedagem($id)
+    {
+        $id = Crypt::decrypt($id);
+        $hospedagem = \App\Hospede::findOrFail($id);
+        $produtos = \App\TarifaExtra::all();
+        $carrinho = \App\CheckOut::where('hospedagem_id', $id)
+            ->where('usuario_id', $hospedagem->user_id)
+            ->OrderBy('id', 'DESC')
+            ->get();
+
+        $total = $carrinho->sum('valor');
+        return view('atendente.adicionar', compact('hospedagem', 'produtos', 'carrinho', 'total'));
+    }
+
+    public function cadastrarProdutoCarrinho(Request $request)
+    {
+        $validatedData = $request->validate([
+            'produto' => 'required',
+            'quantidade' => 'required',
+        ]);
+        
+        $produto = \App\TarifaExtra::findOrFail($validatedData['produto']);
+        $valor = $produto->valor * $validatedData['quantidade'];
+
+        $consulta = new \App\CheckOut();
+        $consulta->tarifa_id = $validatedData['produto'];
+        $consulta->quantidade = $validatedData['quantidade'];
+        $consulta->usuario_id = $request->user_id;
+        $consulta->hospedagem_id = $request->id;
+        $consulta->atendente_id = Auth::user()->id;
+        $consulta->valor = $valor;
+        $consulta->save();
+
+        Session::flash('message', ['msg'=>"Produto Adicionado!", 'class'=>'success']);
+        return redirect()->back();
+    }
+
+    public function buscar()
+    {
+        return view('atendente.buscar');
+    }
+
+    public function buscahospedagem(Request $request)
+    {
+        if(strlen($request->cpf) > 11){
+            Session::flash('message', ['msg'=>"CPF inválido!", 'class'=>'danger']);
+            return redirect()->route('buscar');
+        }
+
+        $consulta = \App\Hospede::where('user_cpf', $request->cpf)->where('status', 2)->get();
+        return view('atendente.index', compact('consulta'));
+    }
+
+    public function deletarItem($id)
+    {
+        $id = Crypt::decrypt($id);
+        \App\CheckOut::find($id)->delete();
+        Session::flash('message', ['msg'=>"Deletado!", 'class'=>'success']);
+        return redirect()->back();
+    }
+}

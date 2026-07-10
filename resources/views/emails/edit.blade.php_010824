@@ -1,0 +1,159 @@
+@extends('layouts.app')
+
+@section('content')
+<article class="items-list-page">
+    <div class="title-search-block">
+        <div class="title-block">
+            <div class="row">
+                <div class="col-md-6">
+                    <h3 class="title"> Editar E-mail </h3>
+                </div>
+            </div>
+        </div>
+        <div class="items-search">
+            
+        </div>
+    </div>
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-block">
+                        <section class="example">
+                            <div class="table-flip-scroll">
+                                <form id="password-form" action="{{ route('email.atualizar') }}" method="POST">
+                                    @csrf
+
+                                    <div class="row form-group has-error">
+
+                                        <div class="col-12">
+                                        <label class="control-label">{{ __('Assunto') }}</label>
+                                        <input type="hidden" name="id" value="{{ $consulta->id }}">
+                                        <input type="text" name="assunto" id="assunto" class="form-control boxed" value="{{ $consulta->assunto }}" maxlength="255" minlength="2" onpaste="return false;" autofocus>
+                                        @error('assunto')
+                                        <span class="has-error" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                        </div>
+                                    
+                                    </div>
+
+                                    <div class="row form-group has-error">
+
+                                        <div class="col-12">
+                                        <label class="control-label">{{ __('Cabeçalho') }}</label>
+                                        <input type="text" name="cabecalho" id="cabecalho" class="form-control boxed" value="{{ $consulta->cabecalho }}" maxlength="255" minlength="2" autofocus>
+                                        @error('cabecalho')
+                                        <span class="has-error" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                        </div>
+                                    
+                                    </div>
+                                    
+                                    <div class="row form-group has-error">
+                                        <div class="col-12">
+                                            <label class="control-label">Mensagem</label>
+                                            <textarea id="corpo" name="corpo" class="ckeditor form-control" rows="100" cols="30" maxlength="300">{!! $consulta->corpo !!}
+                                            </textarea>
+                                            @error('corpo')
+                                            <span class="has-error" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                            </span>
+                                            @enderror 
+                                    </div>
+                                    </div>
+                                    <hr>
+                                    <div class="form-group row">
+                                        <div class="col-sm-10 col-sm-offset-2">
+                                            <button type="submit" class="btn btn-primary rounded-s"><i class="fas fa-check-circle fa-sm"></i>  Atualizar </button>
+                                             <a href="{{ route('email.index') }}" class="btn btn-danger rounded-s"><i class="fas fa-window-close fa-sm"></i>  Cancelar </a>
+                                        </div>
+                                    </div>
+                                </form>
+                               
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-sm-10 col-sm-offset-2">
+                                    
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</article>
+
+@push('javascript')
+<script src="{{ asset('ckeditor5/build/ckeditor.js') }}" ></script>
+  <script src="{{ asset('ckfinder/ckfinder.js') }}"></script>
+<script>ClassicEditor
+            .create( document.querySelector( '.ckeditor' ), {
+        
+                toolbar: {
+                    items: [
+                        'bold',
+                        'italic',
+                        '|',
+                        'link',
+                        'bulletedList',
+                        'numberedList',
+                        '|',
+                        'indent',
+                        'outdent',
+                        '|',
+                        'imageUpload',
+                        'blockQuote',
+                        '|',
+                        'undo',
+                        'redo',
+                        '|',
+                        'removeFormat',
+                        'fontFamily',
+                        'alignment',
+                        '|',
+                        'fontSize',
+                        'CKFinder',
+                        'exportPdf'
+                    ]
+                },
+                language: 'pt-br',
+                image: {
+                    toolbar: [
+                        'imageTextAlternative',
+                        'imageStyle:full',
+                        'imageStyle:side'
+                    ]
+                },
+                table: {
+                    contentToolbar: [
+                        'tableColumn',
+                        'tableRow',
+                        'mergeTableCells'
+                    ]
+                },
+                licenseKey: '',
+                
+            } )
+            .then( editor => {
+                window.editor = editor;
+        
+                
+      
+                
+            } )
+            .catch( error => {
+                console.error( 'Oops, something went wrong!' );
+                console.error( 'Please, report the following error on https://github.com/ckeditor/ckeditor5/issues with the build id and the error stack trace:' );
+                console.warn( 'Build id: rjw3ovjid1ph-4tfjamdaf132' );
+                console.error( error );
+            } );
+
+    </script>
+
+@endpush
+@endsection

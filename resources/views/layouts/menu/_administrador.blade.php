@@ -1,0 +1,47 @@
+<li class="@if(request()->is('admin/usuarios/*')) active open @endif">
+    <a href="">
+        <i class="fa fa-users"></i> Usuários <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">        
+        <li>
+             <a href="{{ route('user.index') }}"> Gerenciar </a>
+        </li>
+    </ul>
+</li>
+
+
+
+<li class="@if(request()->is('admin/relatorio/*')) active open @endif">
+    <a href="">
+        <i class="fa fa-pie-chart" aria-hidden="true"></i> Relatórios <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">
+         <li>
+            <a href="{{route('relatorio.index')}}"> Mensal </a>
+        </li>
+        <li>
+            <a href="{{route('relatorio.arrecadacao')}}"> Hospedados Pagos </a>
+        </li>
+        <li>
+            <a href="{{route('relatorio.cancelados')}}"> Cancelados Pagos </a>
+        </li>
+        <li>
+            <a href="{{route('arrecadacaoTotlal.index')}}"> Arrecadação Total </a>
+        </li>
+    </ul>
+</li>
+
+
+
+<li class="@if(request()->is('admin/hospedagem/*')) active open @endif">
+    <a href="">
+        <i class="fa fa-h-square"></i> Hospedagem <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">  
+        <li>
+            <a href="{{route('hospedagem.aguardando_liberacao')}}"> Aguardando Liberação </a>
+        </li>
+    </ul>
+</li>
+
+

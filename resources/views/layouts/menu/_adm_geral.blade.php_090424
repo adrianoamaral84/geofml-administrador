@@ -1,0 +1,171 @@
+<li class="@if(request()->is('admin/usuarios/*')) active open @endif">
+    <a href="">
+        <i class="fa fa-users"></i> Usuários <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">
+        
+        <li>
+             <a href="{{ route('user.index') }}"> Gerenciar </a>
+        </li>
+          
+        <li>
+            <a href="{{ route('lista.pedidos') }}"> Validar </a>
+        </li>
+         <li>
+            <a href="{{ route('user.precadastro.lista') }}"> Pré Cadastro </a>
+        </li>
+
+
+    </ul>
+</li>
+
+
+
+<li class="@if(request()->is('admin/habitacao/*')) active open @endif">
+    <a href="">
+        <i class="fa fa-home"></i> Habitação <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">
+          <li>
+            <a href="{{ route('habitacao.index') }}"> Tipo UH </a>
+        </li>
+        <li>
+            <a href="{{ route('classehabitacao.index') }}"> Classe Habitacional </a>
+        </li>
+        <li>
+            <a href="{{ route('grupo_destinacao.index') }}"> Grupo de Destinação </a>
+        </li>
+         <li>
+            <a href="{{ route('uh.index') }}"> Unidade Habitacional </a>
+        </li>
+          
+         <li>
+            <a href="{{ route('grupo_tarifa.index') }}"> Grupo Tarifa </a>
+        </li>
+
+        <li>
+            <a href="{{ route('tarifas.index') }}"> Tarifas </a>
+        </li>
+
+        <li>
+            <a href="{{ route('tarifaextra.index') }}"> Tarifa Extra</a>
+        </li>
+
+    </ul>
+</li>
+
+<li class="@if(request()->is('admin/administracao/*')) active open @endif">
+    <a href="">
+        <i class="fa fa-cogs"></i> Administração <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">
+        
+        <li>
+            <a href="{{ route('indexuf') }}"> UF</a>
+        </li>
+        <!--
+        <li>
+            <a href="{{ route('guarnicao.index') }}">- Guarnição </a>
+        </li>
+    
+        <li>
+            <a href="{{ route('forca.index') }}">- Força </a>
+        </li>
+          -->     
+        
+        <li>
+            <a href="{{ route('postograduacao.list') }}"> Posto / Graduação </a>
+        </li>
+         
+         <li>
+            <a href="{{ route('gerenciarom.listOMs') }}"> Gerenciar OMs </a>
+        </li>
+        <li>
+            <a href="{{ route('dadosgerais.index') }}"> Dados Gerais </i></a>
+        </li>
+
+         
+        <li>
+            <a href="{{route('configurarhospedagem.index')}}"> Configurar Hospedagem</a>
+        </li> 
+           
+        <li>
+            <a href="{{route('pagamento.index')}}"> PagTesouro Configuração</a>
+        </li>
+
+
+
+    </ul>
+</li>
+
+
+
+
+
+
+
+<li class="@if(request()->is('admin/hospedagem/*')) active open @endif">
+    <a href="">
+        <i class="fa fa-h-square"></i> Hospedagem <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">  
+        <li>
+            <a href="{{route('hospedagem.aguardando_liberacao')}}"> Aguardando Liberação </a>
+        </li>
+<li>
+    
+    <a href="">
+        Distribuição  <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">
+        
+        <li>
+            <a href="{{route('hospedagem.distribuicao.gen')}}"> Oficiais Generais </a>
+        </li>
+        <li>
+            <a href="{{route('hospedagem.distribuicao.ofsup')}}"> Oficiais Superiores </a>
+        </li>
+        <li>
+            <a href="{{route('hospedagem.distribuicao.capten')}}"> Oficiais Intermediário / Subalternos / SC NS</a>
+        </li>
+        <li>
+            <a href="{{route('hospedagem.distribuicao.subten')}}"> Subtenentes / Sargentos / SC NM</a>
+        </li>
+        <li>
+            <a href="{{route('hospedagem.distribuicao.motorhome')}}"> Motor-Home </a>
+        </li>
+        <li>
+            <a href="{{route('hospedagem.distribuicao.camping')}}"> Camping</a>
+        </li>
+        
+        
+    </ul>
+</li>    
+
+        
+    </ul>
+</li>
+
+
+
+
+
+
+<li class="@if(request()->is('admin/relatorio/*')) active open @endif">
+    <a href="">
+        <i class="fa fa-pie-chart" aria-hidden="true"></i> Relatórios <i class="fa arrow"></i>
+    </a>
+    <ul class="sidebar-nav">
+        
+         <li>
+            <a href="{{route('relatorio.index')}}"> Mensal </a>
+        </li>
+        <li>
+            <a href="{{route('relatorio.arrecadacao')}}"> Arrecadação </a>
+        </li>
+        <li>
+            <a href="{{route('relatorio.cancelados')}}"> Cancelados pagos </a>
+        </li>
+        
+    </ul>
+</li>

@@ -1,0 +1,125 @@
+<?php
+
+namespace App\Http\Controllers\Relatorio;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class RelatorioController extends Controller
+{
+    
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+
+    public function index(){
+
+
+    	$consulta = \App\Hospede::where('status', 2)->with('user')->get()->sortBy('user.postograd_id');   
+    	return view('relatorios.index', compact('consulta'));
+
+    }
+
+
+    public function view(Request $request){
+
+    	$customMessages = [
+                      
+            'ano.required' => 'Campo obrigatório',
+            'mes.required' => 'Campo obrigatório',
+            'status.required' => 'Campo obrigatório',
+             
+        ];
+
+        $validatedData = [
+            'ano' => 'required',
+            'mes' => 'required',
+            'status' => 'required',
+           
+           
+        ];
+
+        //dd($request->all());
+
+        $pegaStatus = \App\Status_hospedagem::where('id', $request->status)->first();
+        //dd($pegaStatus->status);
+        $statusUG = $pegaStatus->status;
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $validatedData['ano'];
+        $mes = $validatedData['mes'];
+        $status = $validatedData['status'];
+        $data_inicial = $ano . '-'. $mes . '-01' ;      
+        $data_final = date("$ano-" . "$mes". "-t");
+        $consulta = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->where('status', $status)
+        ->with('undHB')
+        ->get();
+        
+        if(!isset($consulta->undHB)){
+        $consulta = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->where('status', $status)
+        ->get();
+        }
+       
+
+
+
+        return view('relatorios.view', compact('consulta', 'statusUG'));
+
+    	
+
+    }
+
+
+    public function arrecadacao(){
+
+
+            $consulta = \App\Hospede::where('status', 2)->with('user')->get()->sortBy('user.postograd_id');   
+           return view('relatorios.arrecadacao_index', compact('consulta'));
+
+    }
+
+    public function arrecadacaoview(Request $request){
+
+    $customMessages = [
+                      
+            'ano.required' => 'Campo obrigatório',
+            'mes.required' => 'Campo obrigatório',
+             
+        ];
+
+        $validatedData = [
+            'ano' => 'required',
+            'mes' => 'required',  
+           
+        ];
+
+
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $ano = $validatedData['ano'];
+        $mes = $validatedData['mes'];
+
+        $data_inicial = $ano . '-'. $mes . '-01' ;      
+        $data_final = date("$ano-" . "$mes". "-t");
+        
+        $consulta = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
+        ->where('checkin', 2)
+        ->where('status', 2)
+        //->with('undHB')
+        ->get();
+
+        $valor = 0;
+        foreach ($consulta as $key => $value) {
+            $valor += $value->valor;
+        }
+
+
+        return view('relatorios.arrecadacao_resultado', compact('consulta', 'valor'));
+        
+    }
+}

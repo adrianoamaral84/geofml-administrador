@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Http\Controllers\GerenciarEmails;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Crypt;
+use App\GerenciarEmails;
+use Illuminate\Support\Str;
+
+class GerenciaEmailController extends Controller
+{
+
+
+
+     public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+
+    public function index(){
+	
+		$consulta = GerenciarEmails::all();
+
+        
+	    return view('emails.index', compact('consulta'));
+	    
+	}
+
+	public function editar($id){
+
+
+		$id = Crypt::decrypt($id);
+		//dd($id);
+	    $consulta = GerenciarEmails::FindOrFail($id);
+	    //dd($consulta);
+
+	    return view('emails.edit', compact('consulta', $consulta));
+
+	}
+
+	public function atualizar(Request $request){
+
+
+        date_default_timezone_set('America/Sao_Paulo');
+
+			$customMessages = [
+                
+            'assunto.max' => 'Campo Cabeçalho deve ter no max 255 caracteres',
+            'assunto.min' => 'Campo Cabeçalho deve ter no min 10 caracteres',
+            'assunto.required' => 'Campo obrigatório', 
+
+            'corpo.max' => 'Campo Mensagem deve ter no max 65535 caracteres',
+            'corpo.min' => 'Campo Mensagem deve ter no min 2 caracteres',
+            'corpo.required' => 'Campo obrigatório',        
+
+            'cabecalho.max' => 'Campo Mensagem deve ter no max 255 caracteres',
+            'cabecalho.min' => 'Campo Mensagem deve ter no min 2 caracteres',
+            'cabecalho.required' => 'Campo obrigatório',           
+          
+        ];
+
+        $validatedData = [
+            
+            'cabecalho' => 'required|min:5  |max:65535',
+            'corpo' => 'required|min:10|max:65535',
+            'assunto' => 'required|min:10|max:255',
+        ];
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $email = GerenciarEmails::where('id', 1)->first();
+        //dd($email);
+        $email->cabecalho = $validatedData['cabecalho'];
+        $email->corpo = $validatedData['corpo'];
+        $email->assunto = $validatedData['assunto'];
+        $email->update();
+
+        \Session::flash('message', ['msg'=>'Atualizado com sucesso!', 'class'=>'success']);
+
+   		return redirect()->route('email.index');
+		//dd($email);
+
+	}
+}

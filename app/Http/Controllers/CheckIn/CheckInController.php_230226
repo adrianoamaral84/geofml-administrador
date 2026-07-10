@@ -1,0 +1,104 @@
+<?php
+
+namespace App\Http\Controllers\CheckIn;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Crypt;
+use Auth;
+use Session;
+
+class CheckInController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    // TELA PRINCIPAL DO ATENDENTE (Com a Busca)
+    public function atendente(Request $request)
+    {
+        $search = $request->input('search');
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1)->toDateString();     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+        
+        $query = \App\Hospede::where('status', 2)
+            ->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+            ->orderBy('data_inicio', 'ASC')
+            ->with('undHB', 'user');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function($u) use ($search) {
+                    $u->where('name', 'LIKE', "%$search%");
+                })->orWhere('user_cpf', 'LIKE', "%$search%");
+            });
+        }
+
+        $consulta = $query->get();
+        return view('atendente.index', compact('consulta', 'search'));
+    }
+
+    // TELA DE CHECK-IN (A que estava dando erro de "Method does not exist")
+    public function checkIn()
+    {
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1)->toDateString();     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+
+        $consulta = \App\Hospede::where('status', 2)
+            ->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+            ->orderBy('data_inicio', 'ASC')
+            ->with('undHB', 'user')
+            ->get();
+
+        return view('atendente.index', compact('consulta'));
+    }
+
+    // TELA DE CHECK-OUT
+    public function checkOut()
+    {
+        $umMes = Carbon::now()->startOfMonth()->addMonth(1)->toDateString();     
+        $VinteOitodiasAtras = Carbon::now()->subDays(28)->toDateString();
+        
+        $consulta = \App\Hospede::where('status', 2)
+            ->whereBetween('data_inicio', [$VinteOitodiasAtras, $umMes])
+            ->whereNotNull('checkin') 
+            ->orderBy('data_inicio', 'ASC')
+            ->with('undHB', 'user')
+            ->get();
+
+        return view('atendente.checkout', compact('consulta'));
+    }
+
+    public function buscar()
+    {
+        return view('atendente.buscar');
+    }
+
+    public function buscahospedagem(Request $request)
+    {
+        if(strlen($request->cpf) > 11){
+            Session::flash('message', ['msg'=>"CPF inválido!", 'class'=>'danger']);
+            return redirect()->route('buscar');
+        }
+
+        $consulta = \App\Hospede::where('user_cpf', $request->cpf)
+            ->where('status', 2)
+            ->get();
+
+        return view('atendente.index', compact('consulta'));
+    }
+
+    public function adicionarProdutoHospedagem($id)
+    {
+        $id = Crypt::decrypt($id);
+        $hospedagem = \App\Hospede::findOrFail($id);
+        $produtos = \App\TarifaExtra::all();
+        $carrinho = \App\CheckOut::where('hospedagem_id', $id)->get();
+        $total = $carrinho->sum('valor');
+       
+        return view('atendente.adicionar', compact('hospedagem', 'produtos', 'carrinho', 'total'));
+    }
+}

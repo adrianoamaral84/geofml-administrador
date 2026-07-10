@@ -1,0 +1,253 @@
+<?php
+
+namespace App\Http\Controllers\GrupoTarifa;
+
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Crypt;
+use App\GrupoTarifa;
+use App\PostoGraduacao;
+
+class GrupoTarifaController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    public function index(){
+   	$consulta = GrupoTarifa::paginate(20)->sortBy('descricao');
+   	return view('grupotarifa.index', compact('consulta'));
+    }
+
+    public function edit($id){
+    
+    $id = Crypt::decrypt($id);
+   	
+    $consulta = GrupoTarifa::find($id);
+    
+    $habitacoes = \App\TipoUndHab::all();
+
+    $postos = \App\PostoGraduacao::whereNotIn('id', [60,59])->get();
+    //dd($postos);
+   	return view('grupotarifa.edit', compact('consulta', 'postos', 'habitacoes'));
+    }
+
+    public function delete($id){
+    
+    $id = Crypt::decrypt($id);
+   	$consulta = GrupoTarifa::find($id);
+   	$consulta->delete();
+   	\Session::flash('message', ['msg'=>"Deletado com sucesso!", 'class'=>'success']);
+    return redirect()->route('grupo_tarifa.index');
+    }
+
+    public function create(){
+    
+    $postos = \App\PostoGraduacao::all();
+    $habitacoes = \App\TipoUndHab::all();
+
+    return view('grupotarifa.create', compact('postos', 'habitacoes'));
+    }
+
+   public function store(Request $request){
+    
+    
+
+    
+      //dd($request->all());.
+
+      if(!isset($request->posto)){
+        \Session::flash('message', ['msg'=>"Marque pelo menos um Posto / Graduação!", 'class'=>'danger']);
+          return redirect()->back();
+      }
+      $consulta1 = GrupoTarifa::where('descricao', $request->nome)
+        ->where('unidade_habitacional_id', $request->habitacao)
+        ->where('id', '<>', $request->id)
+        ->count();
+        if($consulta1 > 0){
+          \Session::flash('message', ['msg'=>"Já existe um grupo com essa descrição e Tipo de UH!", 'class'=>'danger']);
+          return redirect()->back();
+        }
+
+      //$verificaGrupo = \App\GrupoTarifa::with('postos')->where('unidade_habitacional_id', $request->habitacao)
+      //->get();
+
+
+
+      // traz os postos do grupo 40
+      //$teste = \App\GrupoTarifa::find(40)->postos;
+      //dd($teste);
+      // mostra os postos
+      /*
+      foreach ($teste as $posto) {
+        echo $posto->sigla;
+      }
+      dd('ok');
+      */
+
+      //dd($teste->sigla);
+      
+
+      // Traz o grupo com os postos
+      //$teste = \App\GrupoTarifa::with('postos')->find('40');
+      //dd($teste->postos);
+      
+      // Retorna os postos
+      //foreach ($teste->postos as $posto) {
+      //  echo $posto->sigla;
+      //}
+      //dd('ok');
+      
+      //dd($verificaGrupo);
+     
+      //dd($verificaGrupo);
+/*
+      if($verificaGrupo > 0){
+          $pegaId = \App\GrupoTarifa::where('unidade_habitacional_id', $request->habitacao)
+                      ->get();
+        //dd($pegaId->id);
+      }
+*/
+      $contador = null;
+      foreach ($request->posto as $key => $value) {
+       //echo $key;
+      //$verificaPostos = \App\GrupoTarifaPostoGraduacao::where('posto_id', $value)
+      //->where('unidade_habitacional_id', $request->habitacao)
+      //->count();
+
+     
+
+      //dd($verificaGrupo);
+/*
+      if($verificaPostos){
+          \Session::flash('message', ['msg'=>"Já existe um grupo com esse Posto / Graduação!", 'class'=>'danger']);
+          return redirect()->back();
+      }
+*/
+      }
+
+      //dd($verificaPostos);
+      $countpostos = PostoGraduacao::all()->count();
+      //dd($request->posto);
+      
+
+      //$perfil = \App\PostoGraduacao::all();
+      //dd($val);
+      
+      //$resultado = $perfil->permissoes()->sync($permissoes);
+
+      //dd($val);
+      //$resul = (json_encode($request->posto));
+
+   		$customMessages = [
+            'nome.min' => 'Descrição deve ter no min 2 caracteres',
+            'nome.max' => 'Descrição deve ter no max 100 caracteres',            
+            'nome.required' => 'Campo obrigatório',
+            'habitacao.required' => 'Campo obrigatório',
+            'sigla.min' => 'Sigla deve ter no min 1 caracteres',
+          
+        ];
+
+        $validatedData = [
+            'nome' => 'required|max:100|min:2',
+            'habitacao' => 'required',
+           
+        ];
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        //$verificaPostos = \App\GrupoTarifaPostoGraduacao::find(1);
+        //$consulta1 = GrupoTarifa::where('descricao', $request->nome)->count();
+        /*
+        if($consulta1 > 0){
+        	\Session::flash('message', ['msg'=>"Já existe um grupo com essa descrição!", 'class'=>'danger']);
+        	return redirect()->back();
+        }
+        */
+      $consulta = new GrupoTarifa();
+      //$consulta->sigla = $validatedData['sigla'];
+      $consulta->unidade_habitacional_id = $validatedData['habitacao'];
+   		
+      $consulta->descricao = $validatedData['nome'];
+   		$consulta->save();
+      if($request->posto){
+      foreach ($request->posto as $key => $value) {
+        //echo $value. "<br>";
+        $val[] = $value;
+
+      }
+        $r = $consulta->postos()->sync($val);
+    }
+      //var_dump($val);
+
+      
+
+   		\Session::flash('message', ['msg'=>"Cadastrado com sucesso!", 'class'=>'success']);
+    	return redirect()->route('grupo_tarifa.index');
+   }
+
+   public function update(Request $request){
+    
+   //dd($request->all());
+
+    $customMessages = [
+            'nome.min' => 'Descrição deve ter no min 2 caracteres',
+            'nome.max' => 'Descrição deve ter no max 100 caracteres',            
+            'nome.required' => 'Campo obrigatório', 
+            'habitacao.required' => 'Campo obrigatório', 
+        
+        ];
+
+        $validatedData = [
+            'nome' => 'required|max:100|min:2',
+            'habitacao' => 'required',
+            
+        ];
+        $validatedData = $request->validate($validatedData, $customMessages);
+
+        $consulta1 = GrupoTarifa::where('descricao', $request->nome)
+        ->where('unidade_habitacional_id', $request->habitacao)
+        ->where('id', '<>', $request->id)
+        ->count();
+        if($consulta1 > 0){
+          \Session::flash('message', ['msg'=>"Já existe um grupo com essa descrição e Tipo de UH!", 'class'=>'danger']);
+          return redirect()->back();
+        }
+        //dd($consulta1);
+        /*
+        $consulta1 = GrupoTarifa::where('descricao', $request->nome)
+        ->where('id', '<>', $request->id)
+        ->count();
+
+        if($consulta1 > 0){
+        	\Session::flash('message', ['msg'=>"Já existe um grupo com essa descrição!", 'class'=>'danger']);
+        	return redirect()->back();
+        }
+        */
+        $consulta = GrupoTarifa::find($request->id);
+   		  $consulta->descricao = $validatedData['nome'];
+        $consulta->unidade_habitacional_id = $validatedData['habitacao'];
+        //$consulta->sigla = $validatedData['sigla'];
+   	  	$consulta->update();
+      
+      //$val[] = "";
+      if($request->posto){
+      foreach ($request->posto as $key => $value) {
+        //echo $value. "<br>";
+        $val[] = $value;
+
+      }
+      $r = $consulta->postos()->sync($val);
+    }else{
+      $r = $consulta->postos()->detach();
+    }
+      //var_dump($val);
+
+      
+      
+
+
+   		\Session::flash('message', ['msg'=>"Atualizado com sucesso!", 'class'=>'success']);
+   		return redirect()->route('grupo_tarifa.index');
+   }
+}
