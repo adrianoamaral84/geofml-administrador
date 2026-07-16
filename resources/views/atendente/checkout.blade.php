@@ -53,7 +53,7 @@
                                     <tbody>                                        
                                             @if ($consulta->count() == 0)
                                             <tr>
-                                                <td colspan="5" style="text-align: center;"><small>Nenhum registro encontrado</small></td>
+                                                <td colspan="6" style="text-align: center;"><small>Nenhum registro encontrado</small></td>
                                             </tr>
                                             @else
                                              @foreach ($consulta as $item) 

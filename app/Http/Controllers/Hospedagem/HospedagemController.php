@@ -1734,7 +1734,7 @@ public function liberar(Request $request){
 
         $hospedagem->update();
         \Session::flash('message', ['msg'=>"Pedido liberado com sucesso!", 'class'=>'success']);
-       // \Illuminate\Support\Facades\Mail::queue(new \App\Mail\HospedagemLiberadaPagamento($hospedagem)); 
+        \Illuminate\Support\Facades\Mail::queue(new \App\Mail\HospedagemLiberadaPagamento($hospedagem)); 
         return redirect()->route('hospedagem.index');
 
 
@@ -2484,12 +2484,19 @@ public function liberar(Request $request){
 
 
 
-          //dd($mesAtual);
+       
+            if($ultimoPagamento->situacao == 'CONCLUIDO' || $ultimoPagamento->situacao == 'PAGO' || $ultimoPagamento->situacao == 'PAGAMENTO_CONCLUIDO') {
+               $alert = "success";
+               $ultimoPagamento->situacao = "PAGO"; 
+            } else {
+                $alert = "warning";
+            }
+
 
          if($hospedagem->status == 4){
-           return view('hospedagem.verdados_aguardando_liberacao', compact('hospedagem', 'unidades_habitacionais', 'minDate', 'maxDate', 'hoje','a', 'comprovante','ultimoPagamento'));
+           return view('hospedagem.verdados_aguardando_liberacao', compact('hospedagem', 'unidades_habitacionais', 'minDate', 'maxDate', 'hoje','a', 'comprovante','ultimoPagamento', 'alert'));
         }else{
-            return view('hospedagem.verdados_aguardando_liberacao', compact('hospedagem', 'unidades_habitacionais', 'minDate', 'maxDate', 'hoje','a', 'ultimoPagamento'));
+            return view('hospedagem.verdados_aguardando_liberacao', compact('hospedagem', 'unidades_habitacionais', 'minDate', 'maxDate', 'hoje','a', 'ultimoPagamento', 'alert'));
         }
         
 

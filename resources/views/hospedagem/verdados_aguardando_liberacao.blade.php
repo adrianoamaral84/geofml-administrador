@@ -400,7 +400,7 @@
 
                     <hr>
 @if($ultimoPagamento)
-    <div class="alert alert-warning">
+    <div class="alert alert-{{ $alert }}">
         <strong>Status PagTesouro:</strong>
         {{ $ultimoPagamento->situacao ?? 'Não consultado' }}
 

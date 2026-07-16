@@ -888,10 +888,19 @@
             <!-- FIM MOTIVO-->
 
          </div>
-
+         <div class="row has-error">
+                <div class="form-group col-sm-12 col-md-12 col-lg-12">
+                    <div class="d-flex flex-wrap align-items-center" style="gap: 3px;">
+                
+<div id="mensagem-pagamento-restante" style="margin-top: 10px;" class="mt-2" aria-live="polite"></div>
+               
+</div>
+                </div>
+            </div>
             <!-- LINHA DOS BOTOES -->
               <div class="row has-error">
-                    <div class="form-group col-sm-12 col-md-12 col-lg-12">
+                <div class="form-group col-sm-12 col-md-12 col-lg-12">
+                    <div class="d-flex flex-wrap align-items-center" style="gap: 3px;">
                         
                     
                             <!--
@@ -920,9 +929,15 @@
                                     @if($hospedagem->checkin == 1)
                                     @if($valorPagarRestante > 0)
                                     @role('atendente|administrador_geral|auxiliar_administrador_geral')
-                                    <a class="btn btn-success" style="color: white;" target="_blank" title="Realizar Pagamento Restante" onClick="myFunction2()">
-                                    <i class="fas fa-money-bill-alt" style="color: white;" ></i> Realizar Pagamento Restante </a>
-                                    @endrole
+                                    <button type="button"
+                                            id="btn-pagamento-restante"
+                                            class="btn btn-success"
+                                            title="Realizar Pagamento Restante"
+                                            onclick="myFunction2()" style="color: white;">
+                                        <i class="fas fa-money-bill-alt"></i>
+                                        <span id="texto-pagamento-restante">Realizar Pagamento Restante</span>
+                                    </button>
+                                     @endrole
                                     @endif
                                     @endif
                                     @endif
@@ -940,14 +955,6 @@
                                     @endif
 
 
-                                    
-
-
-
-
-                              
-
-
 
                                     @if($hospedagem->status == 2 or $hospedagem->status == 3 or $hospedagem->status == 5 or $hospedagem->status == 7 )
                                     @if($hospedagem->checkin == null)
@@ -957,11 +964,6 @@
 
                                     @endif
                                     @endif
-
-
-
-
-
 
 
                                     @if($hospedagem->status == 2)
@@ -999,6 +1001,7 @@
 
 
                         </div>
+                    </div>
                     </div>
                     <!-- FIM LINHA DOS BOTOES -->
 
@@ -1291,26 +1294,237 @@ span.onclick = function() {
 } 
 </script>
 <script>
-function myFunction() {
-  window.open("{{ route('pagamento.processaRequisicao', ['id' => Crypt::encrypt($hospedagem->id)]) }}", "_blank", "status=no, location=no, menubar=no, fullscreen=no, toolbar=no,scrollbars=no,resizable=no,top=500,left=500,width=700,height=700");
-  
+let janelaPagamentoRestante = null;
+let monitorPagamentoRestante = null;
+let pagamentoRestanteEmAndamento = false;
 
-  window.setTimeout( function() {
-  window.location.reload();
-}, 5000); 
-  //setTimeout(reloadpagina(), 3000);
-
+function atualizarInterfacePagamentoRestante(tipo, mensagem) {
+    const caixa = document.getElementById('mensagem-pagamento-restante');
+    if (!caixa) return;
+    caixa.innerHTML = mensagem
+        ? `<div class="alert alert-${tipo} py-2 mb-0">${mensagem}</div>`
+        : '';
 }
+
+function alterarBotaoPagamentoRestante(processando, texto) {
+    const botao = document.getElementById('btn-pagamento-restante');
+    const textoBotao = document.getElementById('texto-pagamento-restante');
+    if (botao) botao.disabled = processando;
+    if (textoBotao) textoBotao.textContent = texto;
+}
+
+function encerrarMonitorPagamentoRestante() {
+    if (monitorPagamentoRestante) {
+        clearInterval(monitorPagamentoRestante);
+        monitorPagamentoRestante = null;
+    }
+    pagamentoRestanteEmAndamento = false;
+}
+
 function myFunction2() {
-  window.open("{{ route('pagamento.processaPagamentoRestante', ['id' => Crypt::encrypt($hospedagem->id), 'restante' => $valorPagarRestante]) }}", "_blank", "status=no, location=no, menubar=no, fullscreen=no, toolbar=no,scrollbars=no,resizable=no,top=500,left=500,width=700,height=700");
- //$('#checkout11').show();
+    if (pagamentoRestanteEmAndamento) {
+        if (janelaPagamentoRestante && !janelaPagamentoRestante.closed) {
+            janelaPagamentoRestante.focus();
+        }
+        return;
+    }
+
+    const urlPagamento = @json(route('pagamento.processaPagamentoRestante', [
+        'id' => Crypt::encrypt($hospedagem->id),
+        'restante' => $valorPagarRestante
+    ]));
+
+    const urlStatus = @json(route('pagamento.status', [
+        'id' => Crypt::encrypt($hospedagem->id)
+    ]));
+
+    pagamentoRestanteEmAndamento = true;
+    alterarBotaoPagamentoRestante(true, 'Abrindo PagTesouro...');
+    atualizarInterfacePagamentoRestante('info', 'Aguarde enquanto o PagTesouro é aberto.');
+
+    const largura = 760;
+    const altura = 760;
+    const esquerda = Math.max(0, Math.round((window.screen.width - largura) / 2));
+    const topo = Math.max(0, Math.round((window.screen.height - altura) / 2));
+
+    janelaPagamentoRestante = window.open(
+        urlPagamento,
+        'pagamentoRestantePagTesouro',
+        [
+            `width=${largura}`,
+            `height=${altura}`,
+            `left=${esquerda}`,
+            `top=${topo}`,
+            'scrollbars=yes',
+            'resizable=yes',
+            'toolbar=no',
+            'menubar=no',
+            'location=no',
+            'status=no'
+        ].join(',')
+    );
+
+    if (!janelaPagamentoRestante) {
+        encerrarMonitorPagamentoRestante();
+        alterarBotaoPagamentoRestante(false, 'Realizar Pagamento Restante');
+        atualizarInterfacePagamentoRestante('warning', 'O navegador bloqueou a janela. Permita pop-ups e tente novamente.');
+        return;
+    }
+
+    janelaPagamentoRestante.focus();
+    alterarBotaoPagamentoRestante(true, 'Aguardando pagamento...');
+    atualizarInterfacePagamentoRestante('info', 'Conclua o pagamento na janela do PagTesouro. A confirmação será automática.');
+
+    let tentativas = 0;
+    let errosConsecutivos = 0;
+    let consultaEmAndamento = false;
+    const limiteTentativas = 120;
+
+    const consultarStatus = async function () {
+        if (consultaEmAndamento) return;
+
+        consultaEmAndamento = true;
+        tentativas++;
+
+        try {
+            const resposta = await fetch(urlStatus, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                cache: 'no-store'
+            });
+
+            if (!resposta.ok) throw new Error(`Erro HTTP ${resposta.status}`);
+            const dados = await resposta.json();
+            errosConsecutivos = 0;
+
+            if (dados.sucesso === false) {
+                throw new Error(dados.mensagem || 'Falha ao consultar o pagamento.');
+            }
+
+                            if (dados.pagamento_confirmado === true) {
+
+                    encerrarMonitorPagamentoRestante();
+
+                    if (janelaPagamentoRestante && !janelaPagamentoRestante.closed) {
+                        janelaPagamentoRestante.close();
+                    }
+
+                    alterarBotaoPagamentoRestante(true, 'Pagamento confirmado');
+                    atualizarInterfacePagamentoRestante(
+                        'success',
+                        'Pagamento confirmado. Atualizando os valores...'
+                    );
+
+                    // grava a mensagem
+                    sessionStorage.setItem(
+                        'pagamento_confirmado',
+                        'Pagamento restante realizado com sucesso!'
+                    );
+
+                    window.setTimeout(function () {
+                        window.location.reload();
+                    }, 1200);
+
+                    return;
+                }if (dados.pagamento_confirmado === true) {
+    encerrarMonitorPagamentoRestante();
+
+    if (janelaPagamentoRestante && !janelaPagamentoRestante.closed) {
+        janelaPagamentoRestante.close();
+    }
+
+    alterarBotaoPagamentoRestante(
+        true,
+        'Pagamento confirmado'
+    );
+
+    atualizarInterfacePagamentoRestante(
+        'success',
+        '<strong>Pagamento realizado com sucesso!</strong> Os valores da hospedagem foram atualizados.'
+    );
+
+    sessionStorage.setItem(
+        'pagamento_confirmado',
+        'Pagamento restante realizado com sucesso!'
+    );
+
+    window.setTimeout(function () {
+        window.location.reload();
+    }, 2500);
+
+    return;
 }
 
+            if (janelaPagamentoRestante && janelaPagamentoRestante.closed) {
+                encerrarMonitorPagamentoRestante();
+                alterarBotaoPagamentoRestante(false, 'Realizar Pagamento Restante');
+                atualizarInterfacePagamentoRestante('info', 'A janela foi fechada. O pagamento ainda não foi confirmado.');
+                return;
+            }
 
+            if (tentativas >= limiteTentativas) {
+                encerrarMonitorPagamentoRestante();
+                alterarBotaoPagamentoRestante(false, 'Consultar novamente');
+                atualizarInterfacePagamentoRestante('warning', 'A confirmação está demorando. Clique novamente para consultar ou reabrir o pagamento.');
+            }
+        } catch (erro) {
+            errosConsecutivos++;
+            console.error('Erro ao consultar pagamento restante:', erro);
 
+            // Não interrompe tudo por uma falha temporária de rede/API.
+            if (errosConsecutivos >= 3) {
+                atualizarInterfacePagamentoRestante(
+                    'warning',
+                    'A consulta automática está temporariamente indisponível. Continuaremos tentando.'
+                );
+            }
 
+            // Mesmo após o fechamento da janela, faz novas tentativas.
+            if (errosConsecutivos >= 10) {
+                encerrarMonitorPagamentoRestante();
+                alterarBotaoPagamentoRestante(false, 'Consultar pagamento');
+                atualizarInterfacePagamentoRestante(
+                    'warning',
+                    'Não foi possível consultar o PagTesouro. Clique em “Consultar pagamento” novamente.'
+                );
+            }
+        } finally {
+            consultaEmAndamento = false;
+        }
+    };
+
+    consultarStatus();
+    monitorPagamentoRestante = setInterval(consultarStatus, 5000);
+}
+
+window.addEventListener('beforeunload', encerrarMonitorPagamentoRestante);
 </script>
 <script src="{{asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js')}}"></script>
+<script>
+   
+   $(document).ready(function () {
 
+    const mensagem = sessionStorage.getItem('pagamento_confirmado');
+
+    if (mensagem) {
+
+        sessionStorage.removeItem('pagamento_confirmado');
+
+        $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+            '<strong>Sucesso!</strong> ' + mensagem +
+            '<button type="button" class="close" data-dismiss="alert">' +
+            '<span>&times;</span>' +
+            '</button>' +
+          '</div>')
+          .prependTo('section.section');
+
+    }
+
+});
+</script>
 @endpush
 @endsection

@@ -30,11 +30,34 @@ Route::get('/change-passwords', 'HomeController@updatePasswordInativo')->name('p
 // PAGAMENTO
 Route::get('/pagamento', 'Pagamento\PagamentoController@prepareJson')->name('pagamento.prepareJson');
 Route::get('/geraboleto', 'Pagamento\PagamentoController@geraboleto')->name('pagamento.geraboleto');
+Route::get(
+    '/pagamento/simulador/{id}',
+    'Pagamento\PagamentoController@simulador'
+)->name('pagamento.simulador');
+
+Route::post(
+    '/pagamento/simulador/{id}/aprovar',
+    'Pagamento\PagamentoController@aprovarSimulacao'
+)->name('pagamento.simulador.aprovar');
+
+Route::post(
+    '/pagamento/simulador/{id}/cancelar',
+    'Pagamento\PagamentoController@cancelarSimulacao'
+)->name('pagamento.simulador.cancelar');
 
 // Consulta Pagamento
 Route::get('/pagamento/consultar/{id}', 'Pagamento\PagamentoController@consultarPagamento')
     ->name('pagamento.consultar');
-	
+
+Route::get(
+    '/pagamento/restante/{id}/status',
+    'Pagamento\\PagamentoController@consultarStatus'
+)->name('pagamento.status');
+Route::get(
+    '/pagamento/inicial/{id}/status',
+    'Pagamento\PagamentoController@consultarStatusPagamentoInicial'
+)->name('pagamento.inicial.status');
+
 // Processa
 Route::get('/pagamentoCarrinho/{id}/total/{total}', 'Pagamento\PagamentoController@pagamentoCarrinho')->name('pagamento.pagamentoCarrinho');
 Route::get('/processaRequisicao/{id}', 'Pagamento\PagamentoController@processaRequisicao')->name('pagamento.processaRequisicao');
