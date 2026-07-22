@@ -100,9 +100,12 @@ class User extends Authenticatable
 
     public function status()
     {
-        return $this->belongsToMany(Status::class);
+        return $this->belongsToMany(Status::class, 'status');
     }
-
+    public function situacaoStatus()
+{
+    return $this->belongsTo(Status::class, 'status', 'id');
+}
 
      public function uf()
     {

@@ -14,6 +14,12 @@
          <li>
             <a href="{{ route('user.precadastro.lista') }}"> Pré Cadastro </a>
         </li>
+        <li>
+    <a href="{{ route('user.mecenas') }}">
+        <i class="fa fa-star"></i>
+        <span>Mecenas</span>
+    </a>
+</li>
 
 
     </ul>

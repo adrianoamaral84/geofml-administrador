@@ -185,6 +185,9 @@ Route::prefix('hospede')->group(function(){
 
 /* 	ROTAS USUARIO*/
 Route::prefix('usuario')->group(function(){
+	
+	Route::get('/mecenas', 'UsuarioController@mecenas')
+    ->name('user.mecenas');
 
 });
 /* */

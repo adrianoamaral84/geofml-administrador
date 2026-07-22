@@ -1556,4 +1556,38 @@ public function verDocumento($id, $doc, $tipo)
         
         
     }
+
+
+    public function mecenas(Request $request)
+{
+    $search = trim((string) $request->get('search'));
+
+    $usuarios = \App\User::query()
+    ->with([
+        'posto',
+        'om',
+        'perfil',
+        'situacaoStatus',
+    ])
+    ->where('mecenas', 1)
+    ->when($search !== '', function ($query) use ($search) {
+        $query->where(function ($filtro) use ($search) {
+            $filtro->where('name', 'LIKE', '%' . $search . '%')
+                ->orWhere('email', 'LIKE', '%' . $search . '%')
+                ->orWhere('cpf', 'LIKE', '%' . $search . '%')
+                ->orWhere('idtMil', 'LIKE', '%' . $search . '%')
+                ->orWhere('nomeguerra', 'LIKE', '%' . $search . '%');
+        });
+    })
+    ->orderBy('name')
+    ->paginate(20);
+
+    $totalMecenas = \App\User::where('mecenas', 1)->count();
+
+    return view('usuario.mecenas', compact(
+        'usuarios',
+        'totalMecenas',
+        'search'
+    ));
+}
 }

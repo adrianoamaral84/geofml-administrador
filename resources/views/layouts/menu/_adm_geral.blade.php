@@ -18,6 +18,12 @@
         <li>
             <a href="{{route('documentos.vencidos')}}"> Documentos Vencidos </a>
         </li> 
+        <li>
+    <a href="{{ route('user.mecenas') }}">
+        <i class="fa fa-star"></i>
+        <span>Mecenas</span>
+    </a>
+</li>
 
 
     </ul>
