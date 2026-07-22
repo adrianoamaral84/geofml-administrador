@@ -319,11 +319,13 @@ function validaPosto(ufId, cidadeFieldName){
 
 // INICIA SCRIPT
 $(document).ready(function(){
+    const $host = $('meta[name="app-url"]').attr('content');
+
     //Ocultar campos Situação
     hiddenFields();
     $protocol = window.location.protocol;
     //$host = $protocol+ '//'+$(location).attr('host')+'/GEOFML2.1/public';
-    $host = $protocol+ '//'+$(location).attr('host');
+    //$host = $protocol+ '//'+$(location).attr('host');
     //alert($host);
 
     $(".custom-file-input").on("change", function() {

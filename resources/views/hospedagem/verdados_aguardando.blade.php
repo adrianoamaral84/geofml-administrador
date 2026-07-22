@@ -219,7 +219,7 @@
     <input type="hidden" name="mecenas" value="{{ $hospedagem->user->mecenas }}">
 </div>
 
-
+</div>
 
 
 

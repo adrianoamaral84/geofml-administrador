@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Hash;
 use Laratrust;
 use Config;
 use App\Services\DocumentoService;
+use Illuminate\Support\Facades\DB;
+
 
 
 
@@ -42,18 +44,170 @@ class HomeController extends Controller
      */
     public function index()
     {
-        
-        
+        date_default_timezone_set('America/Sao_Paulo');
         $message = \App\Message::newMessage(Auth::user()->id);
         $count = \App\Message::countMsg(Auth::user()->id);
-        //dd($count);
-
-
         $userCPF = Auth::user()->cpf;
-        //dd($userCPF);
-        $message = "teste";
+        $hoje = Carbon::today();
 
-        return view('home', compact('userCPF', 'message', 'count'));
+        // Resumo operacional da hospedagem
+        $totalUnidades = \App\UnidadeHabitacional::count();
+        // Regra legada do sistema: checkin = 1 significa hospedado; checkin = 2 significa checkout concluído.
+        $quartosOcupados = \App\Hospede::where('checkin', 1)
+            ->whereNotNull('und_habitacionais_id')
+            ->distinct('und_habitacionais_id')
+            ->count('und_habitacionais_id');
+
+        $hospedesAtuais = \App\Hospede::where('checkin', 1)
+            ->selectRaw('COALESCE(SUM(adulto), 0) + COALESCE(SUM(crianca), 0) AS total')
+            ->value('total');
+
+        $taxaOcupacao = $totalUnidades > 0
+            ? round(($quartosOcupados / $totalUnidades) * 100, 1)
+            : 0;
+
+
+        // Movimentos efetivamente realizados, e não apenas previstos no período da reserva.
+        $checkinsHoje = \App\Hospede::whereNotNull('checkin_at')
+            ->whereDate('checkin_at', $hoje)
+            ->count();
+        $checkoutsHoje = \App\Hospede::where('checkin', 2)
+            ->whereNotNull('checkout_at')
+            ->whereDate('checkout_at', $hoje)
+            ->count();
+        $reservasPendentes = \App\Hospede::where('status', 4)->count();
+
+
+        // Indicadores financeiros. Como não há data própria de pagamento,
+        // os valores recebidos são associados ao mês em que ocorreu o checkout.
+        $inicioMesAtual = $hoje->copy()->startOfMonth();
+        $fimMesAtual = $hoje->copy()->endOfMonth();
+
+        $recebidoMes = (float) \App\Hospede::where('checkin', 2)
+            ->whereNotNull('checkout_at')
+            ->whereBetween('checkout_at', [$inicioMesAtual, $fimMesAtual])
+            ->sum(DB::raw('COALESCE(valor_pago, 0)'));
+
+        $valorPendente = (float) \App\Hospede::whereIn('checkin', [0, 1])
+            ->sum(DB::raw('COALESCE(valor_restante, 0)'));
+
+        $hospedagensPagasMes = \App\Hospede::where('checkin', 2)
+            ->whereNotNull('checkout_at')
+            ->whereBetween('checkout_at', [$inicioMesAtual, $fimMesAtual])
+            ->where('valor_pago', '>', 0)
+            ->count();
+
+        $ticketMedioMes = $hospedagensPagasMes > 0
+            ? round($recebidoMes / $hospedagensPagasMes, 2)
+            : 0;
+
+        $extrasMes = (float) DB::table('checkout')
+            ->whereBetween('created_at', [$inicioMesAtual, $fimMesAtual])
+            ->sum(DB::raw('COALESCE(valor, 0)'));
+
+        // Movimentação de hoje: entradas, saídas e hóspedes em permanência.
+        $movimentacaoHoje = \App\Hospede::with(['usuario', 'undHB', 'status_hospedagem'])
+            ->where(function ($query) use ($hoje) {
+                $query->whereDate('data_inicio', $hoje)
+                    ->orWhereDate('data_termino', $hoje)
+                    ->orWhere(function ($periodo) use ($hoje) {
+                        $periodo->whereDate('data_inicio', '<=', $hoje)
+                            ->whereDate('data_termino', '>=', $hoje)
+                            ->where('checkin', 1);
+                    });
+            })
+            ->orderBy('data_inicio')
+            ->limit(12)
+            ->get();
+
+        // Série mensal dos últimos 12 meses.
+        $meses = [];
+        $ocupacaoMensal = [];
+        $checkinsMensais = [];
+        $checkoutsMensais = [];
+        $novosUsuarios = [];
+        $recebimentosMensais = [];
+        $pendenciasMensais = [];
+
+        for ($i = 11; $i >= 0; $i--) {
+            $inicioMes = Carbon::now()->subMonths($i)->startOfMonth();
+            $fimMes = Carbon::now()->subMonths($i)->endOfMonth();
+            $diasMes = $inicioMes->daysInMonth;
+            $diariasDisponiveis = $totalUnidades * $diasMes;
+
+             $diariasOcupadas = 0;
+
+$diaAtual = $inicioMes->copy()->startOfDay();
+$ultimoDia = $fimMes->copy()->startOfDay();
+
+while ($diaAtual->lte($ultimoDia)) {
+    $unidadesOcupadasNoDia = \App\Hospede::whereNotNull('und_habitacionais_id')
+        ->whereDate('data_inicio', '<=', $diaAtual)
+        ->whereDate('data_termino', '>', $diaAtual)
+        ->whereIn('checkin', [1, 2])
+        ->distinct()
+        ->count('und_habitacionais_id');
+
+    $diariasOcupadas += min($unidadesOcupadasNoDia, $totalUnidades);
+
+    $diaAtual->addDay();
+}
+
+            $meses[] = ucfirst($inicioMes->locale('pt_BR')->translatedFormat('M/y'));
+            $ocupacaoMensal[] = $diariasDisponiveis > 0
+                ? round(($diariasOcupadas / $diariasDisponiveis) * 100, 1)
+                : 0;
+            $checkinsMensais[] = \App\Hospede::whereNotNull('checkin_at')
+                ->whereBetween('checkin_at', [$inicioMes, $fimMes])
+                ->count();
+            $checkoutsMensais[] = \App\Hospede::where('checkin', 2)
+                ->whereNotNull('checkout_at')
+                ->whereBetween('checkout_at', [$inicioMes, $fimMes])
+                ->count();
+            $novosUsuarios[] = \App\User::whereBetween('created_at', [$inicioMes, $fimMes])->count();
+            $recebimentosMensais[] = (float) \App\Hospede::where('checkin', 2)
+                ->whereNotNull('checkout_at')
+                ->whereBetween('checkout_at', [$inicioMes, $fimMes])
+                ->sum(DB::raw('COALESCE(valor_pago, 0)'));
+
+           $pendenciasMensais[] = (float) \App\Hospede::whereBetween(
+        'data_inicio',
+        [$inicioMes->toDateString(), $fimMes->toDateString()]
+    )
+    ->whereIn('checkin', [0, 1])
+    ->sum(DB::raw('COALESCE(valor_restante, 0)'));
+        }
+
+        $hospedagensPorStatus = DB::table('hospedagem')
+            ->leftJoin('status_hospedagem', 'hospedagem.status', '=', 'status_hospedagem.id')
+            ->selectRaw("COALESCE(status_hospedagem.status, 'Sem situação') AS situacao, COUNT(*) AS total")
+            ->groupBy('hospedagem.status', 'status_hospedagem.status')
+            ->orderByDesc('total')
+            ->get();
+
+        // Indicadores administrativos de usuários.
+        $totalUsuarios = \App\User::count();
+        $usuariosAtivos = \App\User::where('status', 1)->count();
+        $usuariosPreCadastro = \App\User::where('status', 5)->count();
+        $usuariosInativos = \App\User::whereIn('status', [2, 6])->count();
+
+        $usuariosPorStatus = DB::table('user')
+            ->leftJoin('status', 'user.status', '=', 'status.id')
+            ->selectRaw("COALESCE(status.status, 'Sem situação') AS situacao, COUNT(*) AS total")
+            ->groupBy('user.status', 'status.status')
+            ->orderByDesc('total')
+            ->get();
+
+        return view('home', compact(
+            'userCPF', 'message', 'count', 'totalUnidades', 'quartosOcupados',
+            'hospedesAtuais', 'taxaOcupacao', 'checkinsHoje', 'checkoutsHoje',
+            'reservasPendentes', 'movimentacaoHoje', 'meses', 'ocupacaoMensal',
+            'checkinsMensais', 'checkoutsMensais', 'hospedagensPorStatus',
+            'totalUsuarios', 'usuariosAtivos', 'usuariosPreCadastro',
+            'usuariosInativos', 'novosUsuarios', 'usuariosPorStatus',
+            'recebidoMes', 'valorPendente', 'ticketMedioMes', 'extrasMes',
+            'recebimentosMensais', 'pendenciasMensais'
+        ));
     }
 
     public function logout(Request $request){
@@ -782,8 +936,7 @@ class HomeController extends Controller
 }
     public function updatePasswordInativo(){
         
-        dd('rota');
-
+       
         return redirect()->route('login')->with("erro", "Favor Contactar a Administração!");
 
     }

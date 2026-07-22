@@ -1,6 +1,6 @@
 /vendor/
 /node_modules/
-#/.env
+/.env
 
 /storage/logs/*
 !/storage/logs/.gitignore
@@ -17,4 +17,4 @@
 *.log
 *.zip
 *.tar
-*.rar".env" 
+*.rar 
