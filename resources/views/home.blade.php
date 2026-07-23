@@ -43,7 +43,7 @@
             </div>
         </div>
     @endif
-
+@role('administrador_geral')
     <h4 class="section-title"><i class="fa fa-bed"></i> Operação de hospedagem</h4>
     <div class="row sameheight-container">
         @foreach([
@@ -191,6 +191,7 @@
             </div></div>
         </div>
     </div>
+@endrole
 </article>
 @endsection
 
