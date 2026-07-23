@@ -12,8 +12,6 @@ use DateInterval;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Mail\MailController;
 use Response;
-use App\Services\CalculoHospedagemService;
-
 
 class HospedeController extends Controller
 {
@@ -29,11 +27,12 @@ class HospedeController extends Controller
     
     public function checkin($id){
 
-    //dd("O SISTEMA ESTA USANDO O HOSPEDECONTROLLER");
+    
 
     date_default_timezone_set('America/Sao_Paulo');
     $id = Crypt::decrypt($id);
     $hospedagem = \App\Hospede::findOrFail($id);
+
 
     if($hospedagem->checkin == 1){
         \Session::flash('message', ['msg'=>"Hospedagem não está Liberada! Realizar o Chek-Out para liberar!", 'class'=>'danger']);
@@ -41,12 +40,23 @@ class HospedeController extends Controller
 
     }
 
+    
     $hospedagem->checkin = 1;
     $hospedagem->checkin_at = date("Y-m-d H:i:s");
-    $hospedagem->update();
 
+    
+
+
+
+
+
+
+
+    $hospedagem->update();
     \Session::flash('message', ['msg'=>"Check-In realizado com sucesso!", 'class'=>'success']);
     return redirect()->route('checkIn');
+    //return redirect()->back();
+    //dd($hospedagem); 
     
     }
 
@@ -89,7 +99,8 @@ class HospedeController extends Controller
     public function index(){
          
 
-        //dd('INDEX CADASTRA PEDIDO');
+       // dd('INDEX CADASTRA PEDIDO');
+
         date_default_timezone_set('America/Sao_Paulo');
         $usuarioAutenticado = Auth::user();
         $hoje = date("Y-m-d");
@@ -153,25 +164,31 @@ class HospedeController extends Controller
         }
         }
         // Fim do Tipo de Unidade por Posto de Graduação
-        $as = uasort($unidadess, function ($a, $b) {
+        //dd($unidadess);
+        uasort($unidadess, function ($a, $b) {
         return strcmp($a['value'], $b['value']);
         //Se quiser inverter a ordem basta trocar por return strcmp($b['nome'], $a['nome']);
         });
-
-        ///dd($unidadess);
-
         //$unidadess = json_encode($unidadess);
         //dd($unidadess);
+
         //print_r($unidadess);
+
+
         //dd('fim');
+
         /*
         asort($unidadess, 'value');
         dd($unidadess);
+
         foreach ($unidadess as $chave => $valor) {
         $pos[] = $valor;
+        
         }
         */
+
         //dd($pos);
+
 
         $altaTemporada = \App\Temporada::where('tipo_temporada_id', 1)->first();
         $data_inicio = $altaTemporada->data_inicio;
@@ -181,12 +198,11 @@ class HospedeController extends Controller
 
       
         $mesAtual = date("m");
-        //$mesAtual = "12";
+        //$mesAtual = "08";
         $ano = date("Y");
 
        
         if($mesAtual == 12){
-            //dd('12');
             $proximoMes = "01";    
         }else{
 
@@ -225,17 +241,21 @@ class HospedeController extends Controller
 
         $diaBloqueado = \App\BloqueioDia::where('id', 1)->first(); 
 
-        
+        //$datetime = new Carbon('2023-12-11 14:53:20');
+        //$hoje = $datetime->format('d');
+        //dd($datetime);
+
         
 
 
-        
+       // dd($mesAtual);
+
         // MES 12
         $a = [];
         if($mesAtual == 12){
-           
+        
             if($hoje <= $diaBloqueado->dia){               
-                
+               // dd('ok');
                 $minDate = Carbon::today()->addMonths(1)->format('Y-m-01');
                 $maxDate = Carbon::today()->addMonths(2)->format('Y-m-'.$diaBloqueado->limitedia);
                 
@@ -243,16 +263,16 @@ class HospedeController extends Controller
             }
 
             if($hoje > $diaBloqueado->dia && $hoje <= 31){
-               
-                $minDate = Carbon::today()->addMonths(1)->format('Y-m-01');
-                $maxDate = Carbon::today()->addMonths(2)->format('Y-m-'.$diaBloqueado->limitedia);
+                //dd('ok1');
+                $minDate = Carbon::today()->addMonths(2)->format('Y-m-01');
+                $maxDate = Carbon::today()->addMonths(3)->format('Y-m-'.$diaBloqueado->limitedia);
 
 
             }  
         
         }
-        
-
+        //dd($diaBloqueado->dia); 
+        //dd($minDate);
        
         //  MES 11
         if($mesAtual == 11){
@@ -450,7 +470,7 @@ class HospedeController extends Controller
 
 
 
-        //dd($unidadess);
+
        // dd('ok');
         return view('hospedagem.create', compact('tipos', 'minDate', 'maxDate', 'hoje', 'a', 'horario', 'diaBloqueado', 'unidades', 'datasReservadas','diasReservados','maxYear', 'minYear', 'unidadess'));
     }
@@ -459,7 +479,6 @@ class HospedeController extends Controller
 
         public function solicitarinscricaoEditNOVO($id){
 
-        //dd('okl');
         $id = Crypt::decrypt($id);   
         date_default_timezone_set('America/Sao_Paulo');
         $usuarioAutenticado = Auth::user();
@@ -778,6 +797,15 @@ class HospedeController extends Controller
 
 
     }
+
+
+
+
+
+
+
+
+    
     public function solicitarinscricaoEdit($id){
 
         
@@ -1319,7 +1347,7 @@ class HospedeController extends Controller
         if(isset($request->id)){
         
             $consulta->update();
-            $email = \Illuminate\Support\Facades\Mail::queue(new \App\Mail\ConfirmaHospedagem($consulta));
+            //$email = \Illuminate\Support\Facades\Mail::queue(new \App\Mail\ConfirmaHospedagem($consulta));
 
             \Session::flash('message', ['msg'=>"Inscrição atualizada com sucesso!", 'class'=>'success']);
             return redirect()->route('hospede.meuspedidos');
@@ -1327,7 +1355,8 @@ class HospedeController extends Controller
         }else{
           
             $consulta->save();
-            //return new \App\Mail\ConfirmaHospedagem($consulta);
+             
+            
             $email = \Illuminate\Support\Facades\Mail::queue(new \App\Mail\ConfirmaHospedagem($consulta)); 
 
 
@@ -2821,9 +2850,9 @@ class HospedeController extends Controller
 
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    public function solicitarinscricaoEditConfirmar(Request $request){
+   public function solicitarinscricaoEditConfirmar(Request $request){
         
-            //dd("Edit Confirmar");
+            
             date_default_timezone_set('America/Sao_Paulo');
             //dd($request->all());
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2949,148 +2978,108 @@ class HospedeController extends Controller
            
 
             /*
-
-
-            COMECA AQUI
-
-
+            |--------------------------------------------------------------------------
+            | VALIDAÇÃO DO LIMITE DE RESERVAS NA EDIÇÃO
+            |--------------------------------------------------------------------------
             */
-            //dd($dataInicialPedidoMes);
+
+            $idUsuario = Auth::id();
+            $idPedidoAtual = $request->id;
+
+            $pedidoAtual = \App\Hospede::where('id', $idPedidoAtual)
+                ->where('user_id', $idUsuario)
+                ->first();
+
+            if (!$pedidoAtual) {
+                \Session::flash('message', [
+                    'msg' => "Pedido de hospedagem não encontrado ou não pertence ao usuário.",
+                    'class' => 'danger'
+                ]);
+
+                return redirect()->back();
+            }
+
             $verificaQuantidadeHospedagemMesAnoCount = \App\Hospede::where('user_id', $idUsuario)
+                ->where('id', '<>', $idPedidoAtual)
                 ->whereYear('data_inicio', '=', $dataInicialPedidoAno)
                 ->whereMonth('data_inicio', '=', $dataInicialPedidoMes)
                 ->count();
-
-             $verificaQuantidadeHospedagemMesAno = \App\Hospede::where('user_id', $idUsuario)
-                ->whereYear('data_inicio', '=', $dataInicialPedidoAno)
-                ->whereMonth('data_inicio', '=', $dataInicialPedidoMes)
-                ->where('id', $request->id)
-                ->count();
-
-
-            //dd($verificaQuantidadeHospedagemMesAno); 
 
             $verificaQuantidadeHospedagemMesAnoCountTipo = \App\Hospede::where('user_id', $idUsuario)
+                ->where('id', '<>', $idPedidoAtual)
                 ->whereYear('data_inicio', '=', $dataInicialPedidoAno)
                 ->whereMonth('data_inicio', '=', $dataInicialPedidoMes)
-                ->whereIn('tipo_und_id', [11,12])
+                ->whereIn('tipo_und_id', [11, 12])
                 ->count();
 
-            
-           
             $quantidadeReservas = \App\QuantidadeReserva::first();
-            
+
+            if (!$quantidadeReservas) {
+                \Session::flash('message', [
+                    'msg' => "Quantidade máxima de reservas não configurada. Contacte o administrador.",
+                    'class' => 'danger'
+                ]);
+
+                return redirect()->back();
+            }
 
             if ($is_altaTemporada == true) {
 
+                if ($request->tipo == 12 || $request->tipo == 11) {
 
-                $quantidadeReservas = \App\QuantidadeReserva::first();
-                
-                if($request->tipo == 12 or $request->tipo == 11){   
+                    if ($verificaQuantidadeHospedagemMesAnoCountTipo >= 2) {
+                        \Session::flash('message', [
+                            'msg' => "Você alcançou o limite máximo de 2 reservas para esse mês da alta temporada! Nas UH Camping e/ou Motor-Home",
+                            'class' => 'danger'
+                        ]);
 
-
-                    if($verificaQuantidadeHospedagemMesAnoCountTipo >= 2){
-
-
-                        \Session::flash('message', ['msg'=>"Você alcançou o limite máximo de 2 reservas para esse mês da alta temporada! Nas UH Camping e/ou Motor-Home", 'class'=>'danger']);
                         return redirect()->back();
-
-
                     }
 
+                } else {
 
+                    if ($verificaQuantidadeHospedagemMesAnoCount >= $quantidadeReservas->reservas) {
+                        \Session::flash('message', [
+                            'msg' => "Você alcançou o limite máximo de "
+                                . $quantidadeReservas->reservas
+                                . " reserva(s) para esse mês da alta temporada!",
+                            'class' => 'danger'
+                        ]);
 
-                }else{
-
-
-                    if($verificaQuantidadeHospedagemMesAnoCount >= $quantidadeReservas->reservas){
-
-                        
-                    
-                        
-                         if($verificaQuantidadeHospedagemMesAno == 0){
-
-                            
-
-                            \Session::flash('message', ['msg'=>"Você alcançou o limite máximo de ". $quantidadeReservas->reservas ." reserva para esse mês da alta temporada!", 'class'=>'danger']);
                         return redirect()->back();
-
-                        
-                         }
-
-
-
-                        
-
-
-
-
-
-
-
-
-
-
-
-                    
                     }
-
-
                 }
 
-                //dd($verificaQuantidadeHospedagemMesAnoCountTipo);
+            } else {
 
-                
+                if ($request->tipo == 12 || $request->tipo == 11) {
 
-            }else{
-                //dd('baixa');
-                if($request->tipo == 12 or $request->tipo == 11){
+                    if ($verificaQuantidadeHospedagemMesAnoCountTipo >= 2) {
+                        \Session::flash('message', [
+                            'msg' => "Você alcançou o limite máximo de 2 reservas para esse mês da baixa temporada! Nas UH Camping e/ou Motor-Home",
+                            'class' => 'danger'
+                        ]);
 
-                    if($verificaQuantidadeHospedagemMesAnoCountTipo >= 2){
-
-
-
-
-                        \Session::flash('message', ['msg'=>"Você alcançou o limite máximo de 2 reservas para esse mês da baixa temporada! Nas UH Camping e/ou Motor-Home", 'class'=>'danger']);
                         return redirect()->back();
-
-
                     }
 
+                } else {
 
+                    if ($verificaQuantidadeHospedagemMesAnoCount >= $quantidadeReservas->qnt_reservas_baixa_temporada) {
+                        \Session::flash('message', [
+                            'msg' => "Você alcançou o limite máximo de "
+                                . $quantidadeReservas->qnt_reservas_baixa_temporada
+                                . " reserva(s) para esse mês da baixa temporada!",
+                            'class' => 'danger'
+                        ]);
 
-
-                }else{
-
-                    if($verificaQuantidadeHospedagemMesAnoCount >= $quantidadeReservas->qnt_reservas_baixa_temporada){
-                        //dd('entrou');
-
-                        if($verificaQuantidadeHospedagemMesAno == 0){
-
-                            
-
-                            \Session::flash('message', ['msg'=>"Você alcançou o limite máximo de ". $quantidadeReservas->qnt_reservas_baixa_temporada ." reservas para esse mês da baixa temporada!", 'class'=>'danger']);
-                            return redirect()->back();
-
-
-                         }
-                           
-
+                        return redirect()->back();
                     }
-
                 }
-                
-            }      
+            }
 
-
-            /*  
-        
-
-
-            VERIFICA SE JÁ TEM PEDIDO DE HOSPEDAGEM NAQUELE MêS  
-
-
-
+            /*
+            VERIFICA SE JÁ TEM PEDIDO DE HOSPEDAGEM NAQUELE MêS
             */
 
 
@@ -3583,6 +3572,7 @@ class HospedeController extends Controller
 
 
     }
+    ////q////////////////////////////////////////
     public function solicitarinscricaoEditConfirmar2(Request $request){
 
 
@@ -4070,7 +4060,8 @@ class HospedeController extends Controller
 
     }
 
-    public function meuspedido($id)
+
+public function meuspedido($id)
     {
     date_default_timezone_set('America/Sao_Paulo');
 
@@ -4112,9 +4103,6 @@ class HospedeController extends Controller
         $hospedagem->update();
     }
 
-    if($hospedagem->checkin == null){
-        $valorPagarRestante = $hospedagem->valor_restante;
-    }
     return view('meuspedidos.meu_pedido', compact(
         'CheckInAntecipado',
         'CheckOutAtrasado',
@@ -4129,6 +4117,14 @@ class HospedeController extends Controller
     ));
 }
 
+
+
+
+
+
+
+
+
     public function meuspedido_OLD($id){
 
 
@@ -4137,6 +4133,8 @@ class HospedeController extends Controller
         $id = Crypt::decrypt($id);
 
         $hospedagem = \App\Hospede::where('id', $id)->with('user')->first();
+
+       // dd($hospedagem);
 
         if (Auth::user()->id === $hospedagem->user->id){
             $cancelar = 1;
@@ -4184,13 +4182,11 @@ class HospedeController extends Controller
         
         }
 
-        //dd($data_inicio);
+        //dd($dias);
 
 
         // CALCULA VALOR RESTANTE
-        //$ValorTarifa = $hospedagem->valortarifa;
-        $ValorTarifa = $hospedagem->user->aplicarDesconto($hospedagem->valortarifa);
-
+        $ValorTarifa = $hospedagem->valortarifa; 
         $ValorPago = $hospedagem->valor_pago; 
         $valorResto = $hospedagem->valor_restante;
         
@@ -4286,8 +4282,7 @@ class HospedeController extends Controller
                 
                  if($hojeHorasToTime > $HorarioSaidaToleranciaToTime) {
                     //COBRAR MAIS UMA DIÁRIA
-                    $restante = $restante + $ValorTarifa;
-                    //$restante = $restante + $hospedagem->valortarifa;
+                    $restante = $restante + $hospedagem->valortarifa;
                     $dias = $dias + 1;
         
                 }
@@ -4304,7 +4299,7 @@ class HospedeController extends Controller
                  if($hojeHorasToTime > $HorarioSaidaToleranciaToTime) {
                     //COBRAR MAIS UMA DIÁRIA
                     $CheckOutAtrasado = true;
-                    $restante = $restante + $ValorTarifa;
+                    $restante = $restante + $hospedagem->valortarifa;
                     $dias = $dias + 1;
         
                 }
@@ -4328,7 +4323,7 @@ class HospedeController extends Controller
                    $CheckInAntecipado = false;
                    // COBRA UMA DIARIA ANTERIORHorarioEntradaToleranciaToTime
                    if($HoraMeiaNoite <= $dataCheckInToTime and $dataCheckInToTime <= $HorarioEntradaToleranciaToTime){
-                        $restante = $restante + $ValorTarifa;
+                        $restante = $restante + $hospedagem->valortarifa;
                         $dias = $dias + 1;
                     }else{
 
@@ -4346,7 +4341,7 @@ class HospedeController extends Controller
                         //SE ENTRAR ANTES DO HORARIO ADICIONA UM DIA ENTRADA   
                 
                     if($dataCheckInToTime < $HorarioEntradaToleranciaToTime){
-                        $restante = $restante + $ValorTarifa;
+                        $restante = $restante + $hospedagem->valortarifa;
                         $CheckInAntecipado = true;
                         $dias = $dias + 1;
                     }
@@ -4380,6 +4375,7 @@ class HospedeController extends Controller
         $hospedagem->update();
         }
         
+
 
         //dd($comprovante);
         return view('meuspedidos.meu_pedido', compact('CheckInAntecipado','CheckOutAtrasado','hospedagem','unidades_habitacionais', 'horario', 'comprovante', 'arquivo', 'cancelar', 'hoje', 'valorPagarRestante'));
