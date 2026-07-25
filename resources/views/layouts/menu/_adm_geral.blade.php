@@ -19,6 +19,11 @@
                 Validar
             </a>
         </li>
+        <li>
+    <a href="{{ route('pedidos.duplicados.index') }}">
+        Pedidos Duplicados
+    </a>
+</li>
 
         <li>
             <a href="{{ route('user.precadastro.lista') }}">

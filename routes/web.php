@@ -435,6 +435,22 @@ Route::prefix('admin')->group(function(){
 		
 		Route::post('/envia/doc', 'UsuarioController@enviaDoc')->name('usuario.envidoc');
 
+
+
+	Route::get(
+    '/pedidos/duplicados',
+    'PedidosDuplicados\PedidosDuplicadosController@index'
+)->name('pedidos.duplicados.index');
+
+Route::delete(
+    '/pedidos/duplicados/{id}',
+    'PedidosDuplicados\PedidosDuplicadosController@destroy'
+)->name('pedidos.duplicados.destroy');
+
+Route::post(
+    '/pedidos/duplicados/excluir-selecionados',
+    'PedidosDuplicados\PedidosDuplicadosController@destroySelecionados'
+)->name('pedidos.duplicados.destroySelecionados');
 		//Route::post('/delete/{id}', 'UsuarioController@deleteUsuario')->name('delete.user');
 		
 		/* ATUALIZA DADOS USUARIO */
