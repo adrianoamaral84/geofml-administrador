@@ -420,6 +420,10 @@ Route::prefix('admin')->group(function(){
 	
 	/* ROTA USUARIOS */
 	Route::prefix('usuarios')->group(function(){
+		Route::get(
+    '/consulta-pttc',
+    'ConsultaPttc\ConsultaPttcController@index'
+)->name('consulta.pttc.index');
 		Route::get('/consulta','ConsultaUsuario\ConsultaUsuarioController@index')->name('consulta.usuario.index');	
 		Route::get('/solicitacoes/list', 'HomeController@listaPedidos')->name('lista.pedidos');
 		Route::get('/list', 'UsuarioController@index')->name('user.index');
@@ -450,6 +454,7 @@ Route::get(
     '/consulta-atendentes',
     'ConsultaAtendente\ConsultaAtendenteController@index'
 )->name('consulta.atendentes.index');
+
 Route::post(
     '/pedidos/duplicados/excluir-selecionados',
     'PedidosDuplicados\PedidosDuplicadosController@destroySelecionados'

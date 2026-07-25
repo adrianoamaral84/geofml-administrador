@@ -26,6 +26,12 @@
         </a>
         </li>
         <li>
+    <a href="{{ route('consulta.pttc.index') }}">
+        <i class="fa fa-user-circle"></i>
+        Consulta PTTC
+    </a>
+</li>
+        <li>
     <a href="{{ route('consulta.usuario.index') }}">
         <i class="fa fa-search"></i>
         Consulta Usuário

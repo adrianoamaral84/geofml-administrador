@@ -4,23 +4,24 @@
 
 <div class="title-block">
     <h3 class="title">
-        Consulta de Atendentes
+        Consulta PTTC
     </h3>
 
     <p class="title-description">
-        Lista de usuários ativos com a função de atendente.
+        Lista de usuários ativos identificados como PTTC.
     </p>
 </div>
 
 <section class="section">
 
+    {{-- Filtro de pesquisa --}}
     <div class="card mb-4">
 
         <div
             class="card-header"
             style="padding: 15px 20px;"
         >
-            <strong>Pesquisar atendentes</strong>
+            <strong>Pesquisar usuários PTTC</strong>
         </div>
 
         <div
@@ -30,7 +31,7 @@
 
             <form
                 method="GET"
-                action="{{ route('consulta.atendentes.index') }}"
+                action="{{ route('consulta.pttc.index') }}"
             >
                 <div class="row">
 
@@ -48,7 +49,7 @@
                                 id="pesquisa"
                                 class="form-control"
                                 value="{{ $pesquisa }}"
-                                placeholder="Digite os dados do atendente"
+                                placeholder="Digite os dados do usuário"
                             >
 
                         </div>
@@ -71,9 +72,7 @@
                             </button>
 
                             <a
-                                href="{{ route(
-                                    'consulta.atendentes.index'
-                                ) }}"
+                                href="{{ route('consulta.pttc.index') }}"
                                 class="btn btn-secondary"
                             >
                                 Limpar
@@ -89,16 +88,17 @@
         </div>
     </div>
 
+    {{-- Listagem --}}
     <div class="card">
 
         <div
             class="card-header"
             style="padding: 15px 20px;"
         >
-            <strong>Atendentes ativos</strong>
+            <strong>Usuários PTTC ativos</strong>
 
             <span class="badge badge-primary">
-                {{ $atendentes->total() }}
+                {{ $usuariosPttc->total() }}
             </span>
         </div>
 
@@ -107,10 +107,10 @@
             style="padding: 20px;"
         >
 
-            @if($atendentes->isEmpty())
+            @if($usuariosPttc->isEmpty())
 
                 <div class="alert alert-info">
-                    Nenhum atendente ativo foi encontrado.
+                    Nenhum usuário PTTC ativo foi encontrado.
                 </div>
 
             @else
@@ -128,14 +128,16 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Posto/Graduação</th>
-
+                                 <th>Posto/Graduação</th>
                                 <th>Nome</th>
                                 
                                 <th>CPF</th>
+                               
                                 <th>E-mail</th>
-                                <th>Telefone</th>
+                                
+                               
                                 <th>Organização Militar</th>
+                               
                                 <th>Status</th>
                                 <th width="130">Ações</th>
                             </tr>
@@ -143,40 +145,41 @@
 
                         <tbody>
 
-                            @foreach($atendentes as $atendente)
+                            @foreach($usuariosPttc as $usuario)
 
                                 <tr>
 
                                     <td>
-                                        {{ $atendente->id }}
+                                        {{ $usuario->id }}
                                     </td>
-<td>
+                                    <td>
                                         {{
                                             optional(
-                                                $atendente->posto
+                                                $usuario->posto
                                             )->sigla
 
                                             ?? optional(
-                                                $atendente->posto
+                                                $usuario->posto
                                             )->nome
 
                                             ?? '-'
                                         }}
                                     </td>
                                     <td>
-                                        {{ $atendente->name ?: '-' }}
+                                        {{ $usuario->name ?: '-' }}
                                     </td>
 
                                    
+                                    
 
                                     <td>
-                                        @if($atendente->cpf)
+                                        @if($usuario->cpf)
 
                                             {{
                                                 preg_replace(
                                                     '/(\d{3})(\d{3})(\d{3})(\d{2})/',
                                                     '$1.$2.$3-$4',
-                                                    $atendente->cpf
+                                                    $usuario->cpf
                                                 )
                                             }}
 
@@ -185,36 +188,45 @@
                                         @endif
                                     </td>
 
-                                    <td>
-                                        {{ $atendente->email ?: '-' }}
-                                    </td>
+                                   
+                                    
 
                                     <td>
-                                        {{ $atendente->telefone ?: '-' }}
+                                        {{ $usuario->email ?: '-' }}
                                     </td>
+
+                                    
+                                    
 
                                     
 
                                     <td>
                                         {{
                                             optional(
-                                                $atendente->om
+                                                $usuario->om
                                             )->sigla
 
                                             ?? optional(
-                                                $atendente->om
+                                                $usuario->om
                                             )->nome
 
                                             ?? '-'
                                         }}
                                     </td>
 
+                                   
+                                    
+
                                     <td>
-                                        <span
-                                            class="badge badge-success"
-                                        >
+
+                                        <span class="badge badge-success">
                                             Ativo
                                         </span>
+
+                                        <span class="badge badge-info">
+                                            PTTC
+                                        </span>
+
                                     </td>
 
                                     <td>
@@ -222,7 +234,7 @@
                                         <a
                                             href="{{ route(
                                                 'usuario.verdados',
-                                                ['id' => Crypt::encrypt($atendente->id)]
+                                                ['id' => Crypt::encrypt($usuario->id)]
                                             ) }}"
                                             class="
                                                 btn
@@ -246,7 +258,7 @@
                 </div>
 
                 <div class="mt-3">
-                    {{ $atendentes->links() }}
+                    {{ $usuariosPttc->links() }}
                 </div>
 
             @endif
