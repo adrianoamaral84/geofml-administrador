@@ -446,7 +446,10 @@ Route::delete(
     '/pedidos/duplicados/{id}',
     'PedidosDuplicados\PedidosDuplicadosController@destroy'
 )->name('pedidos.duplicados.destroy');
-
+Route::get(
+    '/consulta-atendentes',
+    'ConsultaAtendente\ConsultaAtendenteController@index'
+)->name('consulta.atendentes.index');
 Route::post(
     '/pedidos/duplicados/excluir-selecionados',
     'PedidosDuplicados\PedidosDuplicadosController@destroySelecionados'
