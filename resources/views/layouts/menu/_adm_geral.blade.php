@@ -20,7 +20,14 @@
             </a>
         </li>
         <li>
+    <a href="{{ route('consulta.usuario.index') }}">
+        <i class="fa fa-search"></i>
+        Consulta Usuário
+    </a>
+</li>
+        <li>
     <a href="{{ route('pedidos.duplicados.index') }}">
+        <i class="fa fa-files-o"></i>
         Pedidos Duplicados
     </a>
 </li>
