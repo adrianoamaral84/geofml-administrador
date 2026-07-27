@@ -86,38 +86,16 @@ class CalendarioController extends Controller
                 }
             
         }
-        //dd($proximoMes);
-
-    	//$hospedagens = \App\Hospede::with('usuario')->with('tipouh')
-    	//->where('und_habitacionais_id', $unidade)
-    	//->whereIn(DB::RAW('month(data_inicio)'), [$proximoMes,$proximoMes])
-        //->whereIn('status', [2,3,4,5])
-    	//->orderBy('data_inicio', 'asc')
-    	//->get();
-        /*
+        
+        
 
         $hospedagens = \App\Hospede::with('usuario')->with('tipouh')
         ->where('und_habitacionais_id', $unidade)
-        ->whereIn(DB::RAW('month(data_inicio)'), [$mesAnterior,$proximoMes])
-        ->whereIn('status', [2,3,4,5])
-        ->orderBy('data_inicio', 'asc')
-        ->get();
-        */
-        //$startDate = " CURDATE() - INTERVAL 2 YEAR";
-        //dd($dateMenos2);
-
-        $hospedagens = \App\Hospede::with('usuario')->with('tipouh')
-        ->where('und_habitacionais_id', $unidade)
-        //->whereIn('data_inicio', [$dateMenos2,$dateMais2])
-        //->whereIn(DB::RAW('month(data_inicio)'), [$mesAtual,$proximoMes])
         ->whereIn('status', [2,3,4,5])
         ->where('checkout_at','=', null)
-        //->orWhere('checkin', '=', null)
-        //->orWhereNull('checkin')
         ->orderBy('data_inicio', 'asc')
         ->get();
-        //dd($hospedagens);
-        //$mes = date("Y-04-d");
+        
     	$unidades_habitacionais = \App\UnidadeHabitacional::where('disponivel', 1)
         ->get();
 

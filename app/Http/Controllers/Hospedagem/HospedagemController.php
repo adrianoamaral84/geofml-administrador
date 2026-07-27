@@ -1441,8 +1441,614 @@ class HospedagemController extends Controller
 
         return view('hospedagem.aguardandoliberacao', compact('consulta', $consulta));
     }
-public function liberar(Request $request){
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+public function liberar(Request $request)
+{
+    date_default_timezone_set('America/Sao_Paulo');
+
+    /*
+     * ---------------------------------------------------------
+     * 1. VALIDAÇÃO DOS CAMPOS
+     * ---------------------------------------------------------
+     */
+    $customMessages = [
+        'id1.required' => 'Pedido não informado.',
+        'id1.integer' => 'Pedido inválido.',
+
+        'final1.required' => 'A data de saída é obrigatória.',
+        'peridoinicial1.required' => 'A data de entrada é obrigatória.',
+
+        'unidadeshabitacionais.required' =>
+            'Selecione uma unidade habitacional.',
+
+        'unidadeshabitacionais.integer' =>
+            'Unidade habitacional inválida.',
+
+        'posto_id.required' =>
+            'Posto/graduação não informado.',
+
+        'posto_id.integer' =>
+            'Posto/graduação inválido.',
+    ];
+
+    $validatedData = $request->validate([
+        'id1' => 'required|integer',
+        'final1' => 'required',
+        'peridoinicial1' => 'required',
+        'unidadeshabitacionais' => 'required|integer',
+        'posto_id' => 'required|integer',
+    ], $customMessages);
+
+    /*
+     * ---------------------------------------------------------
+     * 2. CONVERSÃO DAS DATAS
+     * ---------------------------------------------------------
+     *
+     * As datas chegam da tela no formato:
+     *
+     * DD-MM-AAAA
+     *
+     * Exemplo:
+     *
+     * 05-08-2026
+     */
+    try {
+        $dataInicio = Carbon::createFromFormat(
+            'd-m-Y',
+            $validatedData['peridoinicial1']
+        )->startOfDay();
+
+        $dataTermino = Carbon::createFromFormat(
+            'd-m-Y',
+            $validatedData['final1']
+        )->startOfDay();
+    } catch (\Exception $e) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'peridoinicial1' =>
+                    'Informe as datas no formato dia-mês-ano.',
+            ]);
+    }
+
+    /*
+     * A saída precisa ocorrer depois da entrada.
+     */
+    if ($dataTermino->lessThanOrEqualTo($dataInicio)) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'final1' =>
+                    'A data de saída deve ser posterior à data de entrada.',
+            ]);
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 3. RECUPERA A UNIDADE HABITACIONAL
+     * ---------------------------------------------------------
+     */
+    $unidadeHabitacional = \App\UnidadeHabitacional::find(
+        $validatedData['unidadeshabitacionais']
+    );
+
+    if (!$unidadeHabitacional) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'unidadeshabitacionais' =>
+                    'A unidade habitacional selecionada não foi encontrada.',
+            ]);
+    }
+
+    $tipoUND = $unidadeHabitacional->tipo_und_hab_id;
+
+    /*
+     * ---------------------------------------------------------
+     * 4. VERIFICAÇÃO DE SOBREPOSIÇÃO
+     * ---------------------------------------------------------
+     *
+     * Verifica se existe outra hospedagem da mesma UH
+     * cruzando o período solicitado.
+     *
+     * Usa comparação exclusiva:
+     *
+     * reserva existente.data_inicio < nova saída
+     * reserva existente.data_termino > nova entrada
+     *
+     * Isso permite o comportamento de hotel:
+     *
+     * Reserva existente: 01/08 até 05/08
+     * Nova reserva:       05/08 até 10/08
+     *
+     * Resultado: permitido.
+     */
+    $hospedagemConflitante = \App\Hospede::query()
+        ->where(
+            'und_habitacionais_id',
+            $validatedData['unidadeshabitacionais']
+        )
+
+        /*
+         * Ignora o próprio pedido que está sendo liberado.
+         */
+        ->where(
+            'id',
+            '<>',
+            $validatedData['id1']
+        )
+
+        /*
+         * Considera somente os status que ocupam
+         * ou reservam a unidade.
+         */
+        ->whereIn('status', [2, 3, 4, 5])
+
+        /*
+         * Mantém o comportamento do código anterior:
+         * considera apenas hospedagens sem checkout.
+         */
+        ->whereNull('checkout_at')
+
+        /*
+         * Regra de interseção entre os períodos.
+         */
+        ->whereDate(
+            'data_inicio',
+            '<',
+            $dataTermino->format('Y-m-d')
+        )
+        ->whereDate(
+            'data_termino',
+            '>',
+            $dataInicio->format('Y-m-d')
+        )
+        ->orderBy('data_inicio', 'asc')
+        ->first();
+
+    /*
+     * Caso exista conflito, interrompe a liberação.
+     */
+    if ($hospedagemConflitante) {
+        \Session::flash('message', [
+            'msg' =>
+                'A unidade habitacional já está destinada no período de '
+                . Carbon::parse(
+                    $hospedagemConflitante->data_inicio
+                )->format('d/m/Y')
+                . ' até '
+                . Carbon::parse(
+                    $hospedagemConflitante->data_termino
+                )->format('d/m/Y')
+                . '.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()
+            ->back()
+            ->withInput();
+    }
+
+    /*
+     * Datas no formato utilizado pelo banco de dados.
+     */
+    $pi = $dataInicio->format('Y-m-d');
+    $pf = $dataTermino->format('Y-m-d');
+
+    /*
+     * ---------------------------------------------------------
+     * 5. QUANTIDADE DE DIÁRIAS
+     * ---------------------------------------------------------
+     *
+     * Exemplo:
+     *
+     * Entrada: 01/08
+     * Saída:   05/08
+     *
+     * Total: 4 diárias.
+     */
+    $diasHospedagem = $dataInicio->diffInDays(
+        $dataTermino
+    );
+
+    /*
+     * ---------------------------------------------------------
+     * 6. RECUPERA AS TEMPORADAS
+     * ---------------------------------------------------------
+     */
+    $temporadaAlta = \App\Temporada::where(
+        'tipo_temporada_id',
+        1
+    )->first();
+
+    $temporadaBaixa = \App\Temporada::where(
+        'tipo_temporada_id',
+        2
+    )->first();
+
+    if (!$temporadaAlta || !$temporadaBaixa) {
+        \Session::flash('message', [
+            'msg' =>
+                'As temporadas alta e baixa precisam estar cadastradas.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()
+            ->back()
+            ->withInput();
+    }
+
+    /*
+     * Converte as datas das temporadas.
+     */
+    $dataTemporadaAltaInicio = Carbon::parse(
+        $temporadaAlta->data_inicio
+    )->startOfDay();
+
+    $dataTemporadaAltaTermino = Carbon::parse(
+        $temporadaAlta->data_termino
+    )->endOfDay();
+
+    $dataTemporadaBaixaInicio = Carbon::parse(
+        $temporadaBaixa->data_inicio
+    )->startOfDay();
+
+    $dataTemporadaBaixaTermino = Carbon::parse(
+        $temporadaBaixa->data_termino
+    )->endOfDay();
+
+    /*
+     * ---------------------------------------------------------
+     * 7. CLASSIFICA CADA DIÁRIA
+     * ---------------------------------------------------------
+     *
+     * Conta o dia de entrada como primeira diária.
+     * Não conta o dia de saída.
+     *
+     * Exemplo:
+     *
+     * 01/08 até 05/08
+     *
+     * Diárias:
+     * 01, 02, 03 e 04.
+     */
+    $dataDiaria = $dataInicio->copy();
+
+    $diasAltaTemporada = 0;
+    $diasBaixaTemporada = 0;
+
+    /*
+     * Mantido caso essa variável seja utilizada
+     * posteriormente por alguma lógica do sistema.
+     */
+    $a = [];
+
+    for ($i = 0; $i < $diasHospedagem; $i++) {
+        $dataAtual = $dataDiaria->copy();
+
+        /*
+         * Verifica se a diária pertence à alta temporada.
+         */
+        if (
+            $dataAtual->between(
+                $dataTemporadaAltaInicio,
+                $dataTemporadaAltaTermino,
+                true
+            )
+        ) {
+            $diasAltaTemporada++;
+        }
+
+        /*
+         * Caso não seja alta, verifica a baixa temporada.
+         */
+        elseif (
+            $dataAtual->between(
+                $dataTemporadaBaixaInicio,
+                $dataTemporadaBaixaTermino,
+                true
+            )
+        ) {
+            $diasBaixaTemporada++;
+        }
+
+        /*
+         * Impede cobrar uma data que não esteja
+         * cadastrada em nenhuma temporada.
+         */
+        else {
+            \Session::flash('message', [
+                'msg' =>
+                    'A data '
+                    . $dataAtual->format('d/m/Y')
+                    . ' não pertence a nenhuma temporada cadastrada.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()
+                ->back()
+                ->withInput();
+        }
+
+        $a[] = $dataAtual->format('Y-m-d');
+
+        /*
+         * Passa para a próxima diária.
+         */
+        $dataDiaria->addDay();
+    }
+
+    /*
+     * Conferência adicional.
+     *
+     * O total classificado precisa ser igual
+     * à quantidade total de diárias.
+     */
+    $totalDiasClassificados =
+        $diasAltaTemporada
+        +
+        $diasBaixaTemporada;
+
+    if ($totalDiasClassificados !== $diasHospedagem) {
+        \Session::flash('message', [
+            'msg' =>
+                'Não foi possível classificar corretamente todas as diárias.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()
+            ->back()
+            ->withInput();
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 8. LOCALIZA A TARIFA
+     * ---------------------------------------------------------
+     */
+    $gruposTarifa = \App\GrupoTarifa::where(
+        'unidade_habitacional_id',
+        $unidadeHabitacional->tipo_und_hab_id
+    )
+        ->with('postos')
+        ->get();
+
+    $tarifa = null;
+
+    foreach ($gruposTarifa as $grupo) {
+        foreach ($grupo->postos as $posto) {
+            if (
+                (int) $posto->id
+                ===
+                (int) $validatedData['posto_id']
+            ) {
+                $tarifa = \App\Tarifas::where(
+                    'tipoundhab_id',
+                    $unidadeHabitacional->tipo_und_hab_id
+                )
+                    ->where(
+                        'grupo_destinacao_id',
+                        $posto->pivot->grupotarifa_id
+                    )
+                    ->first();
+
+                /*
+                 * Encerra os dois foreach depois
+                 * de encontrar a tarifa.
+                 */
+                break 2;
+            }
+        }
+    }
+
+    if (!$tarifa) {
+        \Session::flash('message', [
+            'msg' =>
+                'Tarifa não encontrada para essa UH! '
+                . 'Favor contactar o Administrador!',
+            'class' => 'danger',
+        ]);
+
+        return redirect()
+            ->back()
+            ->withInput();
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 9. CÁLCULO DOS VALORES
+     * ---------------------------------------------------------
+     */
+    $calculaDiariaAlta = 0;
+    $calculaDiariaBaixa = 0;
+
+    if ($diasAltaTemporada > 0) {
+        $calculaDiariaAlta =
+            $diasAltaTemporada
+            *
+            $tarifa->valor;
+    }
+
+    if ($diasBaixaTemporada > 0) {
+        $calculaDiariaBaixa =
+            $diasBaixaTemporada
+            *
+            $tarifa->valor_baixa;
+    }
+
+    /*
+     * Soma alta e baixa temporada.
+     */
+    $totalValor =
+        $calculaDiariaAlta
+        +
+        $calculaDiariaBaixa;
+
+    /*
+     * ---------------------------------------------------------
+     * 10. RECUPERA O PEDIDO
+     * ---------------------------------------------------------
+     */
+    $hospedagem = \App\Hospede::with('user')
+        ->findOrFail(
+            $validatedData['id1']
+        );
+
+    /*
+     * Aplica o desconto do usuário Mecenas.
+     */
+    if (
+        $hospedagem->user
+        &&
+        method_exists(
+            $hospedagem->user,
+            'aplicarDesconto'
+        )
+    ) {
+        $totalValor =
+            $hospedagem->user->aplicarDesconto(
+                $totalValor
+            );
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 11. ATUALIZA A HOSPEDAGEM
+     * ---------------------------------------------------------
+     */
+    $hospedagem->data_inicio = $pi;
+    $hospedagem->data_termino = $pf;
+
+    $hospedagem->und_habitacionais_id =
+        $validatedData['unidadeshabitacionais'];
+
+    $hospedagem->tipo_und_id = $tipoUND;
+
+    /*
+     * Mantido conforme o código original.
+     */
+    $hospedagem->status = 3;
+
+    /*
+     * O campo valortarifa armazena apenas uma tarifa.
+     *
+     * Em período misto, será mantida a tarifa alta,
+     * seguindo o comportamento anterior.
+     */
+    if ($diasBaixaTemporada > 0) {
+        $hospedagem->valortarifa =
+            $tarifa->valor_baixa;
+    }
+
+    if ($diasAltaTemporada > 0) {
+        $hospedagem->valortarifa =
+            $tarifa->valor;
+    }
+
+    $hospedagem->valor = $totalValor;
+    $hospedagem->qntdiarias = $diasHospedagem;
+
+    /*
+     * Salva o pedido antes de enviar o e-mail.
+     */
+    $hospedagem->save();
+
+    /*
+     * ---------------------------------------------------------
+     * 12. ENVIO DO E-MAIL
+     * ---------------------------------------------------------
+     *
+     * Caso o SMTP falhe, o pedido continua salvo.
+     */
+    try {
+        \Illuminate\Support\Facades\Mail::queue(
+            new \App\Mail\HospedagemLiberadaPagamento(
+                $hospedagem
+            )
+        );
+
+        \Session::flash('message', [
+            'msg' =>
+                'Pedido liberado com sucesso!',
+            'class' => 'success',
+        ]);
+    } catch (\Throwable $e) {
+        \Log::error(
+            'Pedido liberado, mas o e-mail não foi enviado.',
+            [
+                'hospedagem_id' => $hospedagem->id,
+                'erro' => $e->getMessage(),
+            ]
+        );
+
+        \Session::flash('message', [
+            'msg' =>
+                'Pedido liberado com sucesso, '
+                . 'mas o e-mail não pôde ser enviado.',
+            'class' => 'warning',
+        ]);
+    }
+
+    return redirect()
+        ->route('hospedagem.index');
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ////////////////////////////////////
+public function liberar_OLD_1(Request $request){
         
+
         date_default_timezone_set('America/Sao_Paulo');
         $tipoUND = \App\UnidadeHabitacional::where('id', $request->unidadeshabitacionais)->first();
         $tipoUND = $tipoUND->tipo_und_hab_id;
