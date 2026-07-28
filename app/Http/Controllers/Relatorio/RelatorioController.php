@@ -4,11 +4,10 @@ namespace App\Http\Controllers\Relatorio;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use DB;
 use Carbon\Carbon;
 use Crypt;
 use Auth;
-
+use Illuminate\Support\Facades\DB;
 
 class RelatorioController extends Controller
 {
@@ -427,55 +426,285 @@ class RelatorioController extends Controller
         
     }*/
 
-        public function arrecadacaoview(Request $request) {
+   public function arrecadacaoview(Request $request)
+{
     date_default_timezone_set('America/Sao_Paulo');
 
-    $search = $request->input('search');
+    /*
+    |--------------------------------------------------------------------------
+    | Pesquisa
+    |--------------------------------------------------------------------------
+    */
 
-    if(!empty($request->all())){
-        session(['ano' => $request->ano]);
-        session(['mes' => $request->mes]);
+    $search = trim((string) $request->input('search', ''));
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ano e mês
+    |--------------------------------------------------------------------------
+    |
+    | Salva ano e mês na sessão apenas quando eles realmente forem enviados.
+    | Isso evita apagar a sessão quando a requisição possuir somente "search".
+    |
+    */
+
+    if ($request->filled('ano') && $request->filled('mes')) {
+        session([
+            'ano' => (int) $request->input('ano'),
+            'mes' => (int) $request->input('mes'),
+        ]);
     }
 
-    if(empty($request->all())){
-        $request->ano = session()->get('ano');
-        $request->mes = session()->get('mes');
+    $ano = (int) $request->input(
+        'ano',
+        session('ano', date('Y'))
+    );
+
+    $mes = (int) $request->input(
+        'mes',
+        session('mes', date('m'))
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validação
+    |--------------------------------------------------------------------------
+    */
+
+    if ($ano < 2000 || $ano > 2100) {
+        $ano = (int) date('Y');
     }
 
-    $ano = $request->ano;
-    $mes = $request->mes;
-    $data_inicial = date($ano . "-". $mes . "-01");      
-    $data_final = date($ano . "-" . $mes. "-31");
-
-    $filtroNome = "";
-    if ($search) {
-        $filtroNome = " AND (u.name LIKE '%$search%' OR h.user_cpf LIKE '%$search%')";
+    if ($mes < 1 || $mes > 12) {
+        $mes = (int) date('m');
     }
 
-    // --- CONSULTAS SQL COM FILTRO ---
-    $consulta = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h INNER JOIN user u ON u.id = h.user_id LEFT JOIN posto_graduacao p ON p.id = u.postograd_id WHERE h.checkin = 2 AND h.status = 2 AND date(h.checkin_at) >= '$data_inicial' AND date(h.checkin_at) <= '$data_final' " . $filtroNome);
+    session([
+        'ano' => $ano,
+        'mes' => $mes,
+    ]);
 
-    $consulta2 = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h INNER JOIN user u ON u.id = h.user_id LEFT JOIN posto_graduacao p ON p.id = u.postograd_id WHERE h.checkin = 1 AND date(h.checkin_at) >= '$data_inicial' AND date(h.checkin_at) <= '$data_final' " . $filtroNome);
+    /*
+    |--------------------------------------------------------------------------
+    | Intervalo do mês
+    |--------------------------------------------------------------------------
+    |
+    | Exemplo:
+    | início: 2026-07-01 00:00:00
+    | fim:    2026-08-01 00:00:00
+    |
+    | O fim é exclusivo, por isso usamos:
+    | data >= início AND data < fim
+    |
+    */
 
-    $consulta3 = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h INNER JOIN user u ON u.id = h.user_id LEFT JOIN posto_graduacao p ON p.id = u.postograd_id WHERE h.checkin IS NULL AND h.status = 2 AND date(h.data_inicio) >= '$data_inicial' AND date(h.data_inicio) <= '$data_final' " . $filtroNome);
+    $inicio = Carbon::create($ano, $mes, 1)
+        ->startOfDay();
 
-    // --- CÁLCULO DE VALORES TOTAIS (O que estava faltando) ---
-    $consulta_valor = DB::select("SELECT SUM(valor) AS Valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$data_inicial' AND date(checkin_at) <= '$data_final'");
-    $consulta2_valor = DB::select("SELECT SUM(valor_pago) AS valor_pago FROM hospedagem WHERE checkin = 1 AND date(checkin_at) >= '$data_inicial' AND date(checkin_at) <= '$data_final'");
-    $consulta3_valor = DB::select("SELECT SUM(valor_pago) as valor_pagou FROM hospedagem WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$data_inicial' AND date(data_inicio) <= '$data_final'");
+    $fim = $inicio->copy()
+        ->addMonth();
 
-    $valor_total = ($consulta_valor[0]->Valor ?? 0) + ($consulta2_valor[0]->valor_pago ?? 0) + ($consulta3_valor[0]->valor_pagou ?? 0);
-    $valor = $valor_total; // Mantendo o nome da variável que sua view usa
+    $dataInicial = $inicio->toDateTimeString();
+    $dataFinal = $fim->toDateTimeString();
 
-    // --- LÓGICA DE LIBERAÇÃO (Resumida para evitar erros) ---
-    $libera = 0;
-    if(date('Y') == $ano && date('m') == $mes) {
-        $libera = 1;
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Função para aplicar o search
+    |--------------------------------------------------------------------------
+    |
+    | O Query Builder cria os bindings automaticamente, impedindo que o texto
+    | pesquisado seja interpretado como código SQL.
+    |
+    */
 
-    $consulta = array_merge($consulta, $consulta2, $consulta3);
+    $aplicarPesquisa = function ($query) use ($search) {
+        if ($search !== '') {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery
+                    ->where('u.name', 'LIKE', '%' . $search . '%')
+                    ->orWhere('h.user_cpf', 'LIKE', '%' . $search . '%');
+            });
+        }
 
-    return view('relatorios.arrecadacao_resultado', compact('consulta', 'valor', 'ano', 'mes', 'libera', 'search'));
+        return $query;
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | Campos da listagem
+    |--------------------------------------------------------------------------
+    */
+
+    $campos = [
+        'h.id',
+        'h.user_id',
+        'h.checkin_at',
+        'h.checkout_at',
+        'h.qntdiarias',
+        'h.valortarifa',
+        'h.valor',
+        'u.name',
+        'p.sigla',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consulta 1: checkin = 2 e status = 2
+    |--------------------------------------------------------------------------
+    */
+
+    $queryConsulta1 = DB::table('hospedagem as h')
+        ->join('user as u', 'u.id', '=', 'h.user_id')
+        ->leftJoin('posto_graduacao as p', 'p.id', '=', 'u.postograd_id')
+        ->select($campos)
+        ->where('h.checkin', 2)
+        ->where('h.status', 2)
+        ->where('h.checkin_at', '>=', $dataInicial)
+        ->where('h.checkin_at', '<', $dataFinal);
+
+    $aplicarPesquisa($queryConsulta1);
+
+    $consulta1 = $queryConsulta1->get()->all();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consulta 2: checkin = 1
+    |--------------------------------------------------------------------------
+    */
+
+    $queryConsulta2 = DB::table('hospedagem as h')
+        ->join('user as u', 'u.id', '=', 'h.user_id')
+        ->leftJoin('posto_graduacao as p', 'p.id', '=', 'u.postograd_id')
+        ->select($campos)
+        ->where('h.checkin', 1)
+        ->where('h.checkin_at', '>=', $dataInicial)
+        ->where('h.checkin_at', '<', $dataFinal);
+
+    $aplicarPesquisa($queryConsulta2);
+
+    $consulta2 = $queryConsulta2->get()->all();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consulta 3: checkin nulo e status = 2
+    |--------------------------------------------------------------------------
+    */
+
+    $queryConsulta3 = DB::table('hospedagem as h')
+        ->join('user as u', 'u.id', '=', 'h.user_id')
+        ->leftJoin('posto_graduacao as p', 'p.id', '=', 'u.postograd_id')
+        ->select($campos)
+        ->whereNull('h.checkin')
+        ->where('h.status', 2)
+        ->where('h.data_inicio', '>=', $dataInicial)
+        ->where('h.data_inicio', '<', $dataFinal);
+
+    $aplicarPesquisa($queryConsulta3);
+
+    $consulta3 = $queryConsulta3->get()->all();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Soma da consulta 1
+    |--------------------------------------------------------------------------
+    |
+    | Como existe pesquisa por nome, é necessário fazer o JOIN com usuários
+    | também nas consultas de soma.
+    |
+    */
+
+    $queryValor1 = DB::table('hospedagem as h')
+        ->join('user as u', 'u.id', '=', 'h.user_id')
+        ->where('h.checkin', 2)
+        ->where('h.status', 2)
+        ->where('h.checkin_at', '>=', $dataInicial)
+        ->where('h.checkin_at', '<', $dataFinal);
+
+    $aplicarPesquisa($queryValor1);
+
+    $valor1 = (float) $queryValor1->sum('h.valor');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Soma da consulta 2
+    |--------------------------------------------------------------------------
+    */
+
+    $queryValor2 = DB::table('hospedagem as h')
+        ->join('user as u', 'u.id', '=', 'h.user_id')
+        ->where('h.checkin', 1)
+        ->where('h.checkin_at', '>=', $dataInicial)
+        ->where('h.checkin_at', '<', $dataFinal);
+
+    $aplicarPesquisa($queryValor2);
+
+    $valor2 = (float) $queryValor2->sum('h.valor_pago');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Soma da consulta 3
+    |--------------------------------------------------------------------------
+    */
+
+    $queryValor3 = DB::table('hospedagem as h')
+        ->join('user as u', 'u.id', '=', 'h.user_id')
+        ->whereNull('h.checkin')
+        ->where('h.status', 2)
+        ->where('h.data_inicio', '>=', $dataInicial)
+        ->where('h.data_inicio', '<', $dataFinal);
+
+    $aplicarPesquisa($queryValor3);
+
+    $valor3 = (float) $queryValor3->sum('h.valor_pago');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Valor total
+    |--------------------------------------------------------------------------
+    */
+
+    $valor = $valor1 + $valor2 + $valor3;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Liberação
+    |--------------------------------------------------------------------------
+    */
+
+    $libera = (
+        (int) date('Y') === $ano
+        && (int) date('m') === $mes
+    ) ? 1 : 0;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Junta os resultados
+    |--------------------------------------------------------------------------
+    */
+
+    $consulta = array_merge(
+        $consulta1,
+        $consulta2,
+        $consulta3
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Retorna a view
+    |--------------------------------------------------------------------------
+    */
+
+    return view(
+        'relatorios.arrecadacao_resultado',
+        compact(
+            'consulta',
+            'valor',
+            'ano',
+            'mes',
+            'libera',
+            'search'
+        )
+    );
 }
 
     public function cancelados(){
