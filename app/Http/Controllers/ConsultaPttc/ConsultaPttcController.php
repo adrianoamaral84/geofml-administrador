@@ -41,11 +41,7 @@ class ConsultaPttcController extends Controller
                         'LIKE',
                         '%' . $pesquisa . '%'
                     )
-                    ->orWhere(
-                        'nomeguerra',
-                        'LIKE',
-                        '%' . $pesquisa . '%'
-                    )
+                   
                     ->orWhere(
                         'email',
                         'LIKE',

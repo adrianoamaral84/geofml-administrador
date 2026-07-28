@@ -37,11 +37,7 @@ class ConsultaAtendenteController extends Controller
             ) {
                 $consulta
                     ->where('name', 'LIKE', '%' . $pesquisa . '%')
-                    ->orWhere(
-                        'nomeguerra',
-                        'LIKE',
-                        '%' . $pesquisa . '%'
-                    )
+                    
                     ->orWhere(
                         'email',
                         'LIKE',
