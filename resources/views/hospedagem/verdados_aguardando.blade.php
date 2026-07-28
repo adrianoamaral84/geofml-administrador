@@ -39,6 +39,16 @@
         .availability-frame { min-height: 520px; }
         .modal-dialog.modal-xl { max-width: calc(100% - 20px); margin: 10px auto; }
     }
+    .grupodestinacao {
+    width: 100%;
+    min-width: 100%;
+    height: 40px;
+    font-size: 16px;
+}
+
+.grupodestinacao option {
+    font-size: 16px;
+}
 </style>
 
 <div class="title-block">

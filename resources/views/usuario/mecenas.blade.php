@@ -37,7 +37,7 @@
                                     name="search"
                                     class="form-control"
                                     value="{{ $search }}"
-                                    placeholder="Buscar por nome, nome de guerra, CPF, identidade ou e-mail"
+                                    placeholder="Buscar por nome, CPF, identidade ou e-mail"
                                 >
                             </div>
 

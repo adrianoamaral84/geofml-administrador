@@ -1575,8 +1575,8 @@ public function verDocumento($id, $doc, $tipo)
             $filtro->where('name', 'LIKE', '%' . $search . '%')
                 ->orWhere('email', 'LIKE', '%' . $search . '%')
                 ->orWhere('cpf', 'LIKE', '%' . $search . '%')
-                ->orWhere('idtMil', 'LIKE', '%' . $search . '%')
-                ->orWhere('nomeguerra', 'LIKE', '%' . $search . '%');
+                ->orWhere('idtMil', 'LIKE', '%' . $search . '%');
+                
         });
     })
     ->orderBy('name')
