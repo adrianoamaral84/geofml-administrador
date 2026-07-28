@@ -236,7 +236,7 @@
 
                 <li>
                     <a href="{{ route('hospedagem.distribuicao.ofsup') }}">
-                        <i class="fa fa-star-half-o"></i>
+                        <i class="fa fa-star-half"></i>
                         Oficiais Superiores
                     </a>
                 </li>

@@ -336,6 +336,26 @@
     <script src="{{ asset('calendario/js/moment.min.js') }}"></script>
     <script src="{{ asset('calendario/js/fullcalendar.min.js') }}"></script>
     <script src="{{ asset('calendario/locale/pt-br.js') }}"></script>
-@stack('javascript')
+
+    <script>
+        /*
+         * Proteção para páginas que carregam scriptsCalendario,
+         * mas não possuem a função trocaCalendarios.
+         */
+        if (
+            typeof window.trocaCalendarios
+            !==
+            'function'
+        ) {
+            window.trocaCalendarios = function () {
+                console.warn(
+                    'A função trocaCalendarios não está configurada nesta página.'
+                );
+            };
+        }
+    </script>
+
+   
+    @stack('javascript')
 </body>
 </html>

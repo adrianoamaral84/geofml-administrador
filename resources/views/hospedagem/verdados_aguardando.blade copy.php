@@ -14,27 +14,6 @@
     .availability-frame { width: 100%; min-height: 620px; border: 0; background: #fff; }
     .availability-loading { padding: 50px 20px; text-align: center; }
     .availability-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-    .mapa-legenda { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
-    .mapa-legenda__item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
-    .mapa-legenda__cor { width: 18px; height: 18px; border: 1px solid #cbd5e0; border-radius: 3px; }
-    .mapa-scroll { overflow-x: auto; border: 1px solid #d9e2ec; border-radius: 6px; }
-    .mapa-table { border-collapse: separate; border-spacing: 0; min-width: 900px; margin-bottom: 0; }
-    .mapa-table th, .mapa-table td { text-align: center; vertical-align: middle; white-space: nowrap; }
-    .mapa-table thead th { position: sticky; top: 0; z-index: 3; background: #f8fafc; }
-    .mapa-table .mapa-uh { position: sticky; left: 0; z-index: 2; min-width: 210px; text-align: left; background: #fff; }
-    .mapa-table thead .mapa-uh { z-index: 4; background: #f8fafc; }
-    .mapa-dia { width: 42px; min-width: 42px; height: 42px; padding: 0 !important; cursor: default; }
-    .mapa-dia--livre { background: #edfdf3; }
-    .mapa-dia--ocupada { background: #dc3545; color: #fff; }
-    .mapa-dia--checkout { background: #ffc107; color: #212529; }
-    .mapa-dia--solicitado { box-shadow: inset 0 0 0 3px #007bff; }
-    .mapa-dia--conflito { box-shadow: inset 0 0 0 3px #111827; }
-    .mapa-dia--fim-semana { background-image: linear-gradient(rgba(0,0,0,.035), rgba(0,0,0,.035)); }
-    .mapa-uh__status { display: block; font-size: 12px; margin-top: 3px; }
-    .mapa-uh__status--livre { color: #198754; }
-    .mapa-uh__status--ocupada { color: #dc3545; }
-    .mapa-selecionar { margin-left: 8px; }
-
     @media (max-width: 767.98px) {
         .availability-frame { min-height: 520px; }
         .modal-dialog.modal-xl { max-width: calc(100% - 20px); margin: 10px auto; }
@@ -290,7 +269,7 @@
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
                         
                             <label class="control-label">{{ __('PNE') }}</label>
-                                <select id="pne_visual" class="custom-select mr-sm-2 @error('pne') is-invalid @enderror" disabled>
+                                <select name="uf" id="uf" required readonly="" class="custom-select mr-sm-2 @error('pne') is-invalid @enderror" autocomplete="off">
                                 
                                  @if($hospedagem->pne == 1)
                                  <option value="1" selected >Sim</option>
@@ -312,7 +291,7 @@
                     <div class="form-group col-sm-12 col-md-3 col-lg-3">
 
                         <label class="control-label">{{ __('PET') }}</label>
-                                <select id="pet_visual" class="custom-select mr-sm-2 @error('pet') is-invalid @enderror" disabled>
+                                <select name="pet" id="pet" required readonly="" class="custom-select mr-sm-2 @error('pet') is-invalid @enderror" autocomplete="off">
                                 
                                  @if($hospedagem->pet == 1)
                                  <option value="1" selected >Sim</option>
@@ -474,21 +453,11 @@
                                     <button
     type="button"
     id="btnAbrirCalendario"
-    class="btn btn-primary btn-sm mt-3"
+    class="btn btn-outline-primary btn-sm mt-3"
     disabled
 >
     <i class="fas fa-calendar-check"></i>
     Ver calendário da unidade
-</button>
-
-<button
-    type="button"
-    id="btnAbrirMapaOcupacao"
-    class="btn btn-secondary btn-sm mt-3 ml-2"
-    disabled
->
-    <i class="fas fa-th"></i>
-    Ver mapa de ocupação
 </button>
                                 </div>
                             </div> 
@@ -575,21 +544,10 @@
                             @if($hospedagem->checkin == null)
                             @if($hospedagem->status != 6 or $liberaDistribuir == 1)
 
-                                <button
-                                    type="submit"
-                                    id="btnAprovarSolicitacao"
-                                    class="btn btn-primary"
-                                    disabled
-                                >
-                                    <i class="fas fa-check-circle fa-sm"></i>
-                                    <span id="textoBtnAprovar">Aprovar Solicitação!</span>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-check-circle fa-sm"></i>  
+                                        Aprovar Solicitação!
                                 </button>
-
-                                <div
-                                    id="mensagemAprovacao"
-                                    class="alert alert-warning mt-3 mb-0"
-                                    style="display:none;"
-                                ></div>
                             <!--
                              <a href="javascript:;" data-toggle="modal" onclick="aprovapedido('{{Crypt::encrypt($hospedagem->id)}}')" class="btn btn-primary" data-target="#AprovaModal" title="Aprovar Pedido">
                                     <i class="fas fa-check-square" style="color: #ffffff"></i> Liberar Acesso!</a>
@@ -633,129 +591,115 @@
 
                 @endrole
 </form>
-           <div class="modal fade" id="modalCalendarioUH" tabindex="-1" role="dialog"
-    aria-labelledby="modalCalendarioUHTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document" style="max-width:95%;">
+           <div
+    class="modal fade"
+    id="modalCalendarioUH"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="modalCalendarioUHTitulo"
+    aria-hidden="true"
+>
+    <div
+        class="modal-dialog modal-xl"
+        role="document"
+        style="max-width: 95%;"
+    >
         <div class="modal-content">
+
             <div class="modal-header">
                 <div>
-                    <h4 class="modal-title" id="modalCalendarioUHTitulo">
+                    <h4
+                        class="modal-title"
+                        id="modalCalendarioUHTitulo"
+                    >
                         <i class="fas fa-calendar-alt"></i>
                         Disponibilidade da Unidade Habitacional
                     </h4>
+
                     <small class="text-muted">
-                        Reservas em vermelho e período solicitado em azul.
+                        Consulte as hospedagens existentes e os dias livres.
                     </small>
                 </div>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
+
+                <button
+                    type="button"
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Fechar"
+                >
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
 
             <div class="modal-body">
-                <div class="availability-summary">
-                    <div class="availability-summary__item">
-                        <span class="availability-summary__label">Unidade</span>
-                        <span id="modalUnidadeTexto" class="availability-summary__value">-</span>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Unidade:</strong>
+                        <span id="modalUnidadeTexto">-</span>
                     </div>
-                    <div class="availability-summary__item">
-                        <span class="availability-summary__label">Entrada</span>
-                        <span id="modalEntradaTexto" class="availability-summary__value">-</span>
+
+                    <div class="col-md-3">
+                        <strong>Entrada:</strong>
+                        <span id="modalEntradaTexto">-</span>
                     </div>
-                    <div class="availability-summary__item">
-                        <span class="availability-summary__label">Saída</span>
-                        <span id="modalSaidaTexto" class="availability-summary__value">-</span>
+
+                    <div class="col-md-3">
+                        <strong>Saída:</strong>
+                        <span id="modalSaidaTexto">-</span>
                     </div>
                 </div>
 
-                <div id="resultadoDisponibilidadeModal" class="alert mb-3"></div>
+                <div
+                    id="calendarioLoading"
+                    class="text-center p-5"
+                    style="display:none;"
+                >
+                    <i class="fas fa-spinner fa-spin fa-3x"></i>
 
-                <div id="calendarioLoading" class="availability-loading" style="display:none;">
-                    <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
-                    <div>Carregando calendário...</div>
+                    <p class="mt-3">
+                        Carregando calendário...
+                    </p>
                 </div>
 
-                <div id="calendarioUnidade" style="min-height:580px;"></div>
+                <iframe
+                    id="calendarioUnidadeFrame"
+                    title="Calendário da unidade habitacional"
+                    style="
+                        width: 100%;
+                        height: 650px;
+                        border: 0;
+                        display: none;
+                        background: white;
+                    "
+                ></iframe>
+
             </div>
 
             <div class="modal-footer">
-                <button type="button" id="btnRecarregarCalendario" class="btn btn-primary">
+                <button
+                    type="button"
+                    id="btnRecarregarCalendario"
+                    class="btn btn-outline-primary"
+                >
                     <i class="fas fa-sync-alt"></i>
-                    Atualizar calendário
+                    Atualizar
                 </button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-dismiss="modal"
+                >
                     Fechar
                 </button>
             </div>
+
         </div>
     </div>
 </div>
             
-                                    <div class="modal fade" id="modalMapaOcupacao" tabindex="-1" role="dialog"
-    aria-labelledby="modalMapaOcupacaoTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document" style="max-width:98%;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <h4 class="modal-title" id="modalMapaOcupacaoTitulo">
-                        <i class="fas fa-th"></i>
-                        Mapa de ocupação das unidades
-                    </h4>
-                    <small class="text-muted">
-                        Clique em “Selecionar” para usar uma unidade no pedido.
-                    </small>
-                </div>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <div class="mapa-legenda">
-                    <span class="mapa-legenda__item">
-                        <span class="mapa-legenda__cor" style="background:#edfdf3;"></span>
-                        Livre
-                    </span>
-                    <span class="mapa-legenda__item">
-                        <span class="mapa-legenda__cor" style="background:#dc3545;"></span>
-                        Ocupada
-                    </span>
-                    <span class="mapa-legenda__item">
-                        <span class="mapa-legenda__cor" style="background:#ffc107;"></span>
-                        Check-out
-                    </span>
-                    <span class="mapa-legenda__item">
-                        <span class="mapa-legenda__cor" style="box-shadow:inset 0 0 0 3px #007bff;"></span>
-                        Período solicitado
-                    </span>
-                </div>
-
-                <div id="mapaOcupacaoLoading" class="availability-loading" style="display:none;">
-                    <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
-                    <div>Montando mapa de ocupação...</div>
-                </div>
-
-                <div id="mapaOcupacaoErro" class="alert alert-danger" style="display:none;"></div>
-
-                <div id="mapaOcupacaoResumo" class="alert alert-info"></div>
-
-                <div id="mapaOcupacaoConteudo" class="mapa-scroll"></div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" id="btnAtualizarMapaOcupacao" class="btn btn-primary">
-                    <i class="fas fa-sync-alt"></i>
-                    Atualizar mapa
-                </button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    Fechar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="AprovaModal">
+                                    <div class="modal fade" id="AprovaModal">
                                     <div class="modal-dialog" role="document">
                                         <form action="" id="aprovapedido" method="get">
                                             <div class="modal-content">
@@ -876,6 +820,7 @@
 <script src="{{ asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js')}}"></script>
 <script src="{{ asset('js/litepickerBudler.js')}}"></script>
 <script src="{{ asset('js/mobilefriendly.js')}}"></script>
+@include('calendario.scriptsCalendario')
 
 <script type="text/javascript">
      function aprovapedido(id)
@@ -908,776 +853,618 @@
 
 
 <script>
-(function ($) {
-    'use strict';
+    /*
+     * Laravel gera a URL correta, inclusive quando o sistema
+     * estiver instalado em uma subpasta ou dentro de /public.
+     */
+    var carregarUnidadesBaseUrl = '{!! url("/cascade/carregarUnidades") !!}';
 
-    var unidadesUrl = '{!! url("/cascade/carregarUnidades") !!}';
-    var eventosUrl = '{!! url("/admin/calendario/unidade") !!}';
+    var calendarioUrlAtual = null;
 
-    var mapaOcupacaoUrl =
-        '{!! route("hospedagem.disponibilidade.mapa") !!}';
-    var cache = {};
-    var unidadeAtual = null;
+    /*
+     * Protege textos inseridos dinamicamente no HTML.
+     */
+    function escapeHtml(texto) {
+        return $('<div>')
+            .text(texto || '')
+            .html();
+    }
 
-    function status(mensagem, tipo) {
-        $('#availabilityStatus')
-            .removeClass('alert-info alert-success alert-warning alert-danger')
-            .addClass('is-visible alert-' + (tipo || 'info'))
+    /*
+     * Mostra mensagens abaixo do select de UH.
+     */
+    function setAvailabilityStatus(mensagem, tipo) {
+        var $status = $('#availabilityStatus');
+
+        if (!$status.length) {
+            return;
+        }
+
+        $status
+            .removeClass(
+                'alert-info ' +
+                'alert-success ' +
+                'alert-warning ' +
+                'alert-danger'
+            )
+            .addClass(
+                'is-visible alert-' + (tipo || 'info')
+            )
             .html(mensagem);
     }
 
-    function periodo() {
-        return {
-            inicio: $('input[name="peridoinicial1"]').val(),
-            fim: $('input[name="final1"]').val()
-        };
-    }
-
-    function preencherUnidades(unidades) {
-        var $select = $('#unidadeshabitacionais');
-
-        $select.empty().prop('disabled', false).append(
-            $('<option>', {
-                value: '',
-                text: 'Selecione uma unidade habitacional',
-                disabled: true,
-                selected: true
-            })
+    /*
+     * Carrega as unidades habitacionais pertencentes
+     * ao grupo de destinação selecionado.
+     */
+    function validaGrupo(grupoId, campoDestino, tipo) {
+        var $select = $(
+            'select[name="' + campoDestino + '"]'
         );
 
-        $.each(unidades || [], function (_, unidade) {
-            var tipo = unidade.tipohabitacao &&
-                unidade.tipohabitacao.descricao
-                ? unidade.tipohabitacao.descricao
-                : 'Tipo não informado';
-
-            var texto = 'Nº ' + (unidade.sigla || unidade.id) +
-                ' - ' + tipo;
-
-            if (parseInt(unidade.pet, 10) === 1) {
-                texto += ' - PET';
-            }
-
-            if (unidade.disponivel_periodo === true) {
-                texto += ' — DISPONÍVEL';
-            } else if (unidade.disponivel_periodo === false) {
-                var conflito = unidade.conflitos &&
-                    unidade.conflitos.length
-                    ? unidade.conflitos[0]
-                    : null;
-
-                texto += conflito
-                    ? ' — OCUPADA ' + conflito.inicio +
-                      ' a ' + conflito.termino
-                    : ' — OCUPADA';
-            }
-
-            var $option = $('<option>', {
-                value: unidade.id,
-                text: texto
-            });
-
-            $option.data('unidade', unidade);
-            $select.append($option);
-        });
-
-        if (!unidades || !unidades.length) {
-            status(
-                'Nenhuma unidade encontrada para o grupo selecionado.',
-                'warning'
+        if (!$select.length) {
+            console.error(
+                'Select de unidades habitacionais não encontrado.'
             );
+
             return;
         }
 
-        var livres = $.grep(unidades, function (item) {
-            return item.disponivel_periodo === true;
-        }).length;
-
-        status(
-            unidades.length + ' unidade(s) encontrada(s); ' +
-            livres + ' disponível(is) no período.',
-            livres ? 'success' : 'warning'
-        );
-    }
-
-    function carregarUnidades() {
-        var grupo = $('#grupodestinacao').val();
-        var tipo = $('input[name="unidade_habitacional_id"]').val();
-        var datas = periodo();
-        var hospedagem = $('input[name="id1"]').val();
-
-        if (!grupo || !tipo || !datas.inicio || !datas.fim) {
-            return;
-        }
-
-        var chave = [grupo, tipo, datas.inicio, datas.fim, hospedagem].join('|');
-
-        $('#unidadeshabitacionaisdiv').slideDown(150);
-        $('#unidadeshabitacionais')
+        $select
             .empty()
             .prop('disabled', true)
-            .append('<option>Carregando unidades...</option>');
+            .append(
+                '<option value="" disabled selected>' +
+                    'Carregando unidades habitacionais...' +
+                '</option>'
+            );
 
-        $('#btnAbrirCalendario').prop('disabled', true);
-        $('#btnAbrirMapaOcupacao').prop('disabled', false);
-        unidadeAtual = null;
+        $('#btnAbrirCalendario').prop(
+            'disabled',
+            true
+        );
 
-        if (cache[chave]) {
-            preencherUnidades(cache[chave]);
+        calendarioUrlAtual = null;
+
+        /*
+         * Confere se o grupo foi selecionado.
+         */
+        if (!grupoId) {
+            $select
+                .empty()
+                .prop('disabled', false)
+                .append(
+                    '<option value="" disabled selected>' +
+                        'Selecione uma unidade habitacional' +
+                    '</option>'
+                );
+
+            setAvailabilityStatus(
+                'Selecione primeiro um grupo de destinação.',
+                'info'
+            );
+
             return;
         }
 
+        /*
+         * Confere se o tipo da UH existe.
+         */
+        if (!tipo) {
+            $select
+                .empty()
+                .prop('disabled', false)
+                .append(
+                    '<option value="" disabled selected>' +
+                        'Tipo de unidade não informado' +
+                    '</option>'
+                );
+
+            setAvailabilityStatus(
+                'Não foi possível identificar o tipo de unidade habitacional.',
+                'danger'
+            );
+
+            console.error(
+                'O campo unidade_habitacional_id está vazio.'
+            );
+
+            return;
+        }
+
+        /*
+         * Monta a URL final.
+         */
+        var urlCarregarUnidades =
+            carregarUnidadesBaseUrl
+            + '/'
+            + encodeURIComponent(grupoId)
+            + '/'
+            + encodeURIComponent(tipo);
+
+        console.log(
+            'Carregando unidades pela URL:',
+            urlCarregarUnidades
+        );
+
         $.ajax({
-            url: unidadesUrl + '/' +
-                encodeURIComponent(grupo) + '/' +
-                encodeURIComponent(tipo),
+            url: urlCarregarUnidades,
             type: 'GET',
             dataType: 'json',
             cache: false,
-            data: {
-                data_inicio: datas.inicio,
-                data_final: datas.fim,
-                ignorar_hospedagem: hospedagem
-            },
-            success: function (data) {
-                cache[chave] = data;
-                preencherUnidades(data);
-            },
-            error: function (xhr) {
-                console.error(xhr.responseText);
 
-                $('#unidadeshabitacionais')
+            success: function (data) {
+                $select
+                    .empty()
+                    .prop('disabled', false);
+
+                /*
+                 * O Controller pode retornar:
+                 *
+                 * [
+                 *   { ... },
+                 *   { ... }
+                 * ]
+                 *
+                 * ou:
+                 *
+                 * {
+                 *   "0": { ... },
+                 *   "1": { ... }
+                 * }
+                 *
+                 * O $.each funciona nos dois formatos.
+                 */
+                var quantidade = 0;
+
+                $select.append(
+                    '<option value="" disabled selected>' +
+                        'Selecione uma unidade habitacional' +
+                    '</option>'
+                );
+
+                $.each(data || {}, function (
+                    indice,
+                    unidade
+                ) {
+                    if (!unidade || !unidade.id) {
+                        return;
+                    }
+
+                    quantidade++;
+
+                    var sigla =
+                        unidade.sigla
+                        ? unidade.sigla
+                        : unidade.id;
+
+                    var descricaoTipo =
+                        'Tipo não informado';
+
+                    if (
+                        unidade.tipohabitacao
+                        &&
+                        unidade.tipohabitacao.descricao
+                    ) {
+                        descricaoTipo =
+                            unidade
+                                .tipohabitacao
+                                .descricao;
+                    }
+
+                    var descricao =
+                        'Nº '
+                        + sigla
+                        + ' - '
+                        + descricaoTipo;
+
+                    if (
+                        parseInt(
+                            unidade.pet,
+                            10
+                        ) === 1
+                    ) {
+                        descricao += ' - PET';
+                    }
+
+                    $select.append(
+                        $('<option>', {
+                            value: unidade.id,
+                            text: descricao
+                        })
+                    );
+                });
+
+                if (quantidade > 0) {
+                    setAvailabilityStatus(
+                        quantidade
+                        + ' unidade(s) encontrada(s). '
+                        + 'Selecione uma para visualizar '
+                        + 'o calendário.',
+                        'success'
+                    );
+                } else {
+                    $select
+                        .empty()
+                        .append(
+                            '<option value="" disabled selected>' +
+                                'Nenhuma unidade disponível para este grupo' +
+                            '</option>'
+                        );
+
+                    setAvailabilityStatus(
+                        'Nenhuma unidade habitacional foi encontrada '
+                        + 'para o grupo selecionado.',
+                        'warning'
+                    );
+                }
+            },
+
+            error: function (
+                xhr,
+                textStatus,
+                errorThrown
+            ) {
+                $select
                     .empty()
                     .prop('disabled', false)
-                    .append('<option>Erro ao carregar unidades</option>');
+                    .append(
+                        '<option value="" disabled selected>' +
+                            'Erro ao carregar unidades' +
+                        '</option>'
+                    );
 
-                status(
-                    xhr.responseJSON && xhr.responseJSON.message
-                        ? xhr.responseJSON.message
-                        : 'Não foi possível carregar as unidades.',
+                console.error(
+                    'Erro ao carregar unidades habitacionais.',
+                    {
+                        url: urlCarregarUnidades,
+                        statusHttp: xhr.status,
+                        statusTexto: xhr.statusText,
+                        textStatus: textStatus,
+                        errorThrown: errorThrown,
+                        resposta: xhr.responseText
+                    }
+                );
+
+                var mensagem =
+                    'Não foi possível carregar as unidades habitacionais.';
+
+                if (xhr.status === 404) {
+                    mensagem +=
+                        ' A rota de carregamento não foi encontrada.';
+                } else if (xhr.status === 403) {
+                    mensagem +=
+                        ' O usuário não possui permissão para essa consulta.';
+                } else if (xhr.status === 401) {
+                    mensagem +=
+                        ' A sessão pode ter expirado.';
+                } else if (xhr.status === 500) {
+                    mensagem +=
+                        ' O servidor apresentou um erro interno.';
+                } else if (xhr.status) {
+                    mensagem +=
+                        ' Código HTTP: ' + xhr.status + '.';
+                }
+
+                setAvailabilityStatus(
+                    mensagem,
                     'danger'
                 );
             }
         });
     }
 
-    function iniciarCalendario(unidadeId) {
-        var $calendar = $('#calendarioUnidade');
-        var datas = periodo();
-        var hospedagem = $('input[name="id1"]').val();
+    /*
+     * Monta a URL do calendário da unidade.
+     */
+    function montarUrlCalendario() {
+    var unidade =
+        $('#unidadeshabitacionais').val();
 
-        if (typeof $.fn.fullCalendar !== 'function') {
-            status('FullCalendar não carregado.', 'danger');
-            return;
-        }
+    var dataInicio =
+        $('input[name="peridoinicial1"]').val();
 
-        if ($calendar.hasClass('fc')) {
-            $calendar.fullCalendar('destroy');
-        }
+    var dataFinal =
+        $('input[name="final1"]').val();
 
-        $('#calendarioLoading').show();
-
-        $calendar.fullCalendar({
-            header: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'month,listYear'
-            },
-            defaultDate: moment(
-                datas.inicio,
-                'DD-MM-YYYY'
-            ).format('YYYY-MM-DD'),
-            editable: false,
-            navLinks: true,
-            eventLimit: true,
-            selectable: false,
-            locale: 'pt-br',
-            height: 580,
-            eventSources: [
-                {
-                    url: eventosUrl + '/' +
-                        encodeURIComponent(unidadeId) +
-                        '/eventos',
-                    cache: false,
-                    data: {
-                        ignorar_hospedagem: hospedagem
-                    }
-                },
-                {
-                    events: [{
-                        title: 'PERÍODO SOLICITADO',
-                        start: moment(
-                            datas.inicio,
-                            'DD-MM-YYYY'
-                        ).format('YYYY-MM-DD'),
-                        end: moment(
-                            datas.fim,
-                            'DD-MM-YYYY'
-                        ).format('YYYY-MM-DD'),
-                        allDay: true,
-                        color: '#007bff',
-                        textColor: '#ffffff'
-                    }]
-                }
-            ],
-            eventAfterAllRender: function () {
-                $('#calendarioLoading').hide();
-            }
-        });
+    if (
+        !unidade
+        ||
+        !dataInicio
+        ||
+        !dataFinal
+    ) {
+        return null;
     }
 
-    function abrirCalendario() {
-        var unidadeId = $('#unidadeshabitacionais').val();
-        var datas = periodo();
+    /*
+     * O Laravel gera a rota usando marcadores.
+     * Depois o JavaScript substitui pelos valores selecionados.
+     */
+    var url = '{!! route(
+        "calendario.unidade",
+        [
+            "unidade" => "__UNIDADE__",
+            "data_ini" => "__DATA_INICIO__",
+            "data_final" => "__DATA_FINAL__"
+        ]
+    ) !!}';
 
-        if (!unidadeId) {
-            status('Selecione uma unidade.', 'warning');
-            return;
-        }
+    url = url.replace(
+        '__UNIDADE__',
+        encodeURIComponent(unidade)
+    );
 
-        $('#modalUnidadeTexto').text(
-            $('#unidadeshabitacionais option:selected').text()
-        );
-        $('#modalEntradaTexto').text(datas.inicio);
-        $('#modalSaidaTexto').text(datas.fim);
+    url = url.replace(
+        '__DATA_INICIO__',
+        encodeURIComponent(dataInicio)
+    );
 
-        var disponivel = unidadeAtual &&
-            unidadeAtual.disponivel_periodo === true;
+    url = url.replace(
+        '__DATA_FINAL__',
+        encodeURIComponent(dataFinal)
+    );
 
-        $('#resultadoDisponibilidadeModal')
-            .removeClass('alert-success alert-danger')
-            .addClass(disponivel ? 'alert-success' : 'alert-danger')
-            .html(
-                disponivel
-                    ? '<strong>Unidade disponível</strong> no período.'
-                    : '<strong>Unidade com conflito</strong> no período.'
-            );
+    return url;
+}
+    /*
+     * Abre o calendário no modal.
+     */
+   function abrirCalendarioUnidade() {
+        calendarioUrlAtual = montarUrlCalendario();
 
-        $('#modalCalendarioUH').modal('show');
-
-        setTimeout(function () {
-            iniciarCalendario(unidadeId);
-        }, 200);
-    }
-
-
-    function dataEntre(data, inicio, fim) {
-        return data >= inicio && data < fim;
-    }
-
-    function encontrarReservaDoDia(reservas, data) {
-        var encontrada = null;
-
-        $.each(reservas || [], function (_, reserva) {
-            if (dataEntre(data, reserva.inicio, reserva.fim)) {
-                encontrada = {
-                    tipo: 'ocupada',
-                    reserva: reserva
-                };
-                return false;
-            }
-
-            if (data === reserva.fim) {
-                encontrada = {
-                    tipo: 'checkout',
-                    reserva: reserva
-                };
-                return false;
-            }
-        });
-
-        return encontrada;
-    }
-
-    function montarMapaOcupacao(resposta) {
-        var $conteudo = $('#mapaOcupacaoConteudo');
-        var dias = resposta.dias || [];
-        var unidades = resposta.unidades || [];
-
-        $('#mapaOcupacaoResumo').html(
-            '<strong>Período solicitado:</strong> ' +
-            resposta.periodo.inicio + ' até ' +
-            resposta.periodo.fim + '. ' +
-            '<strong>' + unidades.length + '</strong> unidade(s) no mapa.'
-        );
-
-        if (!unidades.length) {
-            $conteudo.html(
-                '<div class="p-4 text-center text-muted">' +
-                'Nenhuma unidade encontrada para esse grupo.' +
-                '</div>'
-            );
-            return;
-        }
-
-        var html = '<table class="table table-bordered table-sm mapa-table">';
-        html += '<thead><tr>';
-        html += '<th class="mapa-uh">Unidade</th>';
-
-        $.each(dias, function (_, dia) {
-            html += '<th title="' + dia.data + '">' +
-                '<div>' + dia.dia + '/' + dia.mes + '</div>' +
-                '<small>' + dia.semana + '</small>' +
-                '</th>';
-        });
-
-        html += '</tr></thead><tbody>';
-
-        $.each(unidades, function (_, unidade) {
-            var statusClasse = unidade.disponivel_periodo
-                ? 'mapa-uh__status--livre'
-                : 'mapa-uh__status--ocupada';
-
-            var statusTexto = unidade.disponivel_periodo
-                ? 'Disponível no período'
-                : 'Conflito no período';
-
-            html += '<tr>';
-            html += '<td class="mapa-uh">';
-            html += '<strong>UH ' + unidade.sigla + '</strong>';
-            html += unidade.tipo ? ' — ' + $('<div>').text(unidade.tipo).html() : '';
-            html += unidade.pet ? ' — PET' : '';
-            html += '<span class="mapa-uh__status ' + statusClasse + '">' +
-                statusTexto +
-                '</span>';
-            html += '<button type="button" ' +
-                'class="btn btn-sm btn-outline-primary mapa-selecionar" ' +
-                'data-unidade-id="' + unidade.id + '">' +
-                'Selecionar</button>';
-            html += '</td>';
-
-            $.each(dias, function (_, dia) {
-                var ocorrencia = encontrarReservaDoDia(
-                    unidade.reservas,
-                    dia.data
-                );
-
-                var classes = ['mapa-dia'];
-                var titulo = 'Livre';
-
-                if (ocorrencia && ocorrencia.tipo === 'ocupada') {
-                    classes.push('mapa-dia--ocupada');
-                    titulo =
-                        'Ocupada: ' +
-                        ocorrencia.reserva.inicio_formatado +
-                        ' até ' +
-                        ocorrencia.reserva.fim_formatado;
-                } else if (ocorrencia && ocorrencia.tipo === 'checkout') {
-                    classes.push('mapa-dia--checkout');
-                    titulo =
-                        'Check-out em ' +
-                        ocorrencia.reserva.fim_formatado;
-                } else {
-                    classes.push('mapa-dia--livre');
-                }
-
-                if (dia.solicitado) {
-                    classes.push('mapa-dia--solicitado');
-
-                    if (ocorrencia && ocorrencia.tipo === 'ocupada') {
-                        classes.push('mapa-dia--conflito');
-                    }
-                }
-
-                if (dia.fim_semana) {
-                    classes.push('mapa-dia--fim-semana');
-                }
-
-                html += '<td class="' + classes.join(' ') + '" ' +
-                    'title="' + $('<div>').text(titulo).html() + '">' +
-                    (ocorrencia && ocorrencia.tipo === 'checkout' ? 'S' : '') +
-                    '</td>';
-            });
-
-            html += '</tr>';
-        });
-
-        html += '</tbody></table>';
-        $conteudo.html(html);
-    }
-
-    function carregarMapaOcupacao() {
-        var grupo = $('#grupodestinacao').val();
-        var tipo = $('input[name="unidade_habitacional_id"]').val();
-        var datas = periodo();
-        var hospedagem = $('input[name="id1"]').val();
-
-        if (!grupo || !tipo || !datas.inicio || !datas.fim) {
-            status(
-                'Selecione o grupo e confira as datas antes de abrir o mapa.',
+        if (!calendarioUrlAtual) {
+            setAvailabilityStatus(
+                'Confira as datas de entrada e saída e selecione uma unidade.',
                 'warning'
             );
             return;
         }
 
-        $('#mapaOcupacaoErro').hide().empty();
-        $('#mapaOcupacaoConteudo').empty();
-        $('#mapaOcupacaoLoading').show();
+        var $modal = $('#modalCalendarioUH').first();
+        var $frame = $('#calendarioUnidadeFrame').first();
+        var $loading = $('#calendarioLoading').first();
 
-        $.ajax({
-            url: mapaOcupacaoUrl,
-            type: 'GET',
-            dataType: 'json',
-            cache: false,
-            data: {
-                grupo_id: grupo,
-                tipo_id: tipo,
-                data_inicio: datas.inicio,
-                data_final: datas.fim,
-                ignorar_hospedagem: hospedagem
-            },
-            success: function (resposta) {
-                montarMapaOcupacao(resposta);
-            },
-            error: function (xhr) {
-                console.error(
-                    'Erro ao carregar mapa de ocupação:',
-                    xhr.responseText
-                );
+        if (!$modal.length || !$frame.length) {
+            console.error('Modal ou iframe do calendário não encontrado.');
+            window.open(
+                calendarioUrlAtual,
+                '_blank',
+                'width=1200,height=800,scrollbars=1,resizable=1'
+            );
+            return;
+        }
 
-                $('#mapaOcupacaoErro')
-                    .html(
-                        xhr.responseJSON && xhr.responseJSON.message
-                            ? xhr.responseJSON.message
-                            : 'Não foi possível carregar o mapa de ocupação.'
-                    )
-                    .show();
-            },
-            complete: function () {
-                $('#mapaOcupacaoLoading').hide();
-            }
-        });
+        $('#modalUnidadeTexto').first().text(
+            $('#unidadeshabitacionais option:selected').text()
+        );
+        $('#modalEntradaTexto').first().text(
+            $('input[name="peridoinicial1"]').val()
+        );
+        $('#modalSaidaTexto').first().text(
+            $('input[name="final1"]').val()
+        );
+
+        $loading.show();
+        $frame.hide().attr('src', 'about:blank');
+
+        $modal.modal('show');
+
+        setTimeout(function () {
+            $frame.attr('src', calendarioUrlAtual);
+        }, 150);
     }
 
-    window.CancelarReserva = function (id) {
-        var url = '{{ route("cancelar.hospedagem", ":id") }}';
-        $('#cancelar').attr('action', url.replace(':id', id));
-    };
+    /*
+     * Recarrega o calendário aberto.
+     */
+    function recarregarCalendario() {
+        calendarioUrlAtual = montarUrlCalendario();
 
-    window.formSubmitCancelar = function () {
+        if (!calendarioUrlAtual) {
+            return;
+        }
+
+        var $frame = $('#calendarioUnidadeFrame').first();
+        var $loading = $('#calendarioLoading').first();
+
+        $loading.show();
+        $frame.hide().attr('src', 'about:blank');
+
+        setTimeout(function () {
+            $frame.attr('src', calendarioUrlAtual);
+        }, 150);
+    }
+
+    /*
+     * Funções dos demais botões da página.
+     */
+    function CancelarReserva(id) {
+        var url =
+            '{{ route("cancelar.hospedagem", ":id") }}';
+
+        url = url.replace(
+            ':id',
+            id
+        );
+
+        $('#cancelar')
+            .attr(
+                'action',
+                url
+            );
+    }
+
+    function formSubmitCancelar() {
         $('#cancelar').submit();
-    };
+    }
 
-    window.VoltarReserva = function (id) {
-        var url = '{{ route("hospedagem.retornarDistribuicao", ":id") }}';
-        $('#voltarcancelar').attr('action', url.replace(':id', id));
-    };
+    function VoltarReserva(id) {
+        var url =
+            '{{ route("hospedagem.retornarDistribuicao", ":id") }}';
 
-    window.formSubmitVoltarCancelar = function () {
+        url = url.replace(
+            ':id',
+            id
+        );
+
+        $('#voltarcancelar')
+            .attr(
+                'action',
+                url
+            );
+    }
+
+    function formSubmitVoltarCancelar() {
         $('#voltarcancelar').submit();
-    };
+    }
 
-    $(function () {
+    /*
+     * Eventos da página.
+     */
+    $(document).ready(function () {
         $('#unidadeshabitacionaisdiv').hide();
 
-        $('#grupodestinacao')
-            .off('change.distribuicao')
-            .on('change.distribuicao', carregarUnidades);
+        $('#calendarioUnidadeFrame')
+            .first()
+            .off('load.calendarioUH')
+            .on('load.calendarioUH', function () {
+                var src = $(this).attr('src');
 
-        $('#unidadeshabitacionais')
-            .off('change.distribuicao')
-            .on('change.distribuicao', function () {
-                unidadeAtual = $(this)
-                    .find('option:selected')
-                    .data('unidade') || null;
-
-                $('#btnAbrirCalendario').prop(
-                    'disabled',
-                    !$(this).val()
-                );
-
-                if (!unidadeAtual) {
-                    $('#btnAprovarSolicitacao').prop('disabled', true);
-                    $('#mensagemAprovacao').hide().empty();
-                    return;
-                }
-
-                var podeAprovar =
-                    unidadeAtual.disponivel_periodo === true;
-
-                $('#btnAprovarSolicitacao')
-                    .prop('disabled', !podeAprovar);
-
-                if (podeAprovar) {
-                    $('#mensagemAprovacao').hide().empty();
-
-                    status(
-                        '<strong>Unidade disponível.</strong> ' +
-                        'Abra o calendário para conferir.',
-                        'success'
-                    );
-                } else {
-                    $('#mensagemAprovacao')
-                        .removeClass(
-                            'alert-success alert-info alert-warning alert-danger'
-                        )
-                        .addClass('alert-danger')
-                        .html(
-                            '<strong>Aprovação bloqueada.</strong> ' +
-                            'Selecione uma unidade disponível.'
-                        )
-                        .show();
-
-                    status(
-                        '<strong>Unidade ocupada.</strong> ' +
-                        'Abra o calendário para ver o conflito.',
-                        'danger'
-                    );
+                if (src && src !== 'about:blank') {
+                    $('#calendarioLoading').first().hide();
+                    $(this).show();
                 }
             });
-
-        $('#btnAbrirMapaOcupacao')
-            .off('click.mapaOcupacao')
-            .on('click.mapaOcupacao', function (event) {
-                event.preventDefault();
-
-                $('#modalMapaOcupacao').modal('show');
-
-                setTimeout(function () {
-                    carregarMapaOcupacao();
-                }, 150);
-            });
-
-        $('#btnAtualizarMapaOcupacao')
-            .off('click.mapaOcupacao')
-            .on('click.mapaOcupacao', function (event) {
-                event.preventDefault();
-                carregarMapaOcupacao();
-            });
-
-        $(document)
-            .off('click.mapaOcupacao', '.mapa-selecionar')
-            .on(
-                'click.mapaOcupacao',
-                '.mapa-selecionar',
-                function () {
-                    var unidadeId = String(
-                        $(this).data('unidade-id')
-                    );
-
-                    $('#unidadeshabitacionais')
-                        .val(unidadeId)
-                        .trigger('change');
-
-                    $('#modalMapaOcupacao').modal('hide');
-
-                    $('html, body').animate({
-                        scrollTop:
-                            $('#unidadeshabitacionais').offset().top - 120
-                    }, 250);
-                }
-            );
 
         $('#btnAbrirCalendario')
-            .off('click.distribuicao')
-            .on('click.distribuicao', function (event) {
+            .off('click.calendarioUH')
+            .on('click.calendarioUH', function (event) {
                 event.preventDefault();
-                abrirCalendario();
+                event.stopPropagation();
+                abrirCalendarioUnidade();
             });
 
         $('#btnRecarregarCalendario')
-            .off('click.distribuicao')
-            .on('click.distribuicao', function (event) {
+            .off('click.calendarioUH')
+            .on('click.calendarioUH', function (event) {
                 event.preventDefault();
-
-                var unidadeId = $('#unidadeshabitacionais').val();
-
-                if (unidadeId) {
-                    iniciarCalendario(unidadeId);
-                }
+                recarregarCalendario();
             });
 
-        $('#profile-form')
-            .off('submit.disponibilidade')
-            .on('submit.disponibilidade', function (event) {
-                var form = this;
+        $('#grupodestinacao')
+            .off('change.calendarioUH')
+            .on('change.calendarioUH', function () {
+                var grupoId = $(this).val();
+                var tipo = $('input[name="unidade_habitacional_id"]').val();
 
-                if ($(form).data('disponibilidade-confirmada')) {
+                $('#unidadeshabitacionaisdiv').slideDown(150);
+                validaGrupo(grupoId, 'unidadeshabitacionais', tipo);
+            });
+
+        $('#unidadeshabitacionais')
+            .off('change.calendarioUH')
+            .on('change.calendarioUH', function () {
+                var unidadeSelecionada = $(this).val();
+                var unidadeTexto = $(this).find('option:selected').text();
+
+                calendarioUrlAtual = montarUrlCalendario();
+
+                if (!unidadeSelecionada || !calendarioUrlAtual) {
+                    $('#btnAbrirCalendario').prop('disabled', true);
+                    setAvailabilityStatus(
+                        'Confira as datas e selecione uma unidade habitacional.',
+                        'warning'
+                    );
                     return;
                 }
 
-                event.preventDefault();
-
-                var unidadeId = $('#unidadeshabitacionais').val();
-                var datas = periodo();
-
-                if (!unidadeId) {
-                    status('Selecione uma unidade habitacional.', 'warning');
-                    return;
-                }
-
-                $('#btnAprovarSolicitacao').prop('disabled', true);
-                $('#textoBtnAprovar').html(
-                    '<i class="fas fa-spinner fa-spin"></i> Verificando...'
+                $('#btnAbrirCalendario').prop('disabled', false);
+                setAvailabilityStatus(
+                    '<strong>' + escapeHtml(unidadeTexto) + '</strong> selecionada. ' +
+                    'Clique em “Ver calendário da unidade” para consultar a disponibilidade.',
+                    'success'
                 );
-
-                $('#mensagemAprovacao')
-                    .removeClass(
-                        'alert-success alert-danger alert-warning alert-info'
-                    )
-                    .addClass('alert-info')
-                    .html(
-                        '<i class="fas fa-spinner fa-spin"></i> ' +
-                        'Confirmando se a unidade continua disponível...'
-                    )
-                    .show();
-
-                $.ajax({
-                    url: '{!! route("hospedagem.disponibilidade.verificar") !!}',
-                    type: 'GET',
-                    dataType: 'json',
-                    cache: false,
-                    data: {
-                        unidade_id: unidadeId,
-                        data_inicio: datas.inicio,
-                        data_final: datas.fim,
-                        ignorar_hospedagem: $('input[name="id1"]').val()
-                    },
-                    success: function (resposta) {
-                        if (!resposta.disponivel) {
-                            cache = {};
-                            carregarUnidades();
-
-                            unidadeAtual.disponivel_periodo = false;
-
-                            $('#mensagemAprovacao')
-                                .removeClass(
-                                    'alert-success alert-info alert-warning'
-                                )
-                                .addClass('alert-danger')
-                                .html(
-                                    '<strong>Aprovação interrompida.</strong> ' +
-                                    'A unidade acabou de receber outra reserva. ' +
-                                    'Selecione uma unidade disponível.'
-                                )
-                                .show();
-
-                            status(
-                                '<strong>Aprovação interrompida.</strong> ' +
-                                'A unidade acabou de receber outra reserva.',
-                                'danger'
-                            );
-
-                            return;
-                        }
-
-                        $('#mensagemAprovacao')
-                            .removeClass(
-                                'alert-info alert-danger alert-warning'
-                            )
-                            .addClass('alert-success')
-                            .html(
-                                '<strong>Disponibilidade confirmada.</strong> ' +
-                                'Enviando aprovação...'
-                            )
-                            .show();
-
-                        $(form).data('disponibilidade-confirmada', true);
-                        form.submit();
-                    },
-                    error: function (xhr) {
-                        console.error(xhr.responseText);
-
-                        $('#mensagemAprovacao')
-                            .removeClass(
-                                'alert-success alert-info alert-warning'
-                            )
-                            .addClass('alert-danger')
-                            .html(
-                                '<strong>A aprovação não foi enviada.</strong> ' +
-                                'Não foi possível confirmar a disponibilidade.'
-                            )
-                            .show();
-
-                        status(
-                            'Não foi possível confirmar a disponibilidade. ' +
-                            'A solicitação não foi enviada.',
-                            'danger'
-                        );
-                    },
-                    complete: function () {
-                        if (!$(form).data('disponibilidade-confirmada')) {
-                            var podeAprovar =
-                                unidadeAtual &&
-                                unidadeAtual.disponivel_periodo === true;
-
-                            $('#btnAprovarSolicitacao')
-                                .prop('disabled', !podeAprovar);
-
-                            $('#textoBtnAprovar')
-                                .text('Aprovar Solicitação!');
-                        }
-                    }
-                });
             });
 
         $('#modalCalendarioUH')
-            .on('shown.bs.modal', function () {
-                var $calendar = $('#calendarioUnidade');
-
-                if ($calendar.hasClass('fc')) {
-                    $calendar.fullCalendar('render');
-                }
-            })
+            .first()
             .on('hidden.bs.modal', function () {
-                var $calendar = $('#calendarioUnidade');
-
-                if ($calendar.hasClass('fc')) {
-                    $calendar.fullCalendar('destroy');
-                }
+                $('#calendarioUnidadeFrame').first().attr('src', 'about:blank').hide();
+                $('#calendarioLoading').first().hide();
             });
     });
 
+    /*
+     * Configuração do seletor de datas.
+     *
+     * Só cria o Litepicker quando os campos existirem.
+     * Isso evita erro para usuários ou situações em que
+     * os inputs não forem exibidos pela Blade.
+     */
     window.disableLitepickerStyles = true;
 
-    var entrada = document.getElementById('peridoinicial');
-    var saida = document.getElementById('final');
+    var campoEntrada =
+        document.getElementById('peridoinicial');
+
+    var campoSaida =
+        document.getElementById('final');
 
     if (
-        entrada &&
-        saida &&
+        campoEntrada
+        &&
+        campoSaida
+        &&
         typeof Litepicker !== 'undefined'
     ) {
-        new Litepicker({
-            element: entrada,
-            elementEnd: saida,
-            plugins: ['mobilefriendly', 'keyboardnav'],
-            keyboardnav: { firstTabIndex: 2 },
-            mobilefriendly: { breakpoint: 480 },
+        var picker = new Litepicker({
+            element: campoEntrada,
+            elementEnd: campoSaida,
+
+            plugins: [
+                'mobilefriendly',
+                'keyboardnav'
+            ],
+
+            keyboardnav: {
+                firstTabIndex: 2
+            },
+
+            mobilefriendly: {
+                breakpoint: 480
+            },
+
             dropdowns: {
                 minYear: 2020,
-                maxYear: new Date().getFullYear() + 5,
+                maxYear:
+                    new Date().getFullYear() + 5,
                 months: false,
                 years: false
             },
+
             singleMode: false,
             allowRepick: false,
             numberOfMonths: 2,
-            numberOfColumns: 2,
             autoRefresh: true,
             disallowLockDaysInRange: true,
             format: 'DD-MM-YYYY',
             lang: 'pt-BR',
+            numberOfColumns: 2,
+
             lockDays: {!! $a !!},
+
             tooltipText: {
                 one: 'diária',
                 other: 'diárias'
             },
-            tooltipNumber: function (totalDays) {
-                return totalDays - 1;
-            },
-            setup: function (picker) {
-                picker.on('selected', function () {
-                    cache = {};
 
-                    if ($('#grupodestinacao').val()) {
-                        carregarUnidades();
-                    }
-                });
+            tooltipNumber: function (
+                totalDays
+            ) {
+                return totalDays - 1;
             }
         });
     }
-})(jQuery);
 </script>
     
 @endpush

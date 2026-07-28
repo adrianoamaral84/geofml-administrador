@@ -127,6 +127,14 @@ Route::get('/cascade/carregarPostoSituacao/{id}','Cascade\CascadeController@carr
 Route::get('/cascade/carregarPostoSituacao/all/{id}','Cascade\CascadeController@carregarPostoSituacaoTodos'); // Carrega as cidades a partir de uma UF informada Carrega as cidades a partir de uma UF informada
 
 Route::get('/cascade/carregarUnidades/{id}/{tipo}','Cascade\CascadeController@carregarUnidadesHabtacionais'); // Carrega Unidades Habitacionais a partir de Grupo de Destino na tela Distribuição de UNIDADES
+Route::get(
+    '/hospedagem/disponibilidade/verificar',
+    'Hospedagem\DisponibilidadeController@verificar'
+)->name('hospedagem.disponibilidade.verificar');
+Route::get(
+    '/hospedagem/disponibilidade/mapa',
+    'Hospedagem\DisponibilidadeController@mapa'
+)->name('hospedagem.disponibilidade.mapa');
 
 Auth::routes(['register' => false]);
 
@@ -224,10 +232,19 @@ Route::prefix('precadastro')->group(function(){
 });
 /*  */
 
+
+
 //Route::prefix('admin')->group(function(){
 Route::prefix('admin')->group(function(){
 
 		//CALENDARIO
+		// Adicione dentro do grupo Route::prefix('admin'):
+Route::get(
+    '/calendario/unidade/{unidade}/eventos',
+    'Calendario\CalendarioController@eventosUnidade'
+)->name('calendario.unidade.eventos');
+
+
 		Route::get('/calendario/{id}', 'Calendario\CalendarioController@index')->name('calendario.index');
 		Route::get('/calendario/mes/{id}', 'Calendario\CalendarioController@calendarioMes')->name('calendario.mes');
 		Route::get('/calendario/unidade/{unidade}/{data_ini}/{data_final}', 'Calendario\CalendarioController@calendarioUnidade')->name('calendario.unidade');

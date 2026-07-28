@@ -2,14 +2,136 @@
 
 @section('content')
 <div class="title-block">
-    <h3 class="title"> Dados do Pedido</h3>
+    <h3 class="title"> Dados do Pedido </h3>
     <p class="title-description">Usuário aguardando a confirmação da sua solicitação!</p>
 </div>
+
+
+@if ($hospedagensAnoPassado->count() > 0)
+
+<div>
+    <div class="alert alert-danger" role="alert">
+            <div align="center" class="card-content">
+                            Usuário já foi contemplado na temporada passada!
+                        </div>
+                    </div>
+                </div>
 <section class="section">
     <div class="row sameheight-container">
         <div class="col-12">
- 
+             <div class="card card-block sameheight-item">
+                <p class="title-description">Lista de datas contempladas</p>
+                <hr>
+              
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">Tipo Unidade Habitacional</th>
+      <th scope="col">Data Início</th>
+      <th scope="col">Data Final</th>
+     
+    </tr>
+  </thead>
+
+  <tbody>
+    @foreach ($hospedagensAnoPassado as $item) 
+
+    <tr>
+      <td>{{ $item->tipouh->descricao }}</td>
+      <td>{{ \Carbon\Carbon::parse($item->data_inicio)->format('d/m/Y') }}</td>
+      <td>{{ \Carbon\Carbon::parse($item->data_termino)->format('d/m/Y') }}</td>
+     
+    </tr>
+    @endforeach
+
+  </tbody>
+</table>
+
+
+
+</div>
+</div>
+</div>
+</section>
+@endif
+
+
+
+
+@if ($ContempladoNessaTemporada->count() > 0)
+<div>
+    <div class="alert alert-danger" role="alert">
+            <div align="center" class="card-content">
+                            Usuário já foi contemplado nessa Alta Temporada!
+                        </div>
+                    </div>
+                </div>
+<section class="section">
+    <div class="row sameheight-container">
+        <div class="col-12">
+             <div class="card card-block sameheight-item">
+                <p class="title-description">Lista de datas contempladas</p>
+                <hr>
+              
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">Tipo Unidade Habitacional</th>
+      <th scope="col">Data Início</th>
+      <th scope="col">Data Final</th>
+     
+    </tr>
+  </thead>
+
+  <tbody>
+    @foreach ($ContempladoNessaTemporada as $item) 
+
+    <tr>
+      <td>{{ $item->tipouh->descricao }}</td>
+      <td>{{ \Carbon\Carbon::parse($item->data_inicio)->format('d/m/Y') }}</td>
+      <td>{{ \Carbon\Carbon::parse($item->data_termino)->format('d/m/Y') }}</td>
+     
+    </tr>
+    @endforeach
+
+  </tbody>
+</table>
+
+
+
+</div>
+</div>
+</div>
+</section>
+@endif
+@if($hospedagem->user->mecenas)
+<div class="alert alert-success shadow-sm border-left-success mb-4" role="alert">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-award fa-2x mr-3"></i>
+
+        <div>
+            <strong>Usuário Mecenas</strong><br>
+            Este militar participa do Programa Mecenas e possui
+            <strong>{{ $hospedagem->user->percentual_desconto }}% de desconto</strong>
+            nas diárias.
+            <br>
+            <small>
+                Todos os pagamentos gerados pelo PagTesouro já utilizam o valor com desconto.
+            </small>
+        </div>
+    </div>
+</div>
+@endif
+
+
+<section class="section">
+    <div class="row sameheight-container">
+        <div class="col-12">
+           
             <div class="card card-block sameheight-item">
+                
                 <p class="title-description">  </p><br>
                 <form id="profile-form" action="{{ route('hospedagem.liberar')}}" method="POST" enctype="multipart/form-data">
                     @csrf
@@ -65,7 +187,7 @@
                         </div>
 
 
-                         <div class="form-group col-sm-6 col-md-6 col-lg-6">
+                         <div class="form-group col-sm-3 col-md-3 col-lg-3">
                             <label class="control-label">{{ __('Cidade') }}</label>
                             <input type="text" class="form-control boxed @error('cidade') is-invalid @enderror" readonly="" value="{{ $hospedagem->user->cidade->descricao }}" name="cidade" id="cidade" required readonly="" autofocus onpaste="return false;">
                             @error('cidade')
@@ -86,8 +208,19 @@
                             @enderror
                         </div>
 
+                        <div class="form-group col-sm-3 col-md-3 col-lg-3">
+    <label class="control-label">Mecenas</label>
 
-                   </div>
+    <input type="text"
+        class="form-control"
+        value="{{ $hospedagem->user->mecenas ? 'Sim ('.$hospedagem->user->percentual_desconto.'% de desconto)' : 'Não' }}"
+        readonly>
+
+    <input type="hidden" name="mecenas" value="{{ $hospedagem->user->mecenas }}">
+</div>
+
+</div>
+
 
 
 
@@ -116,7 +249,7 @@
 
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
                         
-                             <label class="control-label">{{ __('PNE') }}</label>
+                            <label class="control-label">{{ __('PNE') }}</label>
                                 <select name="uf" id="uf" required readonly="" class="custom-select mr-sm-2 @error('pne') is-invalid @enderror" autocomplete="off">
                                 
                                  @if($hospedagem->pne == 1)
@@ -124,19 +257,16 @@
                                 @else
                                 <option value="0">Não</option>
                                 @endif   
-        
                                 
                                 </select>
-                               
-                           
+                                
+                                
                                     @error('pne')
                                     <span class="has-error" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                     @enderror
-
-
-                                     </div>
+                        </div>
 
 
                     <div class="form-group col-sm-12 col-md-3 col-lg-3">
@@ -149,7 +279,7 @@
                                 @else
                                 <option value="0">Não</option>
                                 @endif   
-        
+
                                 
                                 </select>
                                
@@ -158,6 +288,7 @@
                                     <span class="has-error" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
+
                                     @enderror
                         
                             
@@ -166,9 +297,27 @@
                         </div>
 
 
-
                     </div>
 
+                    <div class="row has-error">
+
+
+                        <div class="form-group col-sm-12 col-md-12 col-lg-12">
+                            <label class="control-label">{{ __('Observação') }}</label>
+                            <input type="text" class="form-control boxed @error('observacao1') is-invalid @enderror" readonly="" value="{{$hospedagem->observacao}}" name="observacao1" id="observacao1" required readonly="" autofocus onpaste="return false;">
+                             @error('observacao1')
+                            <span class="has-error" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+
+
+
+
+
+                    </div>
+                    
                     <div class="row has-error">
 
                         <div class="form-group col-sm-12 col-md-6 col-lg-6">
@@ -181,28 +330,15 @@
                                 </span>
                             @enderror
                         </div>
-                      
-                        @if($hospedagem->status == 4)
-                        <div class="form-group col-sm-12 col-md-3 col-lg-3">
-                            <label class="control-label">{{ __('Período Entrada') }}</label>
-                            <input type="text" class="form-control boxed @error('peridoinicial') is-invalid @enderror" value="{{ \Carbon\Carbon::parse($hospedagem->data_inicio)->format('d-m-Y') }}" readonly="" name="peridoinicial12" id="peridoinicial12">
-                            @error('peridoinicial')
-                                <span class="has-error" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
+                         
+                        
+                    
 
-                        <div class="form-group col-sm-12 col-md-3 col-lg-3">
-                            <label class="control-label">{{ __('Período Saída') }}</label>
-                            <input type="text" class="form-control boxed @error('final') is-invalid @enderror" value="{{ \Carbon\Carbon::parse($hospedagem->data_termino)->format('d-m-Y') }}" readonly="" name="final12" id="final12" required autofocus onpaste="return false;">
-                            @error('final')
-                                <span class="has-error" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        @else
+
+                        @role('administrador_geral|auxiliar_administrador_geral')
+                        
+                         @if($hospedagem->checkin == null)
+                         @if($hospedagem->status != 6  or $liberaDistribuir == 1)
                          <div class="form-group col-sm-12 col-md-3 col-lg-3">
                             <label class="control-label">{{ __('Período Entrada') }}</label>
                             <input type="text" class="form-control boxed @error('peridoinicial') is-invalid @enderror" value="{{ \Carbon\Carbon::parse($hospedagem->data_inicio)->format('d-m-Y') }}" name="peridoinicial1" id="peridoinicial" required autofocus onpaste="return false;">
@@ -222,13 +358,26 @@
                                 </span>
                             @enderror
                         </div>
-
                         @endif
+                        @endif
+                        @endrole
+                        
+                         
+                        
 
                     </div>
 
+
+
+
+
+
+                    @role('administrador_geral|auxiliar_administrador_geral')                 
+                    
                     <div class="row has-error">
 
+                        @if($hospedagem->checkin == null)
+                        @if($hospedagem->status != 6  or $liberaDistribuir == 1)
                         <div class="form-group col-sm-12 col-md-6 col-lg-6">
                                 
                              <label class="control-label">{{ __('Grupo Destinação') }}</label>
@@ -252,6 +401,7 @@
 
                         </div>
 
+                       
                         <div class="form-group col-sm-12 col-md-6 col-lg-6">
                                
                             <div id="unidadeshabitacionaisdiv">   
@@ -269,10 +419,14 @@
 
                             </div> 
                         </div>
-          
+                        @endif
+                        @endif
+
+
+                        @if($hospedagem->status == 4)
                         <div class="form-group col-sm-12 col-md-6 col-lg-6">
 
-                                @if($hospedagem->status == 4)
+                                
 
                                     <label class="control-label">{{ __('Valor') }}</label>
                                     <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valor, 2, ',', '.' )}}" name="valor" id="valor" required autofocus readonly onpaste="return false;">
@@ -282,66 +436,109 @@
                                     </span>
                                     @enderror
 
-                                @endif
+                                
 
-                        </div>    
+                        </div> 
+                        @endif   
 
                     </div>
+                   
+                    @endrole
+                    
 
-                    <div class="row has-error">
-                        <div class="form-group col-sm-12 col-md-6 col-lg-6">
-                       
-                        <button type="button" class="btn-lg" id="myBtn">VER DISPONIBILIDADE</button>
+                        @if($hospedagem->status == 4)
+                        @if($comprovante)
+                            
 
-                       </div> 
-                    </div>
-
-                 @if($hospedagem->status == 4)
-
-                        <!---
-                        <img id="myImg" src="{{url('storage/'. $comprovante->caminho)}}" alt="" style="width:100px; margin-top: 20px">
-                        -->
-
-                        
-                            <a href="{{url('storage/'. $comprovante->caminho)}}" target="_blank" title="Ver Comprovante de Pagamento" class="btn btn-secondary btn-xl" style="margin-top: 30px;"><i class="fas fa-address-card"></i>
+                            
+                             <a href="data:image/png;base64, {{ $comprovante->arquivo }}" target="_blank" title="Ver Comprovante de Pagamento" class="btn btn-secondary btn-xl" style="margin-top: 20px;"><i class="fas fa-address-card"></i>
                                 Ver Comprovante de Pagamento
-                            </a>
+                            </a> 
+                        @else
+                            <a href="#" target="_blank" title="Ver Comprovante de Pagamento" class="btn btn-secondary btn-xl" style="margin-top: 20px; color: red;"><i class="fas fa-address-card"></i>
+                                SEM Comprovante de Pagamento
+                            </a> 
 
 
                         @endif
-  
-              
-
-               
-
-                
+                        @endif
 
 
-
-                 
-
+                        @role('administrador_geral|auxiliar_administrador_geral|administrador')
+                        @if(isset($hospedagem->user->motivoinativos->motivo))
+                        <div class="row has-error">
+                            <div class="form-group col-sm-12 col-md-12 col-lg-12">
+                            <label class="control-label">{{ __('Observação') }}</label>
+                            <input type="text" class="form-control boxed @error('motivo') is-invalid @enderror" readonly="" value="{{ $hospedagem->user->motivoinativos->motivo }}" name="motivo" id="motivo" required readonly="" autofocus onpaste="return false;">
+                             @error('motivo')
+                            <span class="has-error" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                            </div>
+                        </div>
+                        @endif
+                        @endrole
+                    
                     <hr>
+                
+                
+                                    
+               
+             
+                
+              
+            </div>
 
-                    <div class="form-group row">
-                        <div class="col-sm-12 col-xl-12">
+            @role('administrador_geral|auxiliar_administrador_geral')
+                    <div class="row mt-4">
+    <div class="col-12">
                             <p class="title-description"> 
 
                              </p><br>
-                            
-                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-check-circle fa-sm"></i>  
-                                    Aprovar Solicitação!
-                            </button>
+
+                             <!-- SE USUARIO NAO FEZ CHECK IN APARECE O BOTAO APROVAR E NEGAR -->
+                            @if($hospedagem->checkin == null)
+                            @if($hospedagem->status != 6 or $liberaDistribuir == 1)
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-check-circle fa-sm"></i>  
+                                        Aprovar Solicitação!
+                                </button>
                             <!--
                              <a href="javascript:;" data-toggle="modal" onclick="aprovapedido('{{Crypt::encrypt($hospedagem->id)}}')" class="btn btn-primary" data-target="#AprovaModal" title="Aprovar Pedido">
                                     <i class="fas fa-check-square" style="color: #ffffff"></i> Liberar Acesso!</a>
                             -->
 
                                     <a href="javascript:;" data-toggle="modal" onclick="negarpedido('{{Crypt::encrypt($hospedagem->id)}}')" data-target="#NegarModal" class="btn btn-danger" title="Negar Pedido">
-                                    <i class="fas fa-ban fa-sm" ></i> Negar Solicitação!</a>
+                                    <i class="fas fa-ban fa-sm" ></i> Negar Solicitação! </a>
+                            @endif 
+                            @endif        
+                                   
+                                    @if($hospedagem->status == 0 or $hospedagem->status == 7)
+                                    
+                                        <a href="{{ route('envia.mail.espera', ['id' => Crypt::encrypt($hospedagem->id)])  }}" class="btn btn-success" style="color: white;" id="enviar_mensagem" title="Enviar Mensagem">
+                                        <i class="fas fa-envelope" style="color: white;" ></i> Fila de Espera </a>
+                                    
+                                    @endif
+
+                                    @if($hospedagem->status == 7 or $hospedagem->status == 3)
+                                        
+
+                                        <a href="javascript:;" data-toggle="modal" onclick="VoltarReserva('{{ Crypt::encrypt($hospedagem->id) }}')" data-target="#ModalVoltarCancelar" style="color: white;"  class="btn btn-info" title="Cancelar Reserva">
+                                            <i class="fas fa-rotate-left"></i> Retornar Para Distribuição </a> 
 
 
-                            
+                                    @endif
+                                    
+                                    @if($hospedagem->status == 2 or $hospedagem->status == 3 or $hospedagem->status == 5)
+                                        @if($hospedagem->checkin == null)
+
+                                    <a href="javascript:;" data-toggle="modal" onclick="CancelarReserva('{{ Crypt::encrypt($hospedagem->id) }}')" data-target="#ModalCancelar" style="background-color: red" class="btn btn-danger" title="Cancelar Reserva">
+                                            <i class="fas fa-bed" ></i> Cancelar Reserva </a> 
+
+                                        @endif
+                                    @endif
                            
 
 
@@ -349,27 +546,9 @@
                         </div>
                     </div>
 
-
-                </form>
-             
-             
-                
-                <p></p>
-                <p></p>
-
-                <p></p>
-                <p></p>
-                <p></p>
-
-                <p>&nbsp;</p>
-            </div>
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <p class="lead"></p>
-                    <div id="calendars" class="col-centered">
-                    </div>
-                </div>
-            </div>
+                @endrole
+</form>
+           
             
                                     <div class="modal fade" id="AprovaModal">
                                     <div class="modal-dialog" role="document">
@@ -396,39 +575,7 @@
                                 </div>
 
 
-    <div class="modal fade" id="myModal" role="dialog">
-    <div class="modal-dialog">
     
-        <!-- Modal content-->
-        <div class="modal-content">
-        <div class="modal-header" style="padding:5px 10px;">
-            
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-          
-        </div>
-        <div class="modal-body" style="padding:40px 50px;">
-          
-            <div style="width: 50%; height: 50%;">
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <p class="lead"></p>
-                    <div id="calendars" class="col-centered">
-                    </div>
-                </div>
-            </div>
-            <iframe style="width: 1000px; height: 1000px;" src="http://127.0.0.1:8888/GEOFML2.1/public/admin/calendario/unidade/13"></iframe>
-            </div>
-
-
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-danger btn-default pull-left" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
-          
-        </div>
-        </div>
-      
-    </div>
-    </div> 
 
  
 
@@ -456,6 +603,64 @@
                                         </form>
                                     </div>
                                 </div>
+
+
+                                 <div class="modal fade" id="ModalCancelar">
+                                    <div class="modal-dialog" role="document">
+                                        <form action="" id="cancelar" method="get">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h4 class="modal-title"><i class="fa fa-warning"></i> Atenção</h4>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    {{ csrf_field() }}  
+                                                    {{ method_field('DELETE') }}
+                                                    <p >Antes de cancelar sua reserva por motivo de <b style="color: red;">mudança de período ou Unidade Habitacional,</b> consulte a Seção FML para os ajustes necessários.</p><br><br>
+                                                      <p style="color: red;"> Caso efetue o cancelamento da reserva aprovada e fizer nova soicitação, terá de pagar nova diária para aprovação.</p>
+                                                    
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="formSubmitCancelar()">Sim</button>
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Não</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+
+
+
+                                <div class="modal fade" id="ModalVoltarCancelar">
+                                    <div class="modal-dialog" role="document">
+                                        <form action="" id="voltarcancelar" method="get">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h4 class="modal-title"><i class="fa fa-warning"></i> Atenção</h4>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    {{ csrf_field() }}  
+                                                    {{ method_field('DELETE') }}
+                                                    <p > Deseja retornar para Distribuição essa Reserva?</p>
+                                                   
+                                                    
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="formSubmitVoltarCancelar()">Sim</button>
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Não</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+
         </div>
     </div>
 </section>
@@ -466,9 +671,6 @@
 <script src="{{ asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js')}}"></script>
 <script src="{{ asset('js/litepickerBudler.js')}}"></script>
 <script src="{{ asset('js/mobilefriendly.js')}}"></script>
-
-
- 
 
 <script type="text/javascript">
      function aprovapedido(id)
@@ -500,30 +702,38 @@
 
 
 <script>
-function validaGrupo(ufId, cidadeFieldName){
+function validaGrupo(ufId, cidadeFieldName, tipo){
    
-    //alert(cidadeFieldName);
+    //exit();
     if(ufId) {
         $.ajax({
 
-            url: $host+'/cascade/carregarUnidades/'+ufId,
+            url: $host+'/cascade/carregarUnidades/'+ufId+'/'+tipo,
             type: "GET",
             dataType: "json",
 
             success:function(data) {
                 $('select[name="'+cidadeFieldName+'"]').empty();
                 var count = Object.keys(data).length;
-                
                 if(count > 0) {
                     
                     
                     $('select[name="'+cidadeFieldName+'"]').append('<option value="" disabled selected>Selecione Unidade Habitacional</option>');
+                    
+
                     for(var i = 0; i < count; i++) {
+                    
+                    //alert(data[i].tipohabitacao.descricao);
 
                     if(data[i].pet == 1){
+                        
+                       
 
                         $('select[name="'+cidadeFieldName+'"]').append('<option value="'+ data[i].id +'">Nº '+ data[i].sigla +' - '+ data[i].tipohabitacao.descricao +' - PET</option>');
                     }else{
+
+
+
                          $('select[name="'+cidadeFieldName+'"]').append('<option value="'+ data[i].id +'">Nº '+ data[i].sigla +' - '+ data[i].tipohabitacao.descricao +'</option>');
                     }
 
@@ -549,15 +759,45 @@ function validaGrupo(ufId, cidadeFieldName){
     $(document).ready(function(){
 
         $('#unidadeshabitacionaisdiv').hide();
-        $protocol = window.location.protocol;
-        $host = $protocol+ '//'+$(location).attr('host')+'/GEOFML2.1/public';
-        
+        //$protocol = window.location.protocol;
+        //$host = $protocol+ '//'+$(location).attr('host')+'/GEOFML2.1/public';
+        $host = $protocol+ '//'+$(location).attr('host');
+        //alert($host);
         $("#myBtn").click(function(){
         $("#myModal").modal();
         });
 
     });
 
+
+function CancelarReserva(id)
+    {
+         var id = id;
+         var url = '{{ route("cancelar.hospedagem", ":id") }}';
+         url = url.replace(':id', id);
+         $("#cancelar").attr('action', url);
+    }
+
+    function formSubmitCancelar()
+    {
+         $("#cancelar").submit();
+    }
+
+
+
+    function VoltarReserva(id)
+    {
+         var id = id;
+         var url = '{{ route("hospedagem.retornarDistribuicao", ":id") }}';
+         url = url.replace(':id', id);
+         $("#voltarcancelar").attr('action', url);
+
+    }
+
+    function formSubmitVoltarCancelar()
+    {
+         $("#voltarcancelar").submit();
+    }
 
 window.disableLitepickerStyles = true;
 
@@ -576,7 +816,7 @@ const picker = new Litepicker({
 
     dropdowns: {
         "minYear":2020,
-        "maxYear":2022,
+        "maxYear":2023,
         "months":false,
         "years":false,
     },
@@ -609,29 +849,36 @@ const picker = new Litepicker({
         //validaGrupo(ufEndId, 'cidade');
     }
     
-    
     if($('select[name="grupodestinacao"] option:selected').val() != '') {
         var ufId = $('select[name="grupodestinacao"] option:selected').val();
         //alert(ufId);
         //validaGrupo(ufId, 'cidade');
     }
+
     $('select[name="grupodestinacao"]').on('change', function() {
         var ufId = $(this).val();
         $('#unidadeshabitacionaisdiv').show();
+        var tipo = $('input[name="unidade_habitacional_id"]').val();
 
-        //alert(ufId);
+        //alert(tipo);
         //$('#cidade').prop('readonly', null);
-        validaGrupo(ufId, 'unidadeshabitacionais');
+        validaGrupo(ufId, 'unidadeshabitacionais', tipo);
     });
-
 
     $('select[name="unidadeshabitacionais"]').on('change', function() {
         
         var UH = $(this).val();
-        var url = '{{ route("calendario.unidade", ":UH") }}';
+        var data_ini = $('input[name="peridoinicial1"]').val();
+        var data_final = $('input[name="final1"]').val();
+
+        var url = '{{ route("calendario.unidade", [ "unidade" => ":UH", "data_ini" => ":data_ini", "data_final" => ":data_final" ]) }}';
+      
         url = url.replace(':UH', UH);
-        window.open(url, '_blank', 'width=400, height=450');
-        //alert(UH);
+        url = url.replace(':data_ini', data_ini);
+        url = url.replace(':data_final', data_final);
+      
+        window.open(url, '_blank', 'toolbars=0,width=300,height=300,left=200,top=200,scrollbars=1,resizable=1');
+       
 
     });
 
