@@ -4,14 +4,15 @@ namespace App\Http\Controllers\Hospede;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Auth;
 use Carbon\Carbon;
-use Crypt;
 use DateTime;
 use DateInterval;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Mail\MailController;
 use Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Validator;
 
 class HospedeController extends Controller
 {
@@ -95,11 +96,343 @@ class HospedeController extends Controller
     //dd($hospedagem); 
     
     }
-    
+
+
     public function index(){
+
+/*
+Carbon::setTestNow(
+    Carbon::create(2026, 11, 8, 12, 0, 0, 'America/Sao_Paulo')
+);
+*/
+date_default_timezone_set('America/Sao_Paulo');
+$usuarioAutenticado = Auth::user();
+$today = Carbon::today();
+
+
+
+if (
+        (int) $usuarioAutenticado->indeterminado !== 1 &&
+        !empty($usuarioAutenticado->validade)
+    ) {
+        $validade = Carbon::parse(
+            $usuarioAutenticado->validade
+        )->startOfDay();
+
+        if ($validade->lt($today)) {
+            \Session::flash('message', [
+                'msg' => 'Seu documento de identidade está com a data de validade vencida! Favor atualizar o documento para prosseguir.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()->route('home');
+        }
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| Tipos de unidade permitidos pelo posto/graduação
+|--------------------------------------------------------------------------
+*/
+
+$tipos = \App\TipoUndHab::all();
+
+$grupoTarifaIds = \App\GrupoTarifaPostoGraduacao::where(
+        'posto_id',
+        $usuarioAutenticado->postograd_id
+    )
+    ->orderBy('grupotarifa_id', 'DESC')
+    ->pluck('grupotarifa_id')
+    ->unique()
+    ->values();
+
+if ($grupoTarifaIds->isEmpty()) {
+    \Session::flash('message', [
+        'msg' => 'Grupo de Tarifa não cadastrado! Contacte o administrador!',
+        'class' => 'danger',
+    ]);
+
+    return redirect()->back();
+}
+
+/*
+|--------------------------------------------------------------------------
+| Busca os grupos e suas unidades em uma única consulta
+|--------------------------------------------------------------------------
+*/
+
+$gruposTarifa = \App\GrupoTarifa::with('tipoundhabitacao')
+    ->whereIn('id', $grupoTarifaIds)
+    ->get();
+
+/*
+|--------------------------------------------------------------------------
+| Monta o array usado na view
+|--------------------------------------------------------------------------
+|
+| Formato:
+|
+| [
+|     ['id' => 1, 'value' => 'Apartamento'],
+|     ['id' => 2, 'value' => 'Chalé'],
+| ]
+|
+*/
+
+$unidadess = $gruposTarifa
+    ->pluck('tipoundhabitacao')
+    ->filter()
+    ->unique('id')
+    ->sortBy(function ($unidade) {
+        return mb_strtolower($unidade->descricao);
+    })
+    ->map(function ($unidade) {
+        return [
+            'id' => $unidade->id,
+            'value' => $unidade->descricao,
+        ];
+    })
+    ->values()
+    ->toArray();
+
+if (empty($unidadess)) {
+    \Session::flash('message', [
+        'msg' => 'Nenhuma unidade habitacional está vinculada ao grupo de tarifa do usuário.',
+        'class' => 'danger',
+    ]);
+
+    return redirect()->back();
+}
+
+$diaBloqueado = \App\BloqueioDia::where('id', 1)->first();
+
+$diaAtual = (int) $today->day;
+$diaCorte = (int) $diaBloqueado->dia;          // 10
+$diaLimite = (int) $diaBloqueado->limitedia;   // 5
+
+$dataBase = $today->copy()->startOfMonth();
+
+/*
+|--------------------------------------------------------------------------
+| Verifica a temporada da data atual
+|--------------------------------------------------------------------------
+*/
+
+$temporadaAtual = \App\Temporada::whereDate(
+        'data_inicio',
+        '<=',
+        $today->format('Y-m-d')
+    )
+    ->whereDate(
+        'data_termino',
+        '>=',
+        $today->format('Y-m-d')
+    )
+    ->first();
+
+if (!$temporadaAtual) {
+    \Session::flash('message', [
+        'msg' => 'Não existe temporada cadastrada para a data atual.',
+        'class' => 'danger',
+    ]);
+
+    return redirect()->back();
+}
+
+$isAltaTemporada =
+    (int) $temporadaAtual->tipo_temporada_id === 1;
+
+$isBaixaTemporada =
+    (int) $temporadaAtual->tipo_temporada_id === 2;
+
+/*
+|--------------------------------------------------------------------------
+| Descobre o mês principal aberto
+|--------------------------------------------------------------------------
+|
+| Até o dia 10:
+| abre o próximo mês.
+|
+| A partir do dia 11:
+| abre o mês seguinte ao próximo.
+|
+*/
+
+if ($diaAtual <= $diaCorte) {
+    $mesAberto = $dataBase
+        ->copy()
+        ->addMonthNoOverflow();
+} else {
+    $mesAberto = $dataBase
+        ->copy()
+        ->addMonthsNoOverflow(2);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Data máxima
+|--------------------------------------------------------------------------
+|
+| O calendário termina no dia 5 do mês seguinte ao mês aberto.
+|
+| Exemplo:
+| mês aberto = abril
+| maxDate = 5 de maio
+|
+*/
+
+$mesDoLimite = $mesAberto
+    ->copy()
+    ->addMonthNoOverflow()
+    ->startOfMonth();
+
+$ultimoDiaMesLimite = $mesDoLimite
+    ->copy()
+    ->endOfMonth()
+    ->day;
+
+$diaLimiteValido = min(
+    $diaLimite,
+    $ultimoDiaMesLimite
+);
+
+$maxDate = $mesDoLimite
+    ->copy()
+    ->day($diaLimiteValido)
+    ->format('Y-m-d');
+
+/*
+|--------------------------------------------------------------------------
+| Data mínima
+|--------------------------------------------------------------------------
+*/
+
+if ($isBaixaTemporada) {
+
+    /*
+     * Março até novembro:
+     * pode solicitar para hoje, amanhã ou datas futuras.
+     */
+
+    $minDate = $today->format('Y-m-d');
+
+} elseif ($isAltaTemporada) {
+
+    /*
+     * Dezembro, janeiro e fevereiro:
+     * somente o mês que está aberto pelo ciclo de inscrição.
+     */
+
+    $minDate = $mesAberto
+        ->copy()
+        ->startOfMonth()
+        ->format('Y-m-d');
+
+} else {
+
+    \Session::flash('message', [
+        'msg' => 'Tipo de temporada inválido.',
+        'class' => 'danger',
+    ]);
+
+    return redirect()->back();
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Bloqueios administrativos
+|--------------------------------------------------------------------------
+*/
+
+$a = [];
+
+$bloquearDias = \App\LockDays::where('tipo', 1)->get();
+
+foreach ($bloquearDias as $bloqueio) {
+    $a[] = [
+        $bloqueio->data_inicio,
+        $bloqueio->data_fim,
+    ];
+}
+
+$bloquearDias2 = \App\LockDays::where('tipo', 2)->get();
+
+foreach ($bloquearDias2 as $bloqueio) {
+    $a[] = $bloqueio->data_inicio;
+}
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Bloqueio especial de dezembro
+|--------------------------------------------------------------------------
+|
+| Depois de 10 de novembro, dezembro já está fechado.
+|
+*/
+
+if (
+    $today->month === 11 &&
+    $diaAtual > $diaCorte
+) {
+    $dezembro = $today
+        ->copy()
+        ->startOfMonth()
+        ->addMonthNoOverflow();
+
+    $a[] = [
+        $dezembro->copy()->startOfMonth()->format('Y-m-d'),
+        $dezembro->copy()->endOfMonth()->format('Y-m-d'),
+    ];
+}
+
+$a = json_encode($a);
+
+
+/*
+|--------------------------------------------------------------------------
+| Outros dados da tela
+|--------------------------------------------------------------------------
+*/
+
+$horario = \App\Horario::first();
+
+if (!$horario) {
+    \Session::flash('message', [
+        'msg' => 'Horários de entrada e saída não cadastrados.',
+        'class' => 'danger',
+    ]);
+
+    return redirect()->back();
+}
+
+$minYear = Carbon::parse($minDate)->format('Y');
+$maxYear = Carbon::parse($maxDate)->format('Y');
+
+/*
+|--------------------------------------------------------------------------
+| Retorno para a view
+|--------------------------------------------------------------------------
+*/
+return view('hospedagem.create', compact(
+    'diaBloqueado',
+    'horario',
+    'unidadess',
+    'minDate',
+    'maxDate',
+    'minYear',
+    'maxYear',
+    'a'
+));
+
+    }
+    
+    public function index_OLD(){
          
 
-       // dd('INDEX CADASTRA PEDIDO');
+        //dd('INDEX CADASTRA PEDIDO');
 
         date_default_timezone_set('America/Sao_Paulo');
         $usuarioAutenticado = Auth::user();
@@ -162,13 +495,11 @@ class HospedeController extends Controller
         $data_inicio = $altaTemporada->data_inicio;
         $data_termino = $altaTemporada->data_termino;
         $diaBloqueado = \App\BloqueioDia::where('id', 1)->first();
-     
-
-      $today = Carbon::now();
-
-$mesAtual = (int) $today->format('m');
-$ano = (int) $today->format('Y');
-$hoje = (int) $today->format('d');
+        
+        $today = Carbon::now();
+        $mesAtual = (int) $today->format('m');
+        $ano = (int) $today->format('Y');
+        $hoje = (int) $today->format('d');
        
 
        
@@ -217,7 +548,7 @@ $hoje = (int) $today->format('d');
 
         
 // Para simular 28 de dezembro, use temporariamente:
-// $today = Carbon::create(2026, 12, 28, 12, 0, 0);
+//$today = Carbon::create(2026, 11, 28, 12, 0, 0);
 
 $a = [];
 
@@ -521,10 +852,408 @@ if ($mesAtual === 12) {
         return view('hospedagem.create', compact('tipos', 'minDate', 'maxDate', 'hoje', 'a', 'horario', 'diaBloqueado', 'unidades', 'datasReservadas','diasReservados','maxYear', 'minYear', 'unidadess'));
     }
 
+public function solicitarinscricaoEditNOVO($id)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Descriptografa o ID
+    |--------------------------------------------------------------------------
+    */
 
+    try {
+        $id = Crypt::decrypt($id);
+    } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+        abort(404);
+    }
 
-        public function solicitarinscricaoEditNOVO($id){
+    $usuarioAutenticado = Auth::user();
+    $today = Carbon::today();
 
+    /*
+    |--------------------------------------------------------------------------
+    | Busca o pedido
+    |--------------------------------------------------------------------------
+    */
+
+    $hospedagem = \App\Hospede::findOrFail($id);
+
+    /*
+     * IMPORTANTE:
+     * Aqui também deve ser verificado se o pedido pertence ao usuário.
+     *
+     * Ajuste "user_id" para o nome real da coluna do usuário na tabela hospedes.
+     *
+     * Exemplo:
+     *
+     * if ((int) $hospedagem->user_id !== (int) $usuarioAutenticado->id) {
+     *     abort(403);
+     * }
+     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validade do documento
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        (int) $usuarioAutenticado->indeterminado !== 1 &&
+        !empty($usuarioAutenticado->validade)
+    ) {
+        $validade = Carbon::parse(
+            $usuarioAutenticado->validade
+        )->startOfDay();
+
+        if ($validade->lt($today)) {
+            \Session::flash('message', [
+                'msg' => 'Seu documento de identidade está com a data de validade vencida! Favor atualizar o documento para prosseguir.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()->route('home');
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tipos e unidades permitidas
+    |--------------------------------------------------------------------------
+    */
+
+    $tipos = \App\TipoUndHab::all();
+
+    $grupoTarifaIds = \App\GrupoTarifaPostoGraduacao::where(
+            'posto_id',
+            $usuarioAutenticado->postograd_id
+        )
+        ->orderBy('grupotarifa_id', 'DESC')
+        ->pluck('grupotarifa_id')
+        ->unique()
+        ->values();
+
+    if ($grupoTarifaIds->isEmpty()) {
+        \Session::flash('message', [
+            'msg' => 'Grupo de Tarifa não cadastrado! Contacte o administrador!',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back();
+    }
+
+    $gruposTarifa = \App\GrupoTarifa::with('tipoundhabitacao')
+        ->whereIn('id', $grupoTarifaIds)
+        ->get();
+
+    /*
+     * Coleção de unidades, caso a view antiga ainda utilize $unidades.
+     */
+
+    $unidades = $gruposTarifa
+        ->pluck('tipoundhabitacao')
+        ->filter()
+        ->unique('id')
+        ->sortBy(function ($unidade) {
+            return mb_strtolower($unidade->descricao);
+        })
+        ->values();
+
+    /*
+     * Array no mesmo formato usado pela tela create.
+     */
+
+    $unidadess = $unidades
+        ->map(function ($unidade) {
+            return [
+                'id' => $unidade->id,
+                'value' => $unidade->descricao,
+            ];
+        })
+        ->values()
+        ->toArray();
+
+    if (empty($unidadess)) {
+        \Session::flash('message', [
+            'msg' => 'Nenhuma unidade habitacional está vinculada ao grupo de tarifa do usuário.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configuração do dia de corte
+    |--------------------------------------------------------------------------
+    */
+
+    $diaBloqueado = \App\BloqueioDia::find(1);
+
+    if (!$diaBloqueado) {
+        \Session::flash('message', [
+            'msg' => 'Configuração do período de inscrições não encontrada.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back();
+    }
+
+    $diaAtual = (int) $today->day;
+    $diaCorte = (int) $diaBloqueado->dia;
+    $diaLimite = (int) $diaBloqueado->limitedia;
+
+    $dataBase = $today->copy()->startOfMonth();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Temporada atual
+    |--------------------------------------------------------------------------
+    */
+
+    $temporadaAtual = \App\Temporada::whereDate(
+            'data_inicio',
+            '<=',
+            $today->format('Y-m-d')
+        )
+        ->whereDate(
+            'data_termino',
+            '>=',
+            $today->format('Y-m-d')
+        )
+        ->first();
+
+    if (!$temporadaAtual) {
+        \Session::flash('message', [
+            'msg' => 'Não existe temporada cadastrada para a data atual.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back();
+    }
+
+    $isAltaTemporada =
+        (int) $temporadaAtual->tipo_temporada_id === 1;
+
+    $isBaixaTemporada =
+        (int) $temporadaAtual->tipo_temporada_id === 2;
+
+    if (!$isAltaTemporada && !$isBaixaTemporada) {
+        \Session::flash('message', [
+            'msg' => 'Tipo de temporada inválido.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mês aberto para solicitação
+    |--------------------------------------------------------------------------
+    |
+    | Até o dia 10:
+    | abre o próximo mês.
+    |
+    | A partir do dia 11:
+    | abre o mês seguinte ao próximo.
+    |
+    */
+
+    if ($diaAtual <= $diaCorte) {
+        $mesAberto = $dataBase
+            ->copy()
+            ->addMonthNoOverflow();
+    } else {
+        $mesAberto = $dataBase
+            ->copy()
+            ->addMonthsNoOverflow(2);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Data máxima
+    |--------------------------------------------------------------------------
+    |
+    | O período pode terminar até o limitedia do mês seguinte.
+    |
+    */
+
+    $mesDoLimite = $mesAberto
+        ->copy()
+        ->addMonthNoOverflow()
+        ->startOfMonth();
+
+    $ultimoDiaMesLimite = $mesDoLimite
+        ->copy()
+        ->endOfMonth()
+        ->day;
+
+    $diaLimiteValido = min(
+        $diaLimite,
+        $ultimoDiaMesLimite
+    );
+
+    $maxDate = $mesDoLimite
+        ->copy()
+        ->day($diaLimiteValido)
+        ->format('Y-m-d');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Data mínima
+    |--------------------------------------------------------------------------
+    */
+
+    if ($isBaixaTemporada) {
+        /*
+         * Na baixa temporada, pode solicitar a partir de hoje.
+         */
+
+        $minDate = $today->format('Y-m-d');
+    } else {
+        /*
+         * Na alta temporada, inicia no primeiro dia do mês aberto.
+         */
+
+        $minDate = $mesAberto
+            ->copy()
+            ->startOfMonth()
+            ->format('Y-m-d');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Transição fevereiro para março
+    |--------------------------------------------------------------------------
+    |
+    | Depois do dia 10 de fevereiro, março continua disponível porque já
+    | pertence à baixa temporada.
+    |
+    */
+
+    if (
+        (int) $today->month === 2 &&
+        $diaAtual > $diaCorte
+    ) {
+        $marco = $dataBase
+            ->copy()
+            ->addMonthNoOverflow()
+            ->startOfMonth();
+
+        $minDate = $marco->format('Y-m-d');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bloqueios administrativos
+    |--------------------------------------------------------------------------
+    */
+
+    $a = [];
+
+    $bloquearDias = \App\LockDays::where('tipo', 1)->get();
+
+    foreach ($bloquearDias as $bloqueio) {
+        $a[] = [
+            $bloqueio->data_inicio,
+            $bloqueio->data_fim,
+        ];
+    }
+
+    $bloquearDiasIndividuais = \App\LockDays::where('tipo', 2)->get();
+
+    foreach ($bloquearDiasIndividuais as $bloqueio) {
+        $a[] = $bloqueio->data_inicio;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bloqueio especial de dezembro
+    |--------------------------------------------------------------------------
+    |
+    | Depois de 10 de novembro, as inscrições para dezembro já encerraram.
+    |
+    */
+
+    if (
+        (int) $today->month === 11 &&
+        $diaAtual > $diaCorte
+    ) {
+        $dezembro = $dataBase
+            ->copy()
+            ->addMonthNoOverflow();
+
+        $a[] = [
+            $dezembro->copy()->startOfMonth()->format('Y-m-d'),
+            $dezembro->copy()->endOfMonth()->format('Y-m-d'),
+        ];
+    }
+
+    $a = json_encode($a);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Horários
+    |--------------------------------------------------------------------------
+    */
+
+    $horario = \App\Horario::first();
+
+    if (!$horario) {
+        \Session::flash('message', [
+            'msg' => 'Horários de entrada e saída não cadastrados.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Período atual do pedido
+    |--------------------------------------------------------------------------
+    |
+    | O Litepicker da criação está configurado como DD-MM-YYYY.
+    |
+    */
+
+    $peridoinicial =
+        Carbon::parse($hospedagem->data_inicio)->format('d-m-Y')
+        . ' - ' .
+        Carbon::parse($hospedagem->data_termino)->format('d-m-Y');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Anos exibidos no calendário
+    |--------------------------------------------------------------------------
+    */
+
+    $minYear = Carbon::parse($minDate)->format('Y');
+    $maxYear = Carbon::parse($maxDate)->format('Y');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Retorno
+    |--------------------------------------------------------------------------
+    */
+
+    return view('hospedagem.edit_inscricao', compact(
+        'hospedagem',
+        'peridoinicial',
+        'tipos',
+        'unidades',
+        'unidadess',
+        'diaBloqueado',
+        'horario',
+        'minDate',
+        'maxDate',
+        'minYear',
+        'maxYear',
+        'a'
+    ));
+}
+
+        public function solicitarinscricaoEditNOVO_OLD($id){
+    
         $id = Crypt::decrypt($id);   
         date_default_timezone_set('America/Sao_Paulo');
         $usuarioAutenticado = Auth::user();
@@ -1458,11 +2187,11 @@ if ($mesAtual == 12) {
 
     public function storeEdit(Request $request){
 
-        
+       
         date_default_timezone_set('America/Sao_Paulo');
         $totalValor = Crypt::decrypt($request->cod);
         $valortarifa = $request->valortarifa;
-
+dd($totalValor);
         $inicial1 = substr($request->peridoinicial, 0, -13);
         $inicial = $inicial1;
 
@@ -2922,12 +3651,494 @@ if ($mesAtual == 12) {
 
 
 
+//////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////q
+public function solicitarinscricaoEditConfirmar(Request $request)
+{
+    $usuario = Auth::user();
+    $today = Carbon::today();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validação básica dos campos
+    |--------------------------------------------------------------------------
+    */
+
+    $validator = Validator::make(
+        $request->all(),
+        [
+            'id' => ['required', 'integer'],
+            'peridoinicial' => ['required', 'string'],
+            'tipo' => ['required', 'integer'],
+            'adultos' => ['required', 'integer', 'min:1'],
+            'criancas' => ['required', 'integer', 'min:0'],
+            'pne' => ['required', 'in:0,1'],
+            'pet' => ['required', 'in:0,1'],
+            'observacao' => ['nullable', 'string', 'max:250'],
+        ],
+        [
+            'peridoinicial.required' => 'Informe o período de hospedagem.',
+            'tipo.required' => 'Selecione o tipo de unidade habitacional.',
+            'adultos.required' => 'Informe a quantidade de adultos.',
+            'adultos.min' => 'Deve haver pelo menos um adulto.',
+            'criancas.required' => 'Informe a quantidade de crianças.',
+            'pne.required' => 'Informe se haverá hóspede PNE.',
+            'pet.required' => 'Informe se haverá PET.',
+            'observacao.max' => 'A observação deve possuir no máximo 250 caracteres.',
+        ]
+    );
+
+    if ($validator->fails()) {
+        return redirect()
+            ->back()
+            ->withErrors($validator)
+            ->withInput();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pedido que está sendo editado
+    |--------------------------------------------------------------------------
+    */
+
+    $pedidoAtual = \App\Hospede::where('id', $request->id)
+        ->where('user_id', $usuario->id)
+        ->first();
+
+    if (!$pedidoAtual) {
+        \Session::flash('message', [
+            'msg' => 'Pedido não encontrado ou não pertence ao usuário.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back();
+    }
+
+    /*
+     * Caso exista uma coluna de status, faça também a validação.
+     *
+     * Exemplo:
+     *
+     * if (!in_array($pedidoAtual->status, ['PENDENTE', 'AGUARDANDO'])) {
+     *     return redirect()->back()->with(...);
+     * }
+     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validade do documento
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        (int) $usuario->indeterminado !== 1 &&
+        !empty($usuario->validade)
+    ) {
+        $validade = Carbon::parse($usuario->validade)->startOfDay();
+
+        if ($validade->lt($today)) {
+            \Session::flash('message', [
+                'msg' => 'Seu documento de identidade está vencido. Atualize o documento para prosseguir.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()->route('home');
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Interpretação do período
+    |--------------------------------------------------------------------------
+    |
+    | Formato recebido:
+    | 08-11-2026 - 12-11-2026
+    |
+    */
+
+    try {
+        [$entradaTexto, $saidaTexto] = array_map(
+            'trim',
+            explode(' - ', $request->peridoinicial)
+        );
+
+        $dataInicio = Carbon::createFromFormat(
+            'd-m-Y',
+            $entradaTexto
+        )->startOfDay();
+
+        $dataTermino = Carbon::createFromFormat(
+            'd-m-Y',
+            $saidaTexto
+        )->startOfDay();
+    } catch (\Throwable $e) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'peridoinicial' => 'O período informado possui um formato inválido.',
+            ]);
+    }
+
+    if ($dataInicio->gte($dataTermino)) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'peridoinicial' => 'A data de saída deve ser posterior à data de entrada.',
+            ]);
+    }
+
+    $diasHospedagem = $dataInicio->diffInDays($dataTermino);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configuração da janela de inscrição
+    |--------------------------------------------------------------------------
+    */
+
+    $diaBloqueado = \App\BloqueioDia::find(1);
+
+    if (!$diaBloqueado) {
+        \Session::flash('message', [
+            'msg' => 'Configuração do período de inscrições não encontrada.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back()->withInput();
+    }
+
+    $temporadaAtual = \App\Temporada::whereDate(
+            'data_inicio',
+            '<=',
+            $today->format('Y-m-d')
+        )
+        ->whereDate(
+            'data_termino',
+            '>=',
+            $today->format('Y-m-d')
+        )
+        ->first();
+
+    if (!$temporadaAtual) {
+        \Session::flash('message', [
+            'msg' => 'Não existe temporada cadastrada para a data atual.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back()->withInput();
+    }
+
+    $janela = $this->calcularJanelaInscricao(
+        $today,
+        $diaBloqueado,
+        $temporadaAtual
+    );
+
+    $minDate = Carbon::parse($janela['minDate'])->startOfDay();
+    $maxDate = Carbon::parse($janela['maxDate'])->startOfDay();
+
+    if ($dataInicio->lt($minDate) || $dataTermino->gt($maxDate)) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'peridoinicial' =>
+                    'O período deve estar entre '
+                    . $minDate->format('d/m/Y')
+                    . ' e '
+                    . $maxDate->format('d/m/Y')
+                    . '.',
+            ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bloqueios administrativos
+    |--------------------------------------------------------------------------
+    */
+
+    $possuiBloqueio = $this->periodoPossuiBloqueio(
+        $dataInicio,
+        $dataTermino
+    );
+
+    if ($possuiBloqueio) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'peridoinicial' => 'O período selecionado contém uma data bloqueada pela administração.',
+            ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Unidade permitida para o posto/graduação
+    |--------------------------------------------------------------------------
+    */
+
+    $grupoTarifaIds = \App\GrupoTarifaPostoGraduacao::where(
+            'posto_id',
+            $usuario->postograd_id
+        )
+        ->pluck('grupotarifa_id')
+        ->unique();
+
+    if ($grupoTarifaIds->isEmpty()) {
+        \Session::flash('message', [
+            'msg' => 'Grupo de tarifa não cadastrado para seu posto/graduação.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back()->withInput();
+    }
+
+    $grupoUnidade = \App\GrupoTarifa::whereIn(
+            'id',
+            $grupoTarifaIds
+        )
+        ->where(
+            'unidade_habitacional_id',
+            $request->tipo
+        )
+        ->first();
+
+    if (!$grupoUnidade) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'tipo' => 'A unidade selecionada não está disponível para seu posto/graduação.',
+            ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tarifa correspondente
+    |--------------------------------------------------------------------------
+    */
+
+    $tarifa = \App\Tarifas::where(
+            'tipoundhab_id',
+            $request->tipo
+        )
+        ->whereIn(
+            'grupo_destinacao_id',
+            $grupoTarifaIds
+        )
+        ->first();
+
+    if (!$tarifa) {
+        \Session::flash('message', [
+            'msg' => 'Tarifa não cadastrada para a unidade e grupo do usuário.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back()->withInput();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conta as diárias de alta e baixa temporada
+    |--------------------------------------------------------------------------
+    |
+    | A diária começa na entrada e termina na saída.
+    | O dia da saída não é contado como uma nova diária.
+    |
+    */
+
+    $diasAltaTemporada = 0;
+    $diasBaixaTemporada = 0;
+
+    for ($data = $dataInicio->copy(); $data->lt($dataTermino); $data->addDay()) {
+        $temporadaDaDiaria = \App\Temporada::whereDate(
+                'data_inicio',
+                '<=',
+                $data->format('Y-m-d')
+            )
+            ->whereDate(
+                'data_termino',
+                '>=',
+                $data->format('Y-m-d')
+            )
+            ->first();
+
+        if (!$temporadaDaDiaria) {
+            \Session::flash('message', [
+                'msg' => 'Existe uma data do período sem temporada cadastrada. Contacte o administrador.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()->back()->withInput();
+        }
+
+        if ((int) $temporadaDaDiaria->tipo_temporada_id === 1) {
+            $diasAltaTemporada++;
+        } elseif ((int) $temporadaDaDiaria->tipo_temporada_id === 2) {
+            $diasBaixaTemporada++;
+        } else {
+            \Session::flash('message', [
+                'msg' => 'Tipo de temporada inválido. Contacte o administrador.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()->back()->withInput();
+        }
+    }
+
+    $isAltaTemporada = $diasAltaTemporada > 0;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Limite de sete diárias na alta temporada
+    |--------------------------------------------------------------------------
+    */
+
+    if ($isAltaTemporada && $diasHospedagem > 7) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'peridoinicial' => 'Na alta temporada, o período máximo é de 7 diárias.',
+            ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Limite mensal de pedidos
+    |--------------------------------------------------------------------------
+    */
+
+    $quantidadeReservas = \App\QuantidadeReserva::first();
+
+    if (!$quantidadeReservas) {
+        \Session::flash('message', [
+            'msg' => 'Limite máximo de reservas não configurado.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->back()->withInput();
+    }
+
+    $pedidosDoMes = \App\Hospede::where(
+            'user_id',
+            $usuario->id
+        )
+        ->where('id', '<>', $pedidoAtual->id)
+        ->whereYear('data_inicio', $dataInicio->year)
+        ->whereMonth('data_inicio', $dataInicio->month)
+        ->count();
+
+    $pedidosCampingMotorhome = \App\Hospede::where(
+            'user_id',
+            $usuario->id
+        )
+        ->where('id', '<>', $pedidoAtual->id)
+        ->whereYear('data_inicio', $dataInicio->year)
+        ->whereMonth('data_inicio', $dataInicio->month)
+        ->whereIn('tipo_und_id', [11, 12])
+        ->count();
+
+    $tipoCampingMotorhome = in_array(
+        (int) $request->tipo,
+        [11, 12],
+        true
+    );
+
+    if ($tipoCampingMotorhome) {
+        if ($pedidosCampingMotorhome >= 2) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'tipo' => 'Você já alcançou o limite de 2 pedidos para Camping e/ou Motor-Home neste mês.',
+                ]);
+        }
+    } else {
+        $limiteMensal = $isAltaTemporada
+            ? (int) $quantidadeReservas->reservas
+            : (int) $quantidadeReservas->qnt_reservas_baixa_temporada;
+
+        if ($pedidosDoMes >= $limiteMensal) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'peridoinicial' =>
+                        'Você já alcançou o limite de '
+                        . $limiteMensal
+                        . ' pedido(s) para esse mês.',
+                ]);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cálculo dos valores
+    |--------------------------------------------------------------------------
+    */
+
+    $calculaDiariaAlta =
+        $diasAltaTemporada * (float) $tarifa->valor;
+
+    $calculaDiariaBaixa =
+        $diasBaixaTemporada * (float) $tarifa->valor_baixa;
+
+    $totalValor =
+        $calculaDiariaAlta + $calculaDiariaBaixa;
+
+    /*
+     * Utilizado apenas para exibição.
+     * Em períodos mistos, há dois valores de diária diferentes.
+     */
+
+    $valorTarifa = $isAltaTemporada
+        ? $tarifa->valor
+        : $tarifa->valor_baixa;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dados enviados à confirmação
+    |--------------------------------------------------------------------------
+    */
+
+    $request->merge([
+        'data_inicio' => $dataInicio->format('Y-m-d'),
+        'data_termino' => $dataTermino->format('Y-m-d'),
+    ]);
+
+    $consulta = $request;
+    $tipos = \App\TipoUndHab::all();
+
+    $totalValorCriptografado = Crypt::encrypt($totalValor);
+
+    return view('hospedagem.confirmarantigoEdit', [
+        'consulta' => $consulta,
+        'tipos' => $tipos,
+        'diasHospedagem' => $diasHospedagem,
+        'diasAltaTemporada' => $diasAltaTemporada,
+        'diasBaixaTemporada' => $diasBaixaTemporada,
+        'calculaDiariaAlta' => $calculaDiariaAlta,
+        'calculaDiariaBaixa' => $calculaDiariaBaixa,
+        'totalValor' => $totalValorCriptografado,
+        'valorTarifa' => $valorTarifa,
+    ]);
+}
+
+
+
 
 
     //////////////////////////////////////////////////////////////////////////////////////////
-   public function solicitarinscricaoEditConfirmar(Request $request){
+   public function solicitarinscricaoEditConfirmar_OLD(Request $request){
         
-            
+           
             date_default_timezone_set('America/Sao_Paulo');
             //dd($request->all());
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4618,6 +5829,110 @@ public function meuspedido($id)
 
     }
 
+private function calcularJanelaInscricao(
+    Carbon $today,
+    $diaBloqueado,
+    $temporadaAtual
+): array {
+    $diaAtual = (int) $today->day;
+    $diaCorte = (int) $diaBloqueado->dia;
+    $diaLimite = (int) $diaBloqueado->limitedia;
 
+    $dataBase = $today->copy()->startOfMonth();
+
+    if ($diaAtual <= $diaCorte) {
+        $mesAberto = $dataBase
+            ->copy()
+            ->addMonthNoOverflow();
+    } else {
+        $mesAberto = $dataBase
+            ->copy()
+            ->addMonthsNoOverflow(2);
+    }
+
+    $mesDoLimite = $mesAberto
+        ->copy()
+        ->addMonthNoOverflow()
+        ->startOfMonth();
+
+    $diaLimiteValido = min(
+        $diaLimite,
+        $mesDoLimite->copy()->endOfMonth()->day
+    );
+
+    $maxDate = $mesDoLimite
+        ->copy()
+        ->day($diaLimiteValido);
+
+    $isAltaTemporada =
+        (int) $temporadaAtual->tipo_temporada_id === 1;
+
+    $isBaixaTemporada =
+        (int) $temporadaAtual->tipo_temporada_id === 2;
+
+    if ($isBaixaTemporada) {
+        $minDate = $today->copy();
+    } elseif ($isAltaTemporada) {
+        $minDate = $mesAberto
+            ->copy()
+            ->startOfMonth();
+    } else {
+        throw new \RuntimeException(
+            'Tipo de temporada inválido.'
+        );
+    }
+
+    /*
+     * Depois do dia 10 de fevereiro, março continua disponível,
+     * pois março já pertence à baixa temporada.
+     */
+
+    if (
+        (int) $today->month === 2 &&
+        $diaAtual > $diaCorte
+    ) {
+        $minDate = $dataBase
+            ->copy()
+            ->addMonthNoOverflow()
+            ->startOfMonth();
+    }
+
+    return [
+        'minDate' => $minDate->format('Y-m-d'),
+        'maxDate' => $maxDate->format('Y-m-d'),
+    ];
+}
+
+private function periodoPossuiBloqueio(
+    Carbon $dataInicio,
+    Carbon $dataTermino
+): bool {
+    /*
+     * Tipo 1: intervalo.
+     *
+     * Verifica se existe interseção entre o período solicitado
+     * e algum intervalo bloqueado.
+     */
+
+    $bloqueioIntervalo = \App\LockDays::where('tipo', 1)
+        ->whereDate('data_inicio', '<', $dataTermino->format('Y-m-d'))
+        ->whereDate('data_fim', '>=', $dataInicio->format('Y-m-d'))
+        ->exists();
+
+    if ($bloqueioIntervalo) {
+        return true;
+    }
+
+    /*
+     * Tipo 2: dia individual.
+     *
+     * A saída não é considerada uma diária. Por isso usamos "< dataTermino".
+     */
+
+    return \App\LockDays::where('tipo', 2)
+        ->whereDate('data_inicio', '>=', $dataInicio->format('Y-m-d'))
+        ->whereDate('data_inicio', '<', $dataTermino->format('Y-m-d'))
+        ->exists();
+}
 
 }

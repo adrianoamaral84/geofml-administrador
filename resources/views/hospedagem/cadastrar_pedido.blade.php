@@ -105,7 +105,7 @@
              <div class="form-group col-sm-12 col-md-12 col-lg-6">
                             <label class="control-label">{{ __('Adultos') }}</label>
                              <small>Quantidade de pessoas que ocuparão a UH</small>
-                            <input type="number" min="1" class="form-control boxed @error('adultos') is-invalid @enderror" value="{{ old('adultos', $hospedagem->adulto) }}" name="adultos" id="adultos" autofocus required maxlength="10" onpaste="return false;">
+                            <input type="number" min="1" class="form-control boxed @error('adultos') is-invalid @enderror" value="{{ old('adultos') }}" name="adultos" id="adultos" autofocus required maxlength="10" onpaste="return false;">
                             
                             @error('adultos')
                                 <span class="has-error" role="alert">
@@ -117,7 +117,7 @@
             <div class="form-group col-sm-12 col-md-12 col-lg-6">
                             <label class="control-label">{{ __('Crianças até 5 anos') }}</label>
                             <small>Quantidade de crianças que ocuparão a UH</small>
-                            <input type="number" min="0" class="form-control boxed @error('criancas') is-invalid @enderror" value="{{ old('criancas', $hospedagem->crianca) }}" name="criancas" id="criancas" autofocus required maxlength="10" onpaste="return false;">
+                            <input type="number" min="0" class="form-control boxed @error('criancas') is-invalid @enderror" value="{{ old('criancas') }}" name="criancas" id="criancas" autofocus required maxlength="10" onpaste="return false;">
                             @error('criancas')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -171,7 +171,7 @@
             <div class="row has-error">
             <div class="form-group col-sm-12 col-md-12 col-lg-12">
                             <label class="control-label">{{ __('Observação') }}</label>
-                            <input type="text" class="form-control boxed @error('observacao') is-invalid @enderror" value="{{ old('observacao', $hospedagem->observacao) }}" name="observacao" id="observacao" autofocus maxlength="250" onpaste="return false;">
+                            <input type="text" class="form-control boxed @error('observacao') is-invalid @enderror" value="{{ old('observacao') }}" name="observacao" id="observacao" autofocus maxlength="250" onpaste="return false;">
                             @error('observacao')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>

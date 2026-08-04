@@ -6,7 +6,7 @@
         <div class="title-block">
             <div class="row">
                 <div class="col-md-6">
-                    <h3 class="title"> Minhas Solicitações  <a href="{{route('hospede.solicitarinscricao')}}" class="btn btn-primary btn-sm rounded-s"> Add </a></h3> 
+                    <h3 class="title">Minhas Solicitações  <a href="{{route('hospede.solicitarinscricao')}}" class="btn btn-primary btn-sm rounded-s"> Add </a></h3> 
                     <small>Minha lista de solicitações de hospedagem!</small>
                 </div>
             </div>

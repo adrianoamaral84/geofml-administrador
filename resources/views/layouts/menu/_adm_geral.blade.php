@@ -20,6 +20,19 @@
             </a>
         </li>
         <li>
+            <a href="{{ route('documentos.vencidos') }}">
+                <i class="fa fa-file-text"></i>
+                Documentos Vencidos
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ route('user.mecenas') }}">
+                <i class="fa fa-star"></i>
+                Mecenas
+            </a>
+        </li>
+        <li>
             <a href="{{ route('consulta.atendentes.index') }}">
                 <i class="fa fa-male"></i>
                 Consulta Atendente
@@ -51,19 +64,7 @@
             </a>
         </li>
 
-        <li>
-            <a href="{{ route('documentos.vencidos') }}">
-                <i class="fa fa-file-text"></i>
-                Documentos Vencidos
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('user.mecenas') }}">
-                <i class="fa fa-star"></i>
-                Mecenas
-            </a>
-        </li>
+        
     </ul>
 </li>
 

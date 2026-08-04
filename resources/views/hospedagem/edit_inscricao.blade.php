@@ -10,8 +10,8 @@
         <div class="title-block">
             <div class="row">
                 <div class="col-md-12">
-                    <h3 class="title"> Editar Inscrição</h3>
-                   <small>Página destinada a inscrição para a Área de Lazer do Forte Marechal Luz.</small><br>
+                    <h3 class="title"> Editar Inscrição </h3>
+                    <small>Página destinada a inscrição para a Área de Lazer do Forte Marechal Luz.</small><br>
                     <small style="color: red;"><b>As inscrições serão aceitas até o dia <b>{{ $diaBloqueado->dia }}</b> do mês anterior ao mês pretendido.</b></small><br>
                     <small>Não há o número mínimo de diárias (pacotes) e a reserva será no máximo de <b>7 (sete)</b> diárias na alta temporada</small><br>
                     <small>Durante a baixa temporada o usuário poderá reservar até 2 (duas) UH, desde que haja disponibilidade</small><br>
@@ -36,9 +36,9 @@
 
                                 <form id="password-form" action="{{ route('hospede.edita.confirmar') }}" method="POST">
                                     @csrf
-                                <!--input type="hidden" name="id" value="{{$hospedagem->id}}">-->
-                                <input type="hidden" name="id" value="{{ $consulta->id }}">
-                          
+                               
+                                <input type="hidden" id="id" name="id" value="{{ old('id',$hospedagem->id) }}">
+                                
 
         <div class="row has-error">
  <div class="form-group col-sm-12 col-md-12 col-lg-6">
@@ -47,10 +47,22 @@
                 
                 
 
-                 <!-- <input type="text" name="peridoinicial" id="peridoinicial"   value="{{  $peridoinicial }}" class="form-control boxed @error('peridoinicial') is-invalid @enderror" required onpaste="return false;"> -->
-                  <!--<input type="text" class="form-control boxed" name="periodo" id="peridoinicial" value="{{ \Carbon\Carbon::parse($consulta->data_inicio)->format('d-m-Y') }} - {{ \Carbon\Carbon::parse($consulta->data_fim)->format('d-m-Y') }}" placeholder="Selecione o período" readonly onkeydown="return false;" onpaste="return false;" required> -->
-                <input type="text" class="form-control boxed" name="periodo" id="peridoinicial" value="{{ \Carbon\Carbon::parse($consulta->data_inicio)->format('d-m-Y') }} - {{ \Carbon\Carbon::parse($consulta->data_termino)->format('d-m-Y') }}" placeholder="Selecione o período" onmousedown="return false;" readonly onkeydown="return false;" required>
-                  
+        
+                  <input
+    type="text"
+    name="peridoinicial"
+    id="peridoinicial"
+    value="{{ old(
+        'peridoinicial',
+        \Carbon\Carbon::parse($hospedagem->data_inicio)->format('d-m-Y')
+        . ' - ' .
+        \Carbon\Carbon::parse($hospedagem->data_termino)->format('d-m-Y')
+    ) }}"
+    class="form-control boxed @error('peridoinicial') is-invalid @enderror"
+    placeholder="Selecione o período"
+    readonly
+    required
+>
                  <small><b>Clica na data de início e arraste o mouse para a data de saída</b></small>
                             @error('peridoinicial')
                                 <span class="has-error" role="alert">
@@ -97,10 +109,11 @@
        
         <div class="row form-group has-error">
 
-             <div class="form-group col-sm-12 col-md-12 col-lg-6">
+               <div class="form-group col-sm-12 col-md-12 col-lg-6">
                             <label class="control-label">{{ __('Adultos') }}</label>
                              <small>Quantidade de pessoas que ocuparão a UH</small>
-                            <input type="number" min="1" class="form-control boxed @error('adultos') is-invalid @enderror" value="{{ $hospedagem->adulto }}" name="adultos" id="adultos" autofocus required maxlength="10" onpaste="return false;">
+                            <input type="number" min="1" class="form-control boxed @error('adultos') is-invalid @enderror" value="{{ old('adultos', $hospedagem->adulto) }}" name="adultos" id="adultos" autofocus required maxlength="10" onpaste="return false;">
+                            
                             @error('adultos')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -108,10 +121,10 @@
                             @enderror
             </div>
 
-            <div class="form-group col-sm-12 col-md-12 col-lg-6">
+           <div class="form-group col-sm-12 col-md-12 col-lg-6">
                             <label class="control-label">{{ __('Crianças até 5 anos') }}</label>
                             <small>Quantidade de crianças que ocuparão a UH</small>
-                            <input type="number" min="0" class="form-control boxed @error('criancas') is-invalid @enderror" value="{{ $hospedagem->crianca }}" name="criancas" id="criancas" autofocus required maxlength="10" onpaste="return false;">
+                            <input type="number" min="0" class="form-control boxed @error('criancas') is-invalid @enderror" value="{{ old('criancas', $hospedagem->crianca) }}" name="criancas" id="criancas" autofocus required maxlength="10" onpaste="return false;">
                             @error('criancas')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -173,16 +186,13 @@
             <div class="row has-error">
             <div class="form-group col-sm-12 col-md-12 col-lg-12">
                             <label class="control-label">{{ __('Observação') }}</label>
-                            <input type="text" class="form-control boxed @error('observacao') is-invalid @enderror" value="{{ $hospedagem->observacao }}" name="observacao" id="observacao" autofocus maxlength="50" onpaste="return false;">
-                            <input type="hidden" name="id" value="{{ $hospedagem->id }}">
+                            <input type="text" class="form-control boxed @error('observacao') is-invalid @enderror" maxlength="250" value="{{ old('observacao', $hospedagem->observacao) }}" name="observacao" id="observacao" autofocus maxlength="250" onpaste="return false;">
                             @error('observacao')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>
                             @enderror
             </div>
-
-
 
         </div>
 
@@ -207,87 +217,7 @@
 @push('javascript')
 <script src="{{ asset('js/litepickerBudler.js')}}"></script>
 <script src="{{ asset('js/mobilefriendly.js')}}"></script>
-<!--<script>    
-window.disableLitepickerStyles = true;
 
-const picker = new Litepicker({ 
-    element: document.getElementById('peridoinicial'),
-    elementEnd: document.getElementById('final'),
-    plugins: ['mobilefriendly','keyboardnav'],
-   
-    keyboardnav: {
-        firstTabIndex: 3,
-    },
-    mobilefriendly: {
-        breakpoint: 480,
-    },
-    dropdowns: {
-        "minYear":2023,
-        "maxYear":2024,
-        "months":true,
-        "years":true,
-    },
-
-    singleMode: false,
-    allowRepick: false,
-    numberOfMonths: 2,
-    autoRefresh: true,
-    disallowLockDaysInRange: true,
-    format: "YYYY-MM-DD",
-    //inlineMode: true,
-    lang: "pt-BR",
-    //maxDays: 2,
-    numberOfColumns: 2,
-    maxDate: "{{ $maxDate }}",
-    minDate: "{{ $minDate }}",
-    lockDays: {!! $a !!},
-    tooltipText: {"one":"dia","other":"dias"},
-    tooltipNumber: (totalDays) => {
-    return totalDays - 1;
-    },
-});
-
-
-const picker1 = new Litepicker({ 
-    //element: document.getElementById('peridoinicial'),
-    element: document.getElementById('final5'),
-    plugins: ['mobilefriendly','keyboardnav'],
-   
-    keyboardnav: {
-        firstTabIndex: 2,
-    },
-    mobilefriendly: {
-        breakpoint: 480,
-    },
-    dropdowns: {
-        "minYear":2022,
-        "maxYear":2024,
-        "months":false,
-        "years":false,
-    },
-
-    singleMode: true,
-    allowRepick: false,
-    numberOfMonths: 2,
-    autoRefresh: true,
-    disallowLockDaysInRange: true,
-    format: "YYYY-MM-DD",
-    inlineMode: true,
-    lang: "pt-BR",
-    //maxDays: 2,
-    numberOfColumns: 2,
-    maxDate: "{{ $maxDate }}",
-    minDate: "{{ $minDate }}",
-    lockDays: {!! $a !!},
-    //lockDays: [["2021-04-17","2021-04-19"],["2021-04-21","2021-04-23"],"2021-04-20","2021-04-28"],
-    //lockDays: [["2021-04-19","2021-04-23"],["2021-05-03","2021-05-06"]],
-    //lockDays: [['2021-05-01', '2021-05-05'],'2021-04-28'],
-    tooltipText: {"one":"dia","other":"dias"},
-    tooltipNumber: (totalDays) => {
-    return totalDays - 1;
-    },
-});
-</script> -->
 
 <script>
     window.disableLitepickerStyles = true;

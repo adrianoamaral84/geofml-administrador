@@ -7,7 +7,7 @@
         <div class="title-block">
             <div class="row">
                 <div class="col-md-12">
-                    <h3 class="title"> Confirmar dados da Inscrição</h3>
+                    <h3 class="title">Confirmar dados da Inscrição</h3>
                      <small>Confirme os dados antes de continuar.</small>
                 </div>
             </div>
