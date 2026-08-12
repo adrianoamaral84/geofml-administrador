@@ -5,17 +5,41 @@
     <ul class="sidebar-nav">
         
         <li>
-             <a href="{{ route('user.index') }}"> Gerenciar </a>
+             <a href="{{ route('user.index') }}">
+                <i class="fa fa-user-cog"></i>
+                Gerenciar
+            </a>
         </li>
           
         
         <li>
-            <a href="{{ route('user.precadastro.lista') }}"> Pré Cadastro </a>
+            <a href="{{ route('user.precadastro.lista') }}">
+                <i class="fa fa-user-plus"></i>
+                Pré-Cadastro
+            </a>
         </li>
 
         <li>
-            <a href="{{route('documentos.vencidos')}}"> Documentos Vencidos </a>
+            <a href="{{ route('documentos.vencidos') }}">
+                <i class="fa fa-file-text"></i>
+                Documentos Vencidos
+            </a>
         </li> 
+
+        <li>
+            <a href="{{ route('user.mecenas') }}">
+                <i class="fa fa-star"></i>
+                Mecenas
+            </a>
+        </li>
+
+        <li>
+             <a href="{{ route('consulta.pttc.index') }}">
+                <i class="fa fa-user-circle"></i>
+                Consulta PTTC
+             </a>
+        </li>
+
     </ul>
 </li>
 
@@ -29,13 +53,18 @@
     </a>
     <ul class="sidebar-nav">  
         <li>
-            <a href="{{route('hospedagem.aguardando_liberacao')}}"> Aguardando Liberação </a>
+             <a href="{{ route('hospedagem.aguardando_liberacao') }}">
+                <i class="fa fa-clock-o"></i>
+                Aguardando Liberação
+            </a>
         </li>
 
     <li>
-    <a href="">
-        Distribuição  <i class="fa arrow"></i>
-    </a>
+     <a href="">
+                <i class="fa fa-random"></i>
+                Distribuição
+                <i class="fa arrow"></i>
+            </a>
     <ul class="sidebar-nav">
         <li>
             <a href="{{route('hospedagem.distribuicao.gen')}}"> Oficiais Generais </a>
@@ -68,16 +97,28 @@
     </a>
     <ul class="sidebar-nav">
          <li>
-            <a href="{{route('relatorio.index')}}"> Mensal </a>
+            <a href="{{ route('relatorio.index') }}">
+                <i class="fa fa-calendar"></i>
+                Mensal
+            </a>
         </li>
         <li>
-            <a href="{{route('relatorio.arrecadacao')}}"> Hospedados Pagos </a>
+            <a href="{{ route('relatorio.arrecadacao') }}">
+                <i class="fa fa-check-circle"></i>
+                Hospedados Pagos
+            </a>
         </li>
         <li>
-            <a href="{{route('relatorio.cancelados')}}"> Cancelados Pagos </a>
+            <a href="{{ route('relatorio.cancelados') }}">
+                <i class="fa fa-times-circle"></i>
+                Cancelados Pagos
+            </a>
         </li>
         <li>
-            <a href="{{route('arrecadacaoTotlal.index')}}"> Arrecadação Total </a>
+            <a href="{{ route('arrecadacaoTotlal.index') }}">
+                <i class="fa fa-line-chart"></i>
+                Arrecadação Total
+            </a>
         </li>
     </ul>
 </li>

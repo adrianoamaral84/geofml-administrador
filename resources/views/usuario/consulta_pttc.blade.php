@@ -33,56 +33,42 @@
                 method="GET"
                 action="{{ route('consulta.pttc.index') }}"
             >
-                <div class="row">
-
-                    <div class="col-md-9">
-
-                        <div class="form-group">
-
-                            <label for="pesquisa">
-                                Nome, CPF ou e-mail
-                            </label>
-
-                            <input
-                                type="text"
-                                name="pesquisa"
-                                id="pesquisa"
-                                class="form-control"
-                                value="{{ $pesquisa }}"
-                                placeholder="Digite os dados do usuário"
-                            >
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-md-3">
-
-                        <div
-                            class="form-group"
-                            style="padding-top: 29px;"
+                           <div class="d-flex align-items-end flex-wrap w-100" style="gap: 15px; margin-bottom: 15px;">
+                
+                <!-- Campo de Busca (Ocupa o máximo de espaço horizontal disponível) -->
+                <div class="flex-grow-1" style="min-width: 250px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input
+                            type="text"
+                            name="pesquisa"
+                            id="pesquisa"
+                            class="form-control"
+                            value="{{ $pesquisa }}"
+                            placeholder="Buscar por nome, CPF, identidade ou e-mail"
                         >
-
-                            <button
-                                type="submit"
-                                class="btn btn-primary"
-                            >
-                                <i class="fa fa-search"></i>
-                                Pesquisar
-                            </button>
-
-                            <a
-                                href="{{ route('consulta.pttc.index') }}"
-                                class="btn btn-secondary"
-                            >
-                                Limpar
-                            </a>
-
-                        </div>
-
                     </div>
-
                 </div>
+
+                <!-- Botões (Travados lado a lado na horizontal com espaçamento) -->
+                <div class="d-flex align-items-center" style="gap: 8px;">
+                    <button
+                        type="submit"
+                        class="btn btn-primary d-inline-flex align-items-center"
+                    >
+                        <i class="fa fa-search" style="margin-right: 5px;"></i>
+                        Pesquisar
+                    </button>
+
+                    <a
+                        href="{{ route('consulta.pttc.index') }}"
+                        class="btn btn-secondary"
+                    >
+                        Limpar
+                    </a>
+                </div>
+
+            </div>
+
             </form>
 
         </div>

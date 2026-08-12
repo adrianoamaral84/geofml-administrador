@@ -217,46 +217,39 @@ while ($diaAtual->lte($ultimoDia)) {
         
     }
 
-    public function administrador(){
+   public function administrador()
+{
+    // Garante que o perfil administrador que acessar a URL direta também carregue os gráficos
+    return $this->index();
+}
 
-        $message = \App\Message::newMessage(Auth::user()->id);
-        $count = \App\Message::countMsg(Auth::user()->id);
-        //dd($count);
-
-
-        $userCPF = Auth::user()->cpf;
-       
-        return view('home', compact('userCPF', 'message', 'count'));
-    }
     public function homehome()
-    {
-        
-        
-        if(Laratrust::hasRole('administrador_especial')) {
-            //dd('ADMIN');
-            return redirect('/admin');
-        }
-        if(Laratrust::hasRole('administrador_geral')) {
-            //dd('USER');
-            return redirect('/admin');
-        }
-        if(Laratrust::hasRole('atendente')) {
-            //dd('USER');
-            return redirect('/atendente');
-        }
-        if(Laratrust::hasRole('hospede')) {
-            //dd('USER');
-            return redirect('/hospede');
-        }
-        if(Laratrust::hasRole('precadastro')) {
-        
-        return redirect()->route('precadastro');
-          //dd('pre');
-            //return view('usuario.consulta', compact('menuAtivo', 'consulta', 'search'));
-        }
-    //dd('home');
-    //return view('home');
+{
+    // Mantém o fluxo original do sistema para os perfis antigos
+    if(\Laratrust::hasRole('administrador_especial')) {
+        return redirect('/admin');
     }
+    if(\Laratrust::hasRole('administrador_geral')) {
+        return redirect('/admin');
+    }
+
+    // NOVO: Envia os novos administradores para o index carregar todas as variáveis
+    if(\Laratrust::hasRole('administrador') || \Laratrust::hasRole('auxiliar_administrador_geral')) {
+        return $this->index();
+    }
+
+    // Mantém o fluxo original para os demais perfis
+    if(\Laratrust::hasRole('atendente')) {
+        return redirect('/atendente');
+    }
+    if(\Laratrust::hasRole('hospede')) {
+        return redirect('/hospede');
+    }
+    if(\Laratrust::hasRole('precadastro')) {
+        return redirect()->route('precadastro');
+    }
+}
+
 
     /*public function precadastro()
     {
