@@ -453,6 +453,7 @@ Route::get(
     '/consulta-pttc',
     'ConsultaPttc\ConsultaPttcController@index'
 )->name('consulta.pttc.index');
+
 		Route::get('/consulta','ConsultaUsuario\ConsultaUsuarioController@index')->name('consulta.usuario.index');	
 		Route::get('/solicitacoes/list', 'HomeController@listaPedidos')->name('lista.pedidos');
 		Route::get('/list', 'UsuarioController@index')->name('user.index');

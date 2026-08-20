@@ -84,23 +84,67 @@
                     </div>
                    
                
-                    <div class="row has-error milReserva">
-                            <div class="col-sm-12 col-md-12 col-lg-12">
-                               
-                            <label class="form-check">
-                           
-                            <input type="checkbox" id="pttc" name="pttc" value="1" class="form-check-input" required="no"> 
-                           
-                            PTTC 
+                    <div class="row has-error milReserva align-items-start">
 
-                            </label>
-                                    @error('pttc')
-                                    <span class="has-error" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                    @enderror
-                            </div>
-                    </div>      
+    <div class="col-sm-6 col-md-6 col-lg-6 form-group">
+        <label class="control-label" for="pttc">
+            {{ __('PTTC') }}
+        </label>
+
+        <div
+            class="form-control boxed"
+            style="display: flex; align-items: center;"
+        >
+            <label
+                for="pttc"
+                style="margin: 0; display: flex; align-items: center; cursor: pointer;"
+            >
+                <input
+                    type="checkbox"
+                    id="pttc"
+                    name="pttc"
+                    value="1"
+                    style="margin: 0 8px 0 0;"
+                    {{ old('pttc') ? 'checked' : '' }}
+                >
+
+                Sim
+            </label>
+        </div>
+
+        @error('pttc')
+            <span class="has-error" role="alert">
+                <strong>{{ $message }}</strong>
+            </span>
+        @enderror
+    </div>
+
+    <div class="col-sm-6 col-md-6 col-lg-6 form-group">
+        <label class="control-label" for="mesAnoFinal">
+            {{ __('Mês/Ano Final') }}
+        </label>
+
+        <input
+            type="text"
+            name="mesAnoFinal"
+            id="mesAnoFinal"
+            value="{{ old('mesAnoFinal') }}"
+            class="form-control boxed @error('mesAnoFinal') is-invalid @enderror"
+            placeholder="MM/AAAA"
+            maxlength="7"
+            inputmode="numeric"
+            data-mask="00/0000"
+            autocomplete="off"
+        >
+
+        @error('mesAnoFinal')
+            <span class="has-error" role="alert">
+                <strong>{{ $message }}</strong>
+            </span>
+        @enderror
+    </div>
+
+</div> 
                   
                 
 
