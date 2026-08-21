@@ -464,6 +464,11 @@ class UsuarioController extends Controller
             'uf.required' => 'Campo obrigatório',
 
             'cidade.required' => 'Campo obrigatório',
+            'mesAnoFinal.required_if' =>
+            'O campo Mês/Ano Final é obrigatório quando PTTC estiver marcado.',
+            
+            'mesAnoFinal.regex' =>
+            'Informe o Mês/Ano Final no formato MM/AAAA.',
 
             'situacao.required' => 'Campo obrigatório',
 
@@ -492,6 +497,11 @@ class UsuarioController extends Controller
             'mecenas' => 'nullable|boolean',
             'forca'  =>  'nullable',
             'om'  =>  'nullable',
+            'mesAnoFinal' => [
+                'required_if:pttc,1',
+                'nullable',
+                'regex:/^(0[1-9]|1[0-2])\/[0-9]{4}$/',
+            ],
             'nivel' => 'nullable',
             'pttc' => 'nullable',
             'validade' => 'nullable',
@@ -600,6 +610,19 @@ class UsuarioController extends Controller
         $usuario->dtUltPromo = $validatedData['dtUltPromo'];
         $usuario->validade = $request->validade;
         $usuario->mecenas = $request->mecenas ? 1 : 0;
+         $usuario->pttc = $request->has('pttc') ? 1 : 0;
+
+if (
+    (int) $validatedData['situacao'] === 2 &&
+    $request->has('pttc')
+) {
+    $usuario->mesAnoFinal = $validatedData['mesAnoFinal'];
+} else {
+    $usuario->mesAnoFinal = null;
+}
+
+
+
         $usuario->indeterminado = (!isset($request->indeterminado))? 0 : 1;
         
 
@@ -625,64 +648,92 @@ class UsuarioController extends Controller
 
 
 
-    /*
-            $usuario->tipo_doc = $type;
-            $usuario->tipo_doc_verso = $type2;
-            $file_documento = $request->file('documento');
-            $file_documento_verso = $request->file('documento_verso');
-
-            $contents = $file_documento->openFile()->fread($file_documento->getSize());
-            $contents = base64_encode($contents);  
-            
-            $contents_documento_verso = $file_documento_verso->openFile()->fread($file_documento_verso->getSize());
-            $contents_documento_verso = base64_encode($contents_documento_verso);  
-
-            */
+   
             $campos[] = "Documento Frente";
             $campos[] = "Documento Verso";
             
-            
-            //if($usuario->documento != $contents){
-            //$campos[] = "Documento Frente";
-            //}
-
-           // if($usuario->documento_verso != $contents_documento_verso){
-            //$campos[] = "Documento Verso";
-            //}
-
-
-            //$usuario->documento = $contents;
-            //$usuario->documento_verso = $contents_documento_verso; 
-
-
-
-        }
-
-        if($usuario->update()){
-                if($request->hasFile('documento')) {
-        $documentoService = new DocumentoService();
-        $documentoService->salvarFrente($usuario, $request->file('documento'));
-    }
-
-    if($request->hasFile('documento_verso')) {
-        $documentoService->salvarVerso($usuario, $request->file('documento_verso'));
-    }
-            if(isset($campos)){
-            
-            //$mail = \Illuminate\Support\Facades\Mail::queue(new \App\Mail\AtualizacaoDadosUsuario($usuario, $campos));         
-            }else{
-            $campos[] = "Não Houve Alteração";
-            //$mail = \Illuminate\Support\Facades\Mail::queue(new \App\Mail\AtualizacaoDadosUsuario($usuario, $campos));         
-            }
-
-            \Session::flash('message', ['msg'=>'Dados pessoais alterados com sucesso.', 'class'=>'success']);
-            return redirect()->route('profile');
-        }else{
-             \Session::flash('message', ['msg'=>'Ocorreu um erro ao salvar os dados.', 'class'=>'danger']);
-             return redirect()->back();
-        }
    
-       
+        }
+
+       if ($usuario->update()) {
+
+    /*
+     * Salva os documentos.
+     * O serviço é criado quando houver frente ou verso.
+     */
+    if (
+        $request->hasFile('documento') ||
+        $request->hasFile('documento_verso')
+    ) {
+        $documentoService = new DocumentoService();
+
+        if ($request->hasFile('documento')) {
+            $documentoService->salvarFrente(
+                $usuario,
+                $request->file('documento')
+            );
+        }
+
+        if ($request->hasFile('documento_verso')) {
+            $documentoService->salvarVerso(
+                $usuario,
+                $request->file('documento_verso')
+            );
+        }
+    }
+
+    /*
+     * Garante que $campos sempre seja um array.
+     */
+    if (!isset($campos) || empty($campos)) {
+        $campos = ['Não houve alteração'];
+    }
+
+    /*
+     * Tenta enviar o e-mail sem interromper o restante do processo.
+     */
+    try {
+        \Illuminate\Support\Facades\Mail::queue(
+            new \App\Mail\AtualizacaoDadosUsuario(
+                $usuario,
+                $campos
+            )
+        );
+
+        \Session::flash('message', [
+            'msg' => 'Dados pessoais alterados com sucesso.',
+            'class' => 'success'
+        ]);
+
+    } catch (\Throwable $erro) {
+
+        // Registra o erro em storage/logs/laravel.log
+        \Illuminate\Support\Facades\Log::error(
+            'Erro ao enviar e-mail de atualização dos dados do usuário.',
+            [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email,
+                'erro' => $erro->getMessage()
+            ]
+        );
+
+        \Session::flash('message', [
+            'msg' => 'Dados pessoais alterados com sucesso, mas não foi possível enviar o e-mail.',
+            'class' => 'warning'
+        ]);
+    }
+
+    return redirect()->route('profile');
+
+} else {
+
+    \Session::flash('message', [
+        'msg' => 'Ocorreu um erro ao salvar os dados.',
+        'class' => 'danger'
+    ]);
+
+    return redirect()->back()->withInput();
+}
         
         return redirect()->route('profile');
     }
@@ -837,25 +888,7 @@ class UsuarioController extends Controller
         $usuario->status = 1;
         $usuario->save();
 
-        /*
-        if (Auth::user()->perfil_id == 2){
-            $comissao_id = Comissao::getIdByPresidenteId(Auth::id());
-        } else {
-            $comissao_id = Comissao::getIdByAuxiliarId(Auth::id());
-        }
-        
-        $processos = $request['processo_id'];
-        foreach ($processos as $key => $value) {
-            $integranteComissao = new IntegrantesComissao();
-            $integranteComissao->comissao_id = $comissao_id;
-            $integranteComissao->integrante_id = $usuario->id;
-            $integranteComissao->processo_id = $value;
-            $integranteComissao->save();
-        }        
-        
-        $descricao = "Nome do novo usuário: $usuario->nome; Perfil: $usuario->perfil_id";
-        $this->saveLog(Config::get('constants.msgLog.usuarioCadastrado'), Route::currentRouteName(), null, null, $descricao);
-        */
+       
         \Session::flash('message', ['msg'=>'Usuário adicionado com sucesso.', 'class'=>'success']);
         $menuAtivo = 'usuarios';
         return redirect()->route('user.index');
@@ -909,24 +942,20 @@ class UsuarioController extends Controller
         $customMessages = [
             'nome.max' => 'Nome deve ter no max 100 caracteres',            
             'nome.required' => 'Campo obrigatório',
-
-            
             'email.max' => 'E-mail deve ter no max 100 caracteres',            
             'email.required' => 'Campo obrigatório',
-
             'cpf.min' => 'CPF deve ter no min 10 caracteres',
             'cpf.max' => 'CPF deve ter no max 11 caracteres',            
             'cpf.required' => 'Campo obrigatório',
-
-        
             'uf.required' => 'Campo obrigatório',
-
             'cidade.required' => 'Campo obrigatório',
-
             'situacao.required' => 'Campo obrigatório',
-
             'idtMil.required' => 'Campo obrigatório',
+            'mesAnoFinal.required_if' =>
+    'O campo Mês/Ano Final é obrigatório quando PTTC estiver marcado.',
 
+'mesAnoFinal.regex' =>
+    'Informe o Mês/Ano Final no formato MM/AAAA.',
             'telefone.required' => 'Campo obrigatório',
             'documento_verso.max' => 'O Documento Verso precisa ter máximo 2mb.',
             'documento.max' => 'O Documento Frente precisa ter máximo 2mb.',
@@ -949,6 +978,11 @@ class UsuarioController extends Controller
             'perfil_id'  =>  'required',
             'nivel'  =>  'nullable',
             'om' => 'required',
+            'mesAnoFinal' => [
+                'required_if:pttc,1',
+                'nullable',
+                'regex:/^(0[1-9]|1[0-2])\/[0-9]{4}$/',
+            ],
             'documento' => 'nullable|image|mimes:jpeg,png|max:2000',
             'documento_verso' => 'nullable|image|mimes:jpeg,png|max:2000',
 
@@ -984,63 +1018,84 @@ class UsuarioController extends Controller
         $usuario->situacao_id = $validatedData['situacao'];
         $usuario->pttc = (!isset($validatedData['pttc']))? 0 : 1;
         $usuario->dtUltPromo = $request['dtUltPromo'];
-        //$usuario->forca_id = $request['forca'];
+     
         $usuario->om_id = $request['om'];
         $usuario->nivel = $request['nivel'];
         $usuario->perfil_id = $validatedData['perfil_id'];
         $usuario->validade = $request->validade;
+       $usuario->pttc = $request->has('pttc') ? 1 : 0;
+
+if (
+    (int) $validatedData['situacao'] === 2 &&
+    $request->has('pttc')
+) {
+    $usuario->mesAnoFinal = $validatedData['mesAnoFinal'];
+} else {
+    $usuario->mesAnoFinal = null;
+}
         $usuario->indeterminado = (!isset($request->indeterminado))? 0 : 1;
         $usuario->mecenas = $request->mecenas ? 1 : 0;
 
         if($validatedData['perfil_id'] == 5){
         $usuario->status = 5;
         }
-        //$usuario->status = 1;
-
-        //$usuario->syncRoles([64]);
-
         $usuario->postograd_id = $request['posto'];
         $usuario->siape = $validatedData['siape'];
         $usuario->password = Hash::make($usuario->cpf);
         $usuario->status = 1;
         $usuario->save();
-        //$usuario->documento = file_get_contents($request->file('documento')->getRealPath());
-       if($request->hasFile('documento') || $request->hasFile('documento_verso')){
+     
+        $documentoService = new DocumentoService();
 
-            $file_documento = $request->file('documento');
-            $file_documento_verso = $request->file('documento_verso');
-
-            $contents = $file_documento->openFile()->fread($file_documento->getSize());
-            $contents = base64_encode($contents);  
-            
-            $contents_documento_verso = $file_documento_verso->openFile()->fread($file_documento_verso->getSize());
-            $contents_documento_verso = base64_encode($contents_documento_verso);  
-           
-            $usuario->documento = $contents;
-            $usuario->documento_verso = $contents_documento_verso;
-
+        if ($request->hasFile('documento')) {
+            $documentoService->salvarFrente($usuario, $request->file('documento'));
         }
-        if($usuario->update()){
-             \Session::flash('message', ['msg'=>'Dados pessoais cadastrados com sucesso.', 'class'=>'success']);
-             $usuario->syncRoles([$validatedData['perfil_id']]);
-             \Illuminate\Support\Facades\Mail::queue(new \App\Mail\MailNovoCadastro($usuario));
-             return redirect()->route('user.index');
-        }else{
-             \Session::flash('message', ['msg'=>'Ocorreu um erro ao salvar os dados.', 'class'=>'danger']);
-             return redirect()->back();
+
+        if ($request->hasFile('documento_verso')) {
+            $documentoService->salvarVerso($usuario, $request->file('documento_verso'));
         }
-        /*
-        $usuario = User::find($usuario->id);
-        dd($u);
-       */
-        //$usuario->syncRoles([$validatedData['perfil_id']]);        
-        //return new \App\Mail\MailNovoCadastro($usuario);
 
-        
+      if ($usuario->update()) {
 
-        //\Session::flash('message', ['msg'=>'Enviamos um e-mail com dados de acesso ao sistema!', 'class'=>'success']);
-        //return redirect()->route('solicitaacesso');
-   
+    $usuario->syncRoles([$validatedData['perfil_id']]);
+
+    try {
+        \Illuminate\Support\Facades\Mail::queue(
+            new \App\Mail\MailNovoCadastro($usuario)
+        );
+
+        \Session::flash('message', [
+            'msg' => 'Dados pessoais cadastrados com sucesso.',
+            'class' => 'success'
+        ]);
+
+    } catch (\Throwable $erro) {
+
+        // Registra o erro no arquivo storage/logs/laravel.log
+        \Log::error('Erro ao enviar e-mail de novo cadastro.', [
+            'usuario_id' => $usuario->id,
+            'email' => $usuario->email,
+            'erro' => $erro->getMessage()
+        ]);
+
+        \Session::flash('message', [
+            'msg' => 'Dados pessoais cadastrados com sucesso, mas não foi possível enviar o e-mail.',
+            'class' => 'warning'
+        ]);
+    }
+
+    return redirect()->route('user.index');
+
+} else {
+
+    \Session::flash('message', [
+        'msg' => 'Ocorreu um erro ao salvar os dados.',
+        'class' => 'danger'
+    ]);
+
+    return redirect()->back()->withInput();
+}
+ 
 
        
         

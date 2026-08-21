@@ -47,12 +47,17 @@ class CascadeController extends Controller
         );
     }
 
-    public function carregarPostoSituacaoTodos($id)
-    {
-        return response()->json(
-            PostoGraduacao::where('situacao_id', $id)->get()
-        );
-    }
+public function carregarPostoSituacaoTodos($id)
+{
+    $listaPosto = PostoGraduacao::where(
+        'situacao_id',
+        (int) $id
+    )
+    ->orderBy('id')
+    ->get();
+
+    return response()->json($listaPosto);
+}
 
     public function carregarUnidadesHabtacionais(
         Request $request,
