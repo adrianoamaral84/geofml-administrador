@@ -214,7 +214,7 @@ while ($diaAtual->lte($ultimoDia)) {
 
         Auth::logout();
         return redirect('/login');
-        
+
     }
 
    public function administrador()
@@ -253,7 +253,7 @@ while ($diaAtual->lte($ultimoDia)) {
 
     /*public function precadastro()
     {
-        
+
         $user = Auth::user();
         $id = $user->id;
         $count = User::where('id', $id)->count();
@@ -279,11 +279,11 @@ while ($diaAtual->lte($ultimoDia)) {
             $user->validade = null;
         }
         $bin = base64_decode($user->documento, true);
-        
+
         $min = date("Y-m-d");
 
         return view('pedido.precadastro', compact('perfis', 'oms', 'postos', 'forcas', 'ufs', 'cidades', 'situacoes', 'user', 'nivels', 'hoje', 'min'));
-    
+
     }*/
 
         public function precadastro(Request $request) {
@@ -311,37 +311,37 @@ while ($diaAtual->lte($ultimoDia)) {
 
     public function solicitaacesso()
     {
-        
+
         $menuAtivo = "administracao";
         return view('solicitaacesso.index');
     }
 
     public function pedido(Request $request)
-    {  
+    {
 
         date_default_timezone_set('America/Sao_Paulo');
 
-        if (isset($request['cpf'])) 
+        if (isset($request['cpf']))
             $request['cpf'] = str_replace([".","-"], "", $request['cpf']);
 
-        if ($request['celular'] != NULL) 
+        if ($request['celular'] != NULL)
             $request['celular'] = str_replace(["(",")"," ","-"], "", $request['celular']);
 
         $customMessages = [
             'nome.min' => 'Nome Guerra deve ter no min 2 caracteres',
-            'nome.max' => 'Nome Guerra deve ter no max 100 caracteres',            
+            'nome.max' => 'Nome Guerra deve ter no max 100 caracteres',
             'nome.required' => 'Campo obrigatório',
 
             'email.min' => 'E-mail deve ter no min 5 caracteres',
-            'email.max' => 'E-mail deve ter no max 100 caracteres',            
+            'email.max' => 'E-mail deve ter no max 100 caracteres',
             'email.required' => 'Campo obrigatório',
 
             'cpf.min' => 'CPF deve ter no min 10 caracteres',
-            'cpf.max' => 'CPF deve ter no max 11 caracteres',            
+            'cpf.max' => 'CPF deve ter no max 11 caracteres',
             'cpf.required' => 'Campo obrigatório',
 
-           
-            'celular.max' => 'Celular deve ter no max 11 caracteres',            
+
+            'celular.max' => 'Celular deve ter no max 11 caracteres',
             'celular.required' => 'Campo obrigatório',
 
         ];
@@ -353,18 +353,18 @@ while ($diaAtual->lte($ultimoDia)) {
             'celular' => 'required|max:11',
 
         ];
-        $validatedData = $request->validate($validatedData, $customMessages); 
+        $validatedData = $request->validate($validatedData, $customMessages);
 
-       
-        
+
+
         if(!$this->validarCPF($validatedData['cpf'])){
             return back()->withInput()->withErrors(['CPF inválido.']);
         }
-        
+
         if(!$this->verificarCPFCadastradoPedido($validatedData['cpf'])){
             return back()->withInput()->withErrors(['Este CPF já está cadastrado no sistema.']);
         }
-        
+
 
         // // Validação se e-mail já está cadastrado
         if(!$this->verificarEmailCadastrado($validatedData['email'])){
@@ -389,7 +389,7 @@ while ($diaAtual->lte($ultimoDia)) {
         $id = Crypt::encrypt($usuario->id);
         \Illuminate\Support\Facades\Mail::queue(new \App\Mail\newLaravelTips($usuario));
         \Session::flash('message', ['msg'=>'Enviamos um e-mail com dados de acesso ao sistema!', 'class'=>'success']);
-        
+
         return redirect('/solicitaacesso')->with('Enviamos um e-mail com dados de acesso ao sistema!');
 
         //return redirect()->route('envia.login.senha', compact('id'));
@@ -422,7 +422,7 @@ while ($diaAtual->lte($ultimoDia)) {
     /*public function listaPedidos()
     {
         $dataAtual = Carbon::now()->locale('pt_BR');
-          
+
         $consulta = \App\User::where('status', '3')->get();
         //dd($consulta);
         return view('pedido.index', compact('consulta'));
@@ -490,43 +490,43 @@ while ($diaAtual->lte($ultimoDia)) {
         }else{
             return redirect('/');
         }
-        
+
 
         //$perfis = Perfil::getByPerfilId(Auth::user()->perfil_id);
-        
-       
-        
-        //$processos = Processo::getByComissaoId($comissao_id);
-       
 
-        
+
+
+        //$processos = Processo::getByComissaoId($comissao_id);
+
+
+
     }
 
 
     public function UserCreateNew(Request $request){
 
-        
-   
+
+
         if($request->indeterminado == 1){
             $request->validade = null;
         }
-   
+
         date_default_timezone_set('America/Sao_Paulo');
 
         if($request['password'] != $request['resenha']){
              return back()->withInput()->withErrors(['Senhas não são iguais!']);
         }
-        
+
         if($request->hasFile('documento') and !$request->hasFile('documento_verso')){
               return back()->withInput()->withErrors(['Falta um Arquivo!!']);
         }
-        
+
         if(!$request->hasFile('documento') and $request->hasFile('documento_verso')){
               return back()->withInput()->withErrors(['Falta um Arquivo!!']);
         }
 
         if($request->hasFile('documento') and $request->hasFile('documento_verso')){
-           
+
             if(!$request->file('documento')->isValid() || !$request->file('documento_verso')->isValid()){
                return back()->withInput()->withErrors(['Arquivo Inválido!']);
             }
@@ -539,37 +539,37 @@ while ($diaAtual->lte($ultimoDia)) {
         }
 
         }
-        
+
         $dataForm = $request->all();
         $dataForm['pttc'] = (!isset($dataForm['pttc']))? 0 : 1;
 
-   
-        if (isset($request['cpf'])) 
+
+        if (isset($request['cpf']))
             $request['cpf'] = str_replace([".","-"], "", $request['cpf']);
 
-        if ($request['telefone'] != NULL) 
+        if ($request['telefone'] != NULL)
             $request['telefone'] = str_replace(["(",")"," ","-"], "", $request['telefone']);
 
-        if ($request['idtMil'] != NULL) 
+        if ($request['idtMil'] != NULL)
             $request['idtMil'] = str_replace("-", "", $request['idtMil']);
 
         $customMessages = [
-            'nome.max' => 'Nome Guerra deve ter no max 100 caracteres',            
+            'nome.max' => 'Nome Guerra deve ter no max 100 caracteres',
             'nome.required' => 'Campo obrigatório',
 
-            
-            'email.max' => 'E-mail deve ter no max 100 caracteres',            
+
+            'email.max' => 'E-mail deve ter no max 100 caracteres',
             'email.required' => 'Campo obrigatório',
 
             'cpf.min' => 'CPF deve ter no min 10 caracteres',
-            'cpf.max' => 'CPF deve ter no max 11 caracteres',            
+            'cpf.max' => 'CPF deve ter no max 11 caracteres',
             'cpf.required' => 'Campo obrigatório',
 
             'password.min' => 'Senha deve ter no min 6 caracteres',
-            'password.max' => 'CPF deve ter no max 15 caracteres',            
+            'password.max' => 'CPF deve ter no max 15 caracteres',
             'password.required' => 'Campo obrigatório',
             'resenha.min' => 'Senha deve ter no min 6 caracteres',
-            'resenha.max' => 'CPF deve ter no max 15 caracteres',            
+            'resenha.max' => 'CPF deve ter no max 15 caracteres',
             'resenha.required' => 'Campo obrigatório',
 
             'uf.required' => 'Campo UF obrigatório',
@@ -583,7 +583,7 @@ while ($diaAtual->lte($ultimoDia)) {
             'telefone.required' => 'Campo Telefone obrigatório',
             'documento_verso.max' => 'O Documento Verso precisa ter máximo MB.',
             'documento.max' => 'O Documento Frente precisa ter máximo 4MB.',
-          
+
 
         ];
 
@@ -611,19 +611,19 @@ while ($diaAtual->lte($ultimoDia)) {
         if(!$this->validarCPF($validatedData['cpf'])){
             return back()->withInput()->withErrors(['CPF inválido.']);
         }
-        
+
         if(!$this->verificarCPFCadastrado($validatedData['cpf'], null, true)){
             return back()->withInput()->withErrors(['Este CPF já está cadastrado no sistema.']);
         }
-        
-        
+
+
         if(!$this->verificarEmailCadastrado($validatedData['email'], $validatedData['email'])){
             return back()->withInput()->withErrors(['Este E-mail já está cadastrado no sistema.']);
         }
         if($request['password'] != $request['resenha']){
             return back()->withInput()->withErrors(['A Senha deve ser igual a Re-Senha']);
-        }     
-         
+        }
+
         $usuario = Auth::user();
         $usuario->name = strtoupper($validatedData['nome']);
         $usuario->email = $validatedData['email'];
@@ -644,17 +644,17 @@ while ($diaAtual->lte($ultimoDia)) {
         $usuario->mecenas = $request->mecenas ? 1 : 0;
         $usuario->validade = $request->validade;
         $usuario->indeterminado = (!isset($request->indeterminado))? 0 : 1;
-        
 
 
-       
-        
+
+
+
 
 
         if($request['password'] === $request['resenha']){
             $usuario->password = Hash::make($request['password']);
         }
-        
+
         if($request->hasFile('documento') || $request->hasFile('documento_verso')){
 
         /*
@@ -664,13 +664,13 @@ while ($diaAtual->lte($ultimoDia)) {
             $file_documento_verso = $request->file('documento_verso');
 
             $contents = $file_documento->openFile()->fread($file_documento->getSize());
-            $contents = base64_encode($contents);  
-            
+            $contents = base64_encode($contents);
+
             $contents_documento_verso = $file_documento_verso->openFile()->fread($file_documento_verso->getSize());
-            $contents_documento_verso = base64_encode($contents_documento_verso);  
-           
+            $contents_documento_verso = base64_encode($contents_documento_verso);
+
             $usuario->documento = $contents;
-            $usuario->documento_verso = $contents_documento_verso; 
+            $usuario->documento_verso = $contents_documento_verso;
             */
         }
         if($usuario->update()){
@@ -683,22 +683,22 @@ while ($diaAtual->lte($ultimoDia)) {
     if($request->hasFile('documento_verso')) {
         $documentoService->salvarVerso($usuario, $request->file('documento_verso'));
     }
-             
+
                 \Session::flash('message', ['msg'=>'Aguarde o Recebimento do E-mail de Confirmação para acessar o sistema Completo!', 'class'=>'success']);
                 $usuario->syncRoles(['5']);
-                return redirect()->route('usuario.home');     
-    
+                return redirect()->route('usuario.home');
+
         }else{
 
                 \Session::flash('message', ['msg'=>'Ocorreu um erro ao salvar os dados.', 'class'=>'danger']);
                 return redirect()->back();
-        
-        }
-       
-        
-        
 
-        
+        }
+
+
+
+
+
 
         /*
         if($usuario->save()){
@@ -709,29 +709,32 @@ while ($diaAtual->lte($ultimoDia)) {
 
 
         //dd($usuario);
-        
+
         //dd($request['cpf']);
         //dd('ok');
 
-        
+
     }
 
 
     public function atualizaDadosUsuario(Request $request){
 
-        //dd($request->all());
-        if($request->indeterminado == 1){
-            $request->validade = null;
-        }
-        date_default_timezone_set('America/Sao_Paulo');
-        if($request->hasFile('documento') and !$request->hasFile('documento_verso')){
-              return back()->withInput()->withErrors(['Falta um Arquivo!!']);
-        }
-        if(!$request->hasFile('documento') and $request->hasFile('documento_verso')){
-              return back()->withInput()->withErrors(['Falta um Arquivo!!']);
-        }
-        if($request->hasFile('documento') and $request->hasFile('documento_verso')){
-           
+        //dd($request->all());  //<-- Tire as barras "//" e deixe assim temporariamente
+
+    if($request->indeterminado == 1){
+        $request->validade = null;
+    }
+
+    date_default_timezone_set('America/Sao_Paulo');
+
+    // Validação de paridade dos arquivos de documento
+    if($request->hasFile('documento') and !$request->hasFile('documento_verso')){
+          return back()->withInput()->withErrors(['Falta um Arquivo!!']);
+    }
+    if(!$request->hasFile('documento') and $request->hasFile('documento_verso')){
+          return back()->withInput()->withErrors(['Falta um Arquivo!!']);
+    }
+    if($request->hasFile('documento') and $request->hasFile('documento_verso')){
         if(!$request->file('documento')->isValid() || !$request->file('documento_verso')->isValid()){
                return back()->withInput()->withErrors(['Arquivo Inválido!']);
         }
@@ -740,154 +743,117 @@ while ($diaAtual->lte($ultimoDia)) {
         if($type != 'jpg' and $type != 'jpeg' and $type != 'png' and $type != 'pdf' or $type2 != 'jpg' and $type2 != 'jpeg' and $type2 != 'png' and $type2 != 'pdf'){
             return back()->withInput()->withErrors(['Formato de Arquivo Inválido!']);
         }
-        }
-        
-        $dataForm = $request->all();
-        $dataForm['pttc'] = (!isset($dataForm['pttc']))? 0 : 1;
-
-        if (isset($request['cpf'])) 
-            $request['cpf'] = str_replace([".","-"], "", $request['cpf']);
-
-        if ($request['telefone'] != NULL) 
-            $request['telefone'] = str_replace(["(",")"," ","-"], "", $request['telefone']);
-
-        if ($request['idtMil'] != NULL) 
-            $request['idtMil'] = str_replace([".","-"], "", $request['idtMil']);
-
-        $customMessages = [
-            'nome.max' => 'Nome deve ter no max 100 caracteres',            
-            'nome.required' => 'Campo obrigatório',
-            'email.max' => 'E-mail deve ter no max 100 caracteres',            
-            'email.required' => 'Campo obrigatório',
-            'cpf.min' => 'CPF deve ter no min 10 caracteres',
-            'cpf.max' => 'CPF deve ter no max 11 caracteres',            
-            'cpf.required' => 'Campo obrigatório',
-            'uf.required' => 'Campo obrigatório',
-            'cidade.required' => 'Campo obrigatório',
-            'situacao.required' => 'Campo obrigatório',
-            'perfil_id.required' => 'Campo obrigatório',
-            'dtUltPromo.required' => 'Campo obrigatório',
-            'idtMil.required' => 'Campo obrigatório',
-            
-            'telefone.required' => 'Campo obrigatório',         
-            'documento_verso.max' => 'O Documento Verso precisa ter máximo 4mb.',
-            'documento.max' => 'O Documento Frente precisa ter máximo 4mb.',
-        ];
-
-        $validatedData = $request->validate([
-            'nome' => 'required|max:100',
-            'email' => 'required|max:100',
-            'cpf' => 'required|max:11',
-            'idtMil' => 'required|max:15',
-            'telefone' => 'required|max:11',
-            'uf' => 'required',
-            'cidade' => 'required',
-            'situacao' => 'required',
-            'mecenas' => 'nullable|boolean',
-            'pttc'  =>  'nullable',
-            'siape'  =>  'nullable',
-            'perfil_id'  =>  'required',
-            'nivel' => 'nullable',
-            'om' => 'required',
-            'documento' => 'nullable|mimes:jpeg,png,pdf|max:4000',
-            'documento_verso' => 'nullable|mimes:jpeg,png,pdf|max:4000',
-        ]);
-        
-        if(!$this->validarCPF($validatedData['cpf'])){
-            return back()->withInput()->withErrors(['CPF inválido.']);
-        }
-        
-	
-        if(!$this->verificarCPFCadastradoAtualizaCPF($validatedData['cpf'], $request->id)){
-           return back()->withInput()->withErrors(['Este CPF já está cadastrado no sistema.']);
-        }
-        
-        
-        if(!$this->verificarEmailCadastradoUsuarios($validatedData['email'], Crypt::decrypt($request['id']) )){
-            return back()->withInput()->withErrors(['Este E-mail já está cadastrado no sistema.']);
-        }
-        
-        $usuario =  User::findOrFail(Crypt::decrypt($request['id']));
-        $usuario->name = strtoupper($validatedData['nome']);
-        $usuario->email = $validatedData['email'];
-        $usuario->cpf = $validatedData['cpf'];
-        $usuario->idtMil = $validatedData['idtMil'];
-        $usuario->telefone = $validatedData['telefone'];
-        $usuario->uf_id = $validatedData['uf'];
-        $usuario->cidade_id = $validatedData['cidade'];
-        $usuario->situacao_id = $validatedData['situacao'];
-        $usuario->pttc = (!isset($validatedData['pttc']))? 0 : 1;
-        $usuario->nivel = $validatedData['nivel'];
-        $usuario->postograd_id = $request['posto'];
-        $usuario->siape = $validatedData['siape'];
-        $usuario->mecenas = $validatedData['mecenas'] ? 1 : 0;
-        $usuario->om_id = $validatedData['om'];
-        $usuario->validade = $request->validade;
-        $usuario->indeterminado = (!isset($request->indeterminado))? 0 : 1;
-        if(isset($request->motivo)){
-            //dd('ok');
-            $usuario->motivo_id = $request->motivo;
-        }else{
-            $usuario->motivo_id =  null;
-        }
-        if(isset($type) and isset(($type2))){
-        //$usuario->tipo_doc = $type;
-        //$usuario->tipo_doc_verso = $type2;
-        }
-        $usuario->dtUltPromo = $request['dtUltPromo'];
-
-        if($validatedData['perfil_id'] == 5){  
-            $usuario->status = 5;
-        }
-
-        $usuario->perfil_id = $validatedData['perfil_id'];
-        
-        if($request->hasFile('documento') || $request->hasFile('documento_verso')){
-           
-
-
-/*
-            $file_documento = $request->file('documento');
-            $file_documento_verso = $request->file('documento_verso');
-
-            $contents = $file_documento->openFile()->fread($file_documento->getSize());
-            $contents = base64_encode($contents);  
-            
-            $contents_documento_verso = $file_documento_verso->openFile()->fread($file_documento_verso->getSize());
-            $contents_documento_verso = base64_encode($contents_documento_verso);  
-           
-            $usuario->documento = $contents;
-            $usuario->documento_verso = $contents_documento_verso; 
-        */
-        }
-        
-        if($usuario->update()){
-
-
-        if($request->hasFile('documento')) {
-        $documentoService = new DocumentoService();
-        $documentoService->salvarFrente($usuario, $request->file('documento'));
     }
 
-    if($request->hasFile('documento_verso')) {
-        $documentoService->salvarVerso($usuario, $request->file('documento_verso'));
+    // Tratamento de strings de máscara antes da validação
+    if (isset($request['cpf']))
+        $request['cpf'] = str_replace([".","-"], "", $request['cpf']);
+
+    if ($request['telefone'] != NULL)
+        $request['telefone'] = str_replace(["(",")"," ","-"], "", $request['telefone']);
+
+    if ($request['idtMil'] != NULL)
+        $request['idtMil'] = str_replace([".","-"], "", $request['idtMil']);
+
+    // 1. AJUSTE NA VALIDAÇÃO: Pttc_periodo estruturado em vetor array (obrigatório para Regex com barras /)
+    $validatedData = $request->validate([
+        'nome' => 'required|max:100',
+        'email' => 'required|max:100',
+        'cpf' => 'required|max:11',
+        'idtMil' => 'required|max:15',
+        'telefone' => 'required|max:11',
+        'uf' => 'required',
+        'cidade' => 'required',
+        'situacao' => 'required',
+        'mecenas' => 'nullable|boolean',
+        'pttc'  =>  'nullable',
+        'pttc_periodo' => ['required_if:pttc,1', 'nullable', 'regex:/^(0[1-9]|1[0-2])\/[0-9]{4}$/'],
+        'siape'  =>  'nullable',
+        'perfil_id'  =>  'required',
+        'nivel' => 'nullable',
+        'om' => 'required',
+        'documento' => 'nullable|mimes:jpeg,png,pdf|max:4000',
+        'documento_verso' => 'nullable|mimes:jpeg,png,pdf|max:4000',
+    ]);
+
+    if(!$this->validarCPF($validatedData['cpf'])){
+        return back()->withInput()->withErrors(['CPF inválido.']);
     }
 
-             \Session::flash('message', ['msg'=>'Dados pessoais alterados com sucesso.', 'class'=>'success']);
-             $usuario->syncRoles([$validatedData['perfil_id']]);
+    if(!$this->verificarCPFCadastradoAtualizaCPF($validatedData['cpf'], $request->id)){
+       return back()->withInput()->withErrors(['Este CPF já está cadastrado no sistema.']);
+    }
 
-             return redirect()->back();
-        }else{
-             \Session::flash('message', ['msg'=>'Ocorreu um erro ao salvar os dados.', 'class'=>'danger']);
-             return redirect()->back();
+    if(!$this->verificarEmailCadastradoUsuarios($validatedData['email'], Crypt::decrypt($request['id']) )){
+        return back()->withInput()->withErrors(['Este E-mail já está cadastrado no sistema.']);
+    }
+
+    // Recupera o ID do usuário descriptografado
+    $userId = Crypt::decrypt($request['id']);
+    $usuario = User::findOrFail($userId);
+
+    // 2. BLINDAGEM DE MEMÓRIA: Evita injeção implícita dos binários de arquivos no Eloquent
+    $request->offsetUnset('documento');
+    $request->offsetUnset('documento_verso');
+
+    // Define o status especial baseado no perfil
+    $status = ($validatedData['perfil_id'] == 5) ? 5 : $usuario->status;
+
+    // 3. PERSISTÊNCIA VIA QUERY BUILDER NATIVO (Garante gravação imediata e sem vazamento de memória)
+    $updateData = [
+        'name'          => strtoupper($validatedData['nome']),
+        'email'         => $validatedData['email'],
+        'cpf'           => $validatedData['cpf'],
+        'idtMil'        => $validatedData['idtMil'],
+        'telefone'      => $validatedData['telefone'],
+        'uf_id'         => $validatedData['uf'],
+        'cidade_id'     => $validatedData['cidade'],
+        'situacao_id'   => $validatedData['situacao'],
+        'pttc'          => $request->has('pttc') ? 1 : 0,
+        'pttc_periodo'  => $request->has('pttc') ? $request->input('pttc_periodo') : null, // Mapeamento correto adicionado!
+        'nivel'         => $validatedData['nivel'],
+        'postograd_id'  => $request['posto'],
+        'siape'         => $validatedData['siape'],
+        'mecenas'       => $validatedData['mecenas'] ? 1 : 0,
+        'om_id'         => $validatedData['om'],
+        'validade'      => $request->validade,
+        'indeterminado' => $request->has('indeterminado') ? 1 : 0,
+        'motivo_id'     => $request->input('motivo', null),
+        'dtUltPromo'    => $request['dtUltPromo'],
+        'status'        => $status,
+        'perfil_id'     => $validatedData['perfil_id'],
+        'updated_at'    => now()
+    ];
+
+       // Executa a query de atualização direta na tabela 'user' do MariaDB
+    $saved = \DB::table('user')->where('id', $userId)->update($updateData);
+
+    // Se a operação foi executada com sucesso sem retornar erros
+    if ($saved !== false) {
+
+        // Executa o upload dos arquivos binários de forma isolada na tabela user_documentos
+        if ($request->hasFile('documento')) {
+            $documentoService = new DocumentoService();
+            $documentoService->salvarFrente($usuario, $request->file('documento'));
         }
-        
-        
-        
+
+        if ($request->hasFile('documento_verso')) {
+            $documentoService->salvarVerso($usuario, $request->file('documento_verso'));
+        }
+
+        \Session::flash('message', ['msg' => 'Dados pessoais alterados com sucesso.', 'class' => 'success']);
+        $usuario->syncRoles([$validatedData['perfil_id']]);
+
+        return redirect()->back();
+    } else {
+        \Session::flash('message', ['msg' => 'Ocorreu um erro ao salvar os dados.', 'class' => 'danger']);
+        return redirect()->back();
     }
+} // <-- Esta chave fecha a função atualizaDadosUsuario corretamente!
+
 
     public function homeUsuario()
-    {    
+    {
         return view('pedido.home');
     }
 
@@ -928,8 +894,8 @@ while ($diaAtual->lte($ultimoDia)) {
         //return back()->with("status", "Senha alterada com sucesso!");
 }
     public function updatePasswordInativo(){
-        
-       
+
+
         return redirect()->route('login')->with("erro", "Favor Contactar a Administração!");
 
     }

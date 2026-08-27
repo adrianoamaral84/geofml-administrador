@@ -14,14 +14,14 @@ class User extends Authenticatable
     use Notifiable;
     protected $table = "user";
 
-    
+
     /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'idtMil', 'cpf', 'om', 'nomeguerra ', 'telefone', 'om_id', 'password', 'status', 'postograd_id', 'perfil_id', 'endereco', 'cep', 'uf_id', 'cidade_id', 'pttc', 'dtUltPromo', 'forca_id', 'situacao_id', 'siape',
+        'name', 'email', 'idtMil', 'cpf', 'om', 'nomeguerra ', 'telefone', 'om_id', 'password', 'status', 'postograd_id', 'perfil_id', 'endereco', 'cep', 'uf_id', 'cidade_id', 'pttc', 'pttc_periodo', 'dtUltPromo', 'forca_id', 'situacao_id', 'siape',
     ];
 
     /**
@@ -48,13 +48,13 @@ class User extends Authenticatable
         $user_id = Auth::user()->id;
         $perfil_id = Auth::user()->perfil_id;
         //$perfil_id = 4;
-        
+
         if ($search == null) {
             //$user = User::find(15)->roles();
             //dd($user);
             //$u = $user->roles;
             return User::all();
-            
+
             //return User::where('id', '!=', $user_id)->where('perfil_id', '>', $perfil_id)->get();
         } else {
             return User::where('id', '!=', $user_id)->where('perfil_id', '>', $perfil_id)
@@ -71,8 +71,8 @@ class User extends Authenticatable
             $usuario->update();
         } catch (\Throwable $th) {
             //throw new Exception("Falha ao alterar status de usuário.", 1);
-            
-        } 
+
+        }
     }
 
     public function om()
@@ -121,7 +121,7 @@ class User extends Authenticatable
     {
         return $this->belongsTo(MotivoInativo::class, 'motivo_id');
     }
-    
+
 
     public function documentos()
 {

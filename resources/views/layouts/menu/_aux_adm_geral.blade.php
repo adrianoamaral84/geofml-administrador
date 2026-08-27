@@ -27,17 +27,10 @@
         </li> 
 
         <li>
-            <a href="{{ route('user.mecenas') }}">
-                <i class="fa fa-star"></i>
-                Mecenas
+            <a href="{{ route('consulta.usuario.index') }}">
+                <i class="fa fa-search"></i>
+                Consulta Usuário
             </a>
-        </li>
-
-        <li>
-             <a href="{{ route('consulta.pttc.index') }}">
-                <i class="fa fa-user-circle"></i>
-                Consulta PTTC
-             </a>
         </li>
 
     </ul>
