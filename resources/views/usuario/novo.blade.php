@@ -43,23 +43,35 @@
                     <div class="row has-error">
 
                         <div class="form-group col-sm-8 col-md-8 col-lg-8">
-                            <label class="control-label">{{ __('Situação') }}</label>
-                
-                                <select name="situacao" id="situacao" required class="custom-select mr-sm-2 @error('situacao') is-invalid @enderror" autocomplete="off">
-                                     <option value="">Selecione Situação</option>
-                                
-                                    @foreach($situacoes as $situacao)
+    <label class="control-label" for="situacao">
+        {{ __('Situação') }}
+    </label>
 
-                                         <option value="{{$situacao->id}}">{{$situacao->situacao}}</option>
+    <select
+        name="situacao"
+        id="situacao"
+        required
+        class="custom-select mr-sm-2 @error('situacao') is-invalid @enderror"
+        autocomplete="off"
+    >
+        <option value="">Selecione Situação</option>
 
-                                    @endforeach
-                            </select>
-                            @error('situacao')
-                                <span class="has-error" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
+        @foreach($situacoes as $situacao)
+            <option
+                value="{{ $situacao->id }}"
+                {{ old('situacao') == $situacao->id ? 'selected' : '' }}
+            >
+                {{ $situacao->situacao }}
+            </option>
+        @endforeach
+    </select>
+
+    @error('situacao')
+        <span class="has-error" role="alert">
+            <strong>{{ $message }}</strong>
+        </span>
+    @enderror
+</div>
 
                             <div class="form-group col-sm-4 col-md-4 col-lg-4">
                             <label class="control-label">{{ __('Perfil') }}</label>
@@ -84,7 +96,7 @@
                     </div>
                    
                
-                    <div class="row has-error milReserva align-items-start">
+                   <div class="row has-error milReserva align-items-start">
 
     <div class="col-sm-6 col-md-6 col-lg-6 form-group">
         <label class="control-label" for="pttc">
@@ -105,7 +117,7 @@
                     name="pttc"
                     value="1"
                     style="margin: 0 8px 0 0;"
-                    {{ old('pttc') ? 'checked' : '' }}
+                    {{ old('pttc') == 1 ? 'checked' : '' }}
                 >
 
                 Sim
@@ -133,7 +145,6 @@
             placeholder="MM/AAAA"
             maxlength="7"
             inputmode="numeric"
-            data-mask="00/0000"
             autocomplete="off"
         >
 
@@ -144,8 +155,7 @@
         @enderror
     </div>
 
-</div> 
-                  
+</div>     
                 
 
                
@@ -154,23 +164,34 @@
 
 
 
-                        <div class="col-sm-4 col-md-4 col-lg-4 form-group ForcaOmPosto">
-                             
-                            
-                            <label class="control-label" id="nivel">{{ __('Posto / Graduação') }}</label>
-                                <select name="posto" id="posto" class="custom-select mr-sm-2 @error('posto') is-invalid @enderror" autocomplete="off">
-                                <option value="" >Selecione Posto / Grad</option>
-                                @foreach($postos as $posto)                               
-                                 <option value="{{$posto->id}}">{{$posto->sigla}}</option>
-                                @endforeach
-                            </select>
-                            @error('posto')
-                                <span class="has-error" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
+                       <div class="col-sm-4 col-md-4 col-lg-4 form-group ForcaOmPosto">
 
+    <input
+        type="hidden"
+        id="posto_selecionado"
+        value="{{ old('posto') }}"
+    >
+
+    <label class="control-label" id="nivel" for="posto">
+        {{ __('Posto / Graduação') }}
+    </label>
+
+    <select
+        name="posto"
+        id="posto"
+        class="custom-select mr-sm-2 @error('posto') is-invalid @enderror"
+        autocomplete="off"
+    >
+        <option value="">Selecione Posto / Graduação</option>
+    </select>
+
+    @error('posto')
+        <span class="has-error" role="alert">
+            <strong>{{ $message }}</strong>
+        </span>
+    @enderror
+
+</div>
                         
 
 
@@ -397,9 +418,8 @@
 
 
 @push('javascript')
-    <script src="{{asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js')}}"></script>
-   
-    <script src="{{ asset('js/script_cadastro_all.js') }}" ></script>   
+<script src="{{ asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js') }}"></script>
+<script src="{{ asset('js/script_cadastro.js') }}?v={{ time() }}"></script>
     
 @endpush
 @endsection

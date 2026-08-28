@@ -775,7 +775,11 @@ while ($diaAtual->lte($ultimoDia)) {
             'perfil_id.required' => 'Campo obrigatório',
             'dtUltPromo.required' => 'Campo obrigatório',
             'idtMil.required' => 'Campo obrigatório',
+             'mesAnoFinal.required_if' =>
+            'O campo Mês/Ano Final é obrigatório quando PTTC estiver marcado.',
             
+            'mesAnoFinal.regex' =>
+            'Informe o Mês/Ano Final no formato MM/AAAA.',
             'telefone.required' => 'Campo obrigatório',         
             'documento_verso.max' => 'O Documento Verso precisa ter máximo 4mb.',
             'documento.max' => 'O Documento Frente precisa ter máximo 4mb.',
@@ -796,6 +800,11 @@ while ($diaAtual->lte($ultimoDia)) {
             'perfil_id'  =>  'required',
             'nivel' => 'nullable',
             'om' => 'required',
+            'mesAnoFinal' => [
+                'required_if:pttc,1',
+                'nullable',
+                'regex:/^(0[1-9]|1[0-2])\/[0-9]{4}$/',
+            ],
             'documento' => 'nullable|mimes:jpeg,png,pdf|max:4000',
             'documento_verso' => 'nullable|mimes:jpeg,png,pdf|max:4000',
         ]);
@@ -831,15 +840,24 @@ while ($diaAtual->lte($ultimoDia)) {
         $usuario->om_id = $validatedData['om'];
         $usuario->validade = $request->validade;
         $usuario->indeterminado = (!isset($request->indeterminado))? 0 : 1;
+        $usuario->pttc = $request->has('pttc') ? 1 : 0;
+        if (
+            (int) $validatedData['situacao'] === 2 &&
+            $request->has('pttc')
+        ) {
+            $usuario->mesAnoFinal = $validatedData['mesAnoFinal'];
+        } else {
+            $usuario->mesAnoFinal = null;
+        }
+
         if(isset($request->motivo)){
-            //dd('ok');
+            
             $usuario->motivo_id = $request->motivo;
         }else{
             $usuario->motivo_id =  null;
         }
         if(isset($type) and isset(($type2))){
-        //$usuario->tipo_doc = $type;
-        //$usuario->tipo_doc_verso = $type2;
+       
         }
         $usuario->dtUltPromo = $request['dtUltPromo'];
 
@@ -852,42 +870,83 @@ while ($diaAtual->lte($ultimoDia)) {
         if($request->hasFile('documento') || $request->hasFile('documento_verso')){
            
 
-
-/*
-            $file_documento = $request->file('documento');
-            $file_documento_verso = $request->file('documento_verso');
-
-            $contents = $file_documento->openFile()->fread($file_documento->getSize());
-            $contents = base64_encode($contents);  
-            
-            $contents_documento_verso = $file_documento_verso->openFile()->fread($file_documento_verso->getSize());
-            $contents_documento_verso = base64_encode($contents_documento_verso);  
-           
-            $usuario->documento = $contents;
-            $usuario->documento_verso = $contents_documento_verso; 
-        */
         }
         
-        if($usuario->update()){
+       try {
+    if (!$usuario->update()) {
+        \Session::flash('message', [
+            'msg' => 'Ocorreu um erro ao salvar os dados.',
+            'class' => 'danger',
+        ]);
 
+        return redirect()->back()->withInput();
+    }
 
-        if($request->hasFile('documento')) {
+    /*
+     * Cria o serviço apenas quando houver algum documento.
+     */
+    if (
+        $request->hasFile('documento') ||
+        $request->hasFile('documento_verso')
+    ) {
         $documentoService = new DocumentoService();
-        $documentoService->salvarFrente($usuario, $request->file('documento'));
-    }
 
-    if($request->hasFile('documento_verso')) {
-        $documentoService->salvarVerso($usuario, $request->file('documento_verso'));
-    }
-
-             \Session::flash('message', ['msg'=>'Dados pessoais alterados com sucesso.', 'class'=>'success']);
-             $usuario->syncRoles([$validatedData['perfil_id']]);
-
-             return redirect()->back();
-        }else{
-             \Session::flash('message', ['msg'=>'Ocorreu um erro ao salvar os dados.', 'class'=>'danger']);
-             return redirect()->back();
+        /*
+         * Salva a frente do documento.
+         */
+        if ($request->hasFile('documento')) {
+            $documentoService->salvarFrente(
+                $usuario,
+                $request->file('documento')
+            );
         }
+
+        /*
+         * Salva o verso do documento.
+         */
+        if ($request->hasFile('documento_verso')) {
+            $documentoService->salvarVerso(
+                $usuario,
+                $request->file('documento_verso')
+            );
+        }
+    }
+
+    /*
+     * Atualiza o perfil/permissão do usuário.
+     */
+    $usuario->syncRoles([
+        $validatedData['perfil_id']
+    ]);
+
+    \Session::flash('message', [
+        'msg' => 'Dados pessoais alterados com sucesso.',
+        'class' => 'success',
+    ]);
+
+    return redirect()->back();
+
+} catch (\Throwable $erro) {
+    /*
+     * Registra o erro em storage/logs/laravel.log.
+     */
+    \Illuminate\Support\Facades\Log::error(
+        'Erro ao atualizar os dados pessoais do usuário.',
+        [
+            'usuario_id' => $usuario->id ?? null,
+            'erro' => $erro->getMessage(),
+            'arquivo' => $erro->getFile(),
+            'linha' => $erro->getLine(),
+        ]
+    );
+
+    \Session::flash('message', [
+        'msg' => 'Ocorreu um erro ao atualizar os dados. Tente novamente.',
+        'class' => 'danger',
+    ]);
+
+    return redirect()->back()->withInput();
+}
         
         
         
