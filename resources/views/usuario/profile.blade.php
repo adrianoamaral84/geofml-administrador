@@ -476,12 +476,12 @@
                         <div class="col-sm-12 col-xl-12">
                             <p class="title-description"> 
 
-                             </p><br> @role('administrador_geral')
+                             </p><br> 
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-check-circle fa-sm"></i>  
                                     Salvar Alterações
                             </button>
-                            @endrole
+                            
                         </div>
                     </div>
 

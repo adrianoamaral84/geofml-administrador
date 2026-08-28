@@ -546,7 +546,13 @@ class UsuarioController extends Controller
             
         }
         }
-
+         if($usuario->mecenas != $validatedData['mecenas']){
+          
+                $campos[] = "Trocou Mecenas";
+        }
+         if($usuario->mesAnoFinal != $validatedData['mesAnoFinal']){
+            $campos[] = "Alteração de Mês/Ano Final: ".$validatedData['mesAnoFinal'];
+        }
 
         if(!empty($validatedData['validade'])){
         if($usuario->validade != $validatedData['validade']){
@@ -610,7 +616,7 @@ class UsuarioController extends Controller
         $usuario->dtUltPromo = $validatedData['dtUltPromo'];
         $usuario->validade = $request->validade;
         $usuario->mecenas = $request->mecenas ? 1 : 0;
-         $usuario->pttc = $request->has('pttc') ? 1 : 0;
+        $usuario->pttc = $request->has('pttc') ? 1 : 0;
 
 if (
     (int) $validatedData['situacao'] === 2 &&
@@ -953,7 +959,7 @@ if (
             'idtMil.required' => 'Campo obrigatório',
             'mesAnoFinal.required_if' =>
     'O campo Mês/Ano Final é obrigatório quando PTTC estiver marcado.',
-
+            
 'mesAnoFinal.regex' =>
     'Informe o Mês/Ano Final no formato MM/AAAA.',
             'telefone.required' => 'Campo obrigatório',
