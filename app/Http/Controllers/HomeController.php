@@ -947,7 +947,6 @@ while ($diaAtual->lte($ultimoDia)) {
         
         
     }
-} // <-- Esta chave fecha a função atualizaDadosUsuario corretamente!
 
 
     public function homeUsuario()
