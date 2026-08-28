@@ -41,7 +41,7 @@ class ConsultaPttcController extends Controller
                         'LIKE',
                         '%' . $pesquisa . '%'
                     )
-                   
+
                     ->orWhere(
                         'email',
                         'LIKE',
@@ -63,9 +63,24 @@ class ConsultaPttcController extends Controller
             });
         }
 
+                // Captura os parâmetros enviados pelo clique na coluna (Blade Etapa 1)
+        $ordem = $request->input('ordem', 'name');
+        $direcao = $request->input('direcao', 'asc');
+
+        // Lista de colunas permitidas para evitar injeção SQL maliciosa
+        $colunasPermitidas = ['id', 'id_posto', 'name', 'cpf', 'email', 'id_om'];
+        if (!in_array($ordem, $colunasPermitidas)) {
+            $ordem = 'name';
+        }
+
+        // Garante que a direção seja apenas 'asc' ou 'desc'
+        $direcao = ($direcao === 'desc') ? 'desc' : 'asc';
+
+        // Executa a ordenação global no MariaDB e faz a paginação de 20 em 20
         $usuariosPttc = $query
-            ->orderBy('name')
+            ->orderBy($ordem, $direcao)
             ->paginate(20);
+
 
         /*
          * Mantém o filtro ao trocar de página.

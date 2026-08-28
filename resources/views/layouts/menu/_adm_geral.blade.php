@@ -19,6 +19,14 @@
                 Validar
             </a>
         </li>
+
+        <li>
+            <a href="{{ route('user.precadastro.lista') }}">
+                <i class="fa fa-user-plus"></i>
+                Pré-Cadastro
+            </a>
+        </li>
+
         <li>
             <a href="{{ route('documentos.vencidos') }}">
                 <i class="fa fa-file-text"></i>
@@ -56,14 +64,6 @@
         Pedidos Duplicados
     </a>
 </li>
-
-        <li>
-            <a href="{{ route('user.precadastro.lista') }}">
-                <i class="fa fa-user-plus"></i>
-                Pré-Cadastro
-            </a>
-        </li>
-
         
     </ul>
 </li>
