@@ -19,7 +19,7 @@
 
                 <div class="card-header" style="padding: 15px 20px;">
 
-            <strong>Pesquisar por CPF</strong>
+            <strong>Pesquisar por Usuários</strong>
         </div>
 
         <div class="card-block">
@@ -34,7 +34,7 @@
                         <div class="form-group">
 
                             <label for="cpf">
-                                CPF do usuário
+                                Buscar por nome, CPF, identidade ou e-mail
                             </label>
 
                             <input
@@ -43,8 +43,8 @@
                                 id="cpf"
                                 class="form-control"
                                 value="{{ old('cpf', $cpfDigitado) }}"
-                                placeholder="000.000.000-00"
-                                maxlength="14"
+                                placeholder="Buscar por nome, CPF, identidade ou e-mail"
+                                maxlength="100"
                                 required
                                 autofocus
                             >
@@ -519,46 +519,6 @@
 
 @push('javascript')
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
 
-    var campoCpf = document.getElementById('cpf');
-
-    if (!campoCpf) {
-        return;
-    }
-
-    /*
-     * Aplica máscara visual no CPF.
-     * O Controller também remove a formatação antes da consulta.
-     */
-    campoCpf.addEventListener('input', function () {
-
-        var cpf = campoCpf.value.replace(/\D/g, '');
-
-        cpf = cpf.substring(0, 11);
-
-        if (cpf.length > 9) {
-            cpf = cpf.replace(
-                /(\d{3})(\d{3})(\d{3})(\d{1,2})/,
-                '$1.$2.$3-$4'
-            );
-        } else if (cpf.length > 6) {
-            cpf = cpf.replace(
-                /(\d{3})(\d{3})(\d{1,3})/,
-                '$1.$2.$3'
-            );
-        } else if (cpf.length > 3) {
-            cpf = cpf.replace(
-                /(\d{3})(\d{1,3})/,
-                '$1.$2'
-            );
-        }
-
-        campoCpf.value = cpf;
-    });
-
-});
-</script>
 
 @endpush

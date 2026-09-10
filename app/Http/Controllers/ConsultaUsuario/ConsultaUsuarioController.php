@@ -10,77 +10,169 @@ use Illuminate\Http\Request;
 class ConsultaUsuarioController extends Controller
 {
     /**
-     * Exibe a página de consulta e pesquisa o usuário pelo CPF.
+     * Exibe a página de consulta e pesquisa o usuário.
      */
     public function index(Request $request)
     {
         /*
-         * Variáveis iniciais.
-         */
+        |--------------------------------------------------------------------------
+        | VARIÁVEIS INICIAIS
+        |--------------------------------------------------------------------------
+        */
+
         $usuario = null;
+
         $pedidos = collect();
+
         $cpfDigitado = $request->input('cpf', '');
+
         $pesquisou = false;
 
+        $pesquisa = trim(
+            $request->input('cpf', '')
+        );
+
+
         /*
-         * Só realiza a consulta quando o CPF for informado.
-         */
+        |--------------------------------------------------------------------------
+        | REALIZA A PESQUISA
+        |--------------------------------------------------------------------------
+        */
+
         if ($request->filled('cpf')) {
+
             $pesquisou = true;
 
+
             /*
-             * Remove pontos, traços, espaços e qualquer caractere
-             * que não seja número.
+             * Remove tudo que não for número.
              *
              * Exemplo:
-             * 123.456.789-00 vira 12345678900.
+             * 123.456.789-00
+             *
+             * vira:
+             *
+             * 12345678900
              */
-            $cpf = preg_replace(
-                '/[^0-9]/',
+            $cpfNumerico = preg_replace(
+                '/\D/',
                 '',
-                $request->input('cpf')
+                $pesquisa
             );
 
-            /*
-             * Valida se o CPF possui exatamente 11 números.
-             */
-            if (strlen($cpf) !== 11) {
-                return redirect()
-                    ->route('consulta.usuario.index')
-                    ->withInput()
-                    ->withErrors([
-                        'Informe um CPF válido com 11 números.',
-                    ]);
-            }
 
             /*
-             * Procura o usuário pelo CPF.
-             */
+            |--------------------------------------------------------------------------
+            | BUSCA O USUÁRIO
+            |--------------------------------------------------------------------------
+            |
+            | Permite pesquisar por:
+            |
+            | - Nome
+            | - E-mail
+            | - Identidade militar
+            | - CPF
+            |
+            |--------------------------------------------------------------------------
+            */
+
             $usuario = User::with([
-                'posto',
-                'om',
-                'perfil',
-                'uf',
-                'cidade',
-            ])
-                ->where('cpf', $cpf)
+                    'posto',
+                    'om',
+                    'perfil',
+                    'uf',
+                    'cidade',
+                ])
+                ->where(function ($consulta) use (
+                    $pesquisa,
+                    $cpfNumerico
+                ) {
+
+                    $consulta
+                        ->where(
+                            'name',
+                            'LIKE',
+                            '%' . $pesquisa . '%'
+                        )
+
+                        ->orWhere(
+                            'email',
+                            'LIKE',
+                            '%' . $pesquisa . '%'
+                        )
+
+                        ->orWhere(
+                            'idtMil',
+                            'LIKE',
+                            '%' . $pesquisa . '%'
+                        );
+
+
+                    /*
+                     * Pesquisa CPF somente se houver números.
+                     */
+                    if ($cpfNumerico !== '') {
+
+                        $consulta->orWhere(
+                            'cpf',
+                            'LIKE',
+                            '%' . $cpfNumerico . '%'
+                        );
+
+                    }
+
+                })
+
+                /*
+                 * Retorna apenas o primeiro usuário encontrado.
+                 *
+                 * Sem o first(), $usuario seria apenas
+                 * um Query Builder.
+                 */
                 ->first();
 
+
             /*
-             * Caso o usuário exista, busca todos os pedidos dele.
-             */
+            |--------------------------------------------------------------------------
+            | BUSCA OS PEDIDOS DO USUÁRIO
+            |--------------------------------------------------------------------------
+            */
+
             if ($usuario) {
+
                 $pedidos = Hospede::with([
-                    'tipouh',
-                    'undHB',
-                    'status_hospedagem',
-                ])
-                    ->where('user_id', $usuario->id)
-                    ->orderBy('data_inicio', 'desc')
-                    ->orderBy('id', 'desc')
+                        'tipouh',
+                        'undHB',
+                        'status_hospedagem',
+                    ])
+
+                    ->where(
+                        'user_id',
+                        $usuario->id
+                    )
+
+                    ->orderBy(
+                        'data_inicio',
+                        'desc'
+                    )
+
+                    ->orderBy(
+                        'id',
+                        'desc'
+                    )
+
                     ->get();
+
             }
+
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | RETORNA A VIEW
+        |--------------------------------------------------------------------------
+        */
 
         return view(
             'usuario.consulta_cpf',
