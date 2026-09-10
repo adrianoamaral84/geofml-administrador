@@ -17,7 +17,7 @@
         <li>
     <a href="{{ route('user.mecenas') }}">
         <i class="fa fa-star"></i>
-        <span>Mecenas</span>
+        <span>Mecenas DCEx / MHEx</span>
     </a>
 </li>
 
