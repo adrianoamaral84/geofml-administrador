@@ -39,7 +39,7 @@
                         <div class="form-group">
 
                             <label for="pesquisa">
-                                Nome, CPF ou e-mail
+                                Nome, CPF, identidade ou e-mail
                             </label>
 
                             <input

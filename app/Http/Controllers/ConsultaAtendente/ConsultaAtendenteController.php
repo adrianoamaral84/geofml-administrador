@@ -42,6 +42,12 @@ class ConsultaAtendenteController extends Controller
                         'email',
                         'LIKE',
                         '%' . $pesquisa . '%'
+                    )
+
+                    ->orWhere(
+                        'idtMil',
+                        'LIKE',
+                        '%' . $pesquisa . '%'
                     );
 
                 if ($cpfNumerico !== '') {
@@ -61,6 +67,7 @@ class ConsultaAtendenteController extends Controller
         /*
          * Mantém o termo pesquisado na paginação.
          */
+
         $atendentes->appends([
             'pesquisa' => $pesquisa,
         ]);
