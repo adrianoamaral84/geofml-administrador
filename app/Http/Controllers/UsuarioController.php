@@ -271,15 +271,8 @@ class UsuarioController extends Controller
         $cidades = \App\Cidade::all();
         $situacoes = \App\Situacao::all();
         $nivels = \App\Nivel::all();
-        //$perfis = Perfil::getByPerfilId(Auth::user()->perfil_id);
-        //dd($postos);
-        if (Auth::user()->perfil_id == 2){
-            //$comissao_id = Comissao::getIdByPresidenteId(Auth::id());
-        } else {
-            //$comissao_id = Comissao::getIdByAuxiliarId(Auth::id());
-        }
+       
         
-        //$processos = Processo::getByComissaoId($comissao_id);
         $menuAtivo = "usuarios";
         return view('usuario.novo', compact('menuAtivo', 'perfis', 'oms', 'postos', 'forcas', 'ufs', 'cidades', 'situacoes', 'nivels'));
     }
@@ -904,7 +897,6 @@ if (
 
     public function NovoUsuario(Request $request){
         
-        //dd($request->all());
         if($request->indeterminado == 1){
             $request->validade = null;
         }
@@ -1029,8 +1021,9 @@ if (
         $usuario->nivel = $request['nivel'];
         $usuario->perfil_id = $validatedData['perfil_id'];
         $usuario->validade = $request->validade;
-       $usuario->pttc = $request->has('pttc') ? 1 : 0;
-
+        $usuario->pttc = $request->has('pttc') ? 1 : 0;
+        
+        
 if (
     (int) $validatedData['situacao'] === 2 &&
     $request->has('pttc')
@@ -1354,46 +1347,7 @@ public function usuariosNegados(Request $request) {
 
         return '';
     }
-    public function testes(){
-        dd('teste');
-    }
-
-    /*public function precadastroLista(){
-
-        $consulta = \App\User::where('status', 5)
-            ->select('id', 'name', 'cpf', 'status')
-            ->get();
-
-        //dd($consulta);
-
-        return view('usuario.listaPreCadastro', compact('consulta'));
-
-    }*/
-
-    /*public function precadastroLista(Request $request) {
-    $search = $request->get('search');
-    $dataAtual = Carbon::now()->locale('pt_BR');
-
-    // Iniciamos a query filtrando apenas os pedidos aguardando (status 5)
-    $consulta = \App\User::where('status', 5);
-
-    if ($search) {
-        // Limpa tudo que não for número para testar se é CPF
-        $cleanSearch = preg_replace('/[^0-9]/', '', $search);
-
-        if (is_numeric($cleanSearch) && strlen($cleanSearch) == 11) {
-            // Busca por CPF exato
-            $consulta->where('cpf', $cleanSearch);
-        } else {
-            // Busca por Nome ignorando acentos
-            $consulta->whereRaw("name COLLATE utf8_general_ci LIKE ?", ["%{$search}%"]);
-        }
-    }
-
-    $consulta = $consulta->get();
-
-    return view('usuario.listaPreCadastro', compact('consulta', 'dataAtual'));
-}*/
+   
 
 public function precadastroLista(Request $request) {
     $search = $request->get('search');
@@ -1432,43 +1386,7 @@ public function precadastroLista(Request $request) {
     }
 
 
-    /*public function documentosVencidos(){
-
-        date_default_timezone_set('America/Sao_Paulo');
-        $hoje = now()->format('Y-m-d');
-        $consulta = DB::select("SELECT id, name, cpf, validade from user where validade < '$hoje' and status = '1'");
-        //dd($consulta);
-        return view('usuario.documentos', compact('consulta'));
-        
-    }*/
-
-/*public function documentosVencidos(Request $request) {
-    $search = $request->get('search');
-    // Pegamos a data atual no formato do banco (Y-m-d) como na função original
-    $hoje = now()->format('Y-m-d'); 
-
-    // Iniciamos a consulta com os filtros da função original:
-    // Apenas usuários ativos (status 1) e com validade menor que hoje
-    $query = \App\User::where('status', '1')
-                      ->whereDate('validade', '<', $hoje);
-
-    if ($search) {
-        $cleanSearch = preg_replace('/[^0-9]/', '', $search);
-
-        if (is_numeric($cleanSearch) && strlen($cleanSearch) == 11) {
-            $query->where('cpf', $cleanSearch);
-        } else {
-            // Busca por nome
-            $query->whereRaw("name COLLATE utf8_general_ci LIKE ?", ["%{$search}%"]);
-        }
-    }
-
-    // Usamos get() na query filtrada. 
-    // Se ainda der erro de memória, troque get() por paginate(50)
-    $consulta = $query->paginate(50);
-
-    return view('usuario.documentos', compact('consulta'));
-}*/
+   
 
 public function documentosVencidos(Request $request) {
     $search = $request->get('search');
@@ -1497,15 +1415,7 @@ public function documentosVencidos(Request $request) {
     return view('usuario.documentos', compact('consulta'));
 }
 
-    public function enviaDoc(Request $request){
-
-
-
-
-        dd($request->all()); 
-
-
-    }
+   
 public function verDocumento($id, $doc, $tipo)
 {
 

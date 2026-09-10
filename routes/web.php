@@ -449,7 +449,8 @@ Route::get(
 	
 	/* ROTA USUARIOS */
 	Route::prefix('usuarios')->group(function(){
-		Route::get(
+		
+	Route::get(
     '/consulta-pttc',
     'ConsultaPttc\ConsultaPttcController@index'
 )->name('consulta.pttc.index');

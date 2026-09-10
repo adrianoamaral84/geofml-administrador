@@ -42,7 +42,7 @@
 
                     <div class="row has-error">
 
-                        <div class="form-group col-sm-8 col-md-8 col-lg-8">
+                        <div class="form-group col-sm-8 col-md-4 col-lg-4">
     <label class="control-label" for="situacao">
         {{ __('Situação') }}
     </label>
@@ -92,7 +92,14 @@
                             @enderror
                         </div>
 
+<div class="form-group col-sm-4 col-md-4 col-lg-4">
+    <label class="control-label">Mecenas DCEx / MHEx</label>
 
+    <select name="mecenas" class="form-control">
+        <option value="0" @if(old('mecenas', $user->mecenas ?? 0) == 0) selected @endif>Não</option>
+        <option value="1" @if(old('mecenas', $user->mecenas ?? 0) == 1) selected @endif>Sim</option>
+    </select>
+</div>
                     </div>
                    
                
@@ -258,67 +265,120 @@
                         </div>
 
                 </div>
-  
-                     <div class="row has-error">
+               
+<div class="row has-error">
+
+    {{-- UF --}}
+    <div class="col-sm-4 col-md-4 col-lg-4 form-group">
+
+        <label class="control-label" for="uf">
+            {{ __('UF') }}
+        </label>
+
+        <select
+            name="uf"
+            id="uf"
+            required
+            class="custom-select mr-sm-2 @error('uf') is-invalid @enderror"
+            autocomplete="off"
+        >
+            <option value="">Selecione UF</option>
+
+            @foreach($ufs as $uf)
+
+                <option
+                    value="{{ $uf->id }}"
+                    {{ old('uf') == $uf->id ? 'selected' : '' }}
+                >
+                    {{ $uf->sigla }}
+                </option>
+
+            @endforeach
+
+        </select>
+
+        @error('uf')
+            <span class="has-error" role="alert">
+                <strong>{{ $message }}</strong>
+            </span>
+        @enderror
+
+    </div>
 
 
-                             <div class="col-sm-4 col-md-4 col-lg-4 form-group">
-                                <label class="control-label">{{ __('UF') }}</label>
-                                <select name="uf" id="uf" required class="custom-select mr-sm-2 @error('uf') is-invalid @enderror" autocomplete="off">
-                                <option value="">Selecione UF</option>
-                                    @foreach($ufs as $uf)
-                                    
-                            <option value="{{$uf->id}}">{{$uf->sigla}}</option>
-                                   
-        
-                                    @endforeach
-                                </select>
+    {{-- CIDADE --}}
+    <div class="col-sm-4 col-md-4 col-lg-4 form-group">
 
-                                @error('uf')
-                                    <span class="has-error" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
+        {{--
+            Guarda a cidade selecionada anteriormente.
+            O JavaScript utiliza exatamente este ID.
+        --}}
+        <input
+            type="hidden"
+            id="cidade_selecionada"
+            value="{{ old('cidade') }}"
+        >
 
-                              <div class="col-sm-4 col-md-4 col-lg-4 form-group">
-                                <input type="hidden" name="cidade" id="cidade" value="old('cidade') }}">
-                                
-                                <input type="hidden" name="cidadee" id="cidadee" value="{{ old('cidade') }}">
-                                
-                                <label class="control-label">{{ __('Cidade') }}</label>
-                                <select name="cidade" id="cidade" required="required" class="custom-select mr-sm-2 @error('cidade') is-invalid @enderror" autocomplete="off">
-                                <option value="">Selecione Cidade</option>
-                                   
-                                </select>
+        <label class="control-label" for="cidade">
+            {{ __('Cidade') }}
+        </label>
 
-                                @error('cidade')
-                                    <span class="has-error" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
+        <select
+            name="cidade"
+            id="cidade"
+            required
+            class="custom-select mr-sm-2 @error('cidade') is-invalid @enderror"
+            autocomplete="off"
+        >
+            <option value="">Selecione Cidade</option>
+        </select>
 
-                            <div class="col-sm-4 col-md-4 col-lg-4 form-group">
-                          
-                                <input type="hidden" name="om" value="">
+        @error('cidade')
+            <span class="has-error" role="alert">
+                <strong>{{ $message }}</strong>
+            </span>
+        @enderror
 
-                                <label class="control-label">{{ __('OM') }}</label>
-                                <select name="om" id="om" class="custom-select mr-sm-2 @error('om') is-invalid @enderror" autocomplete="off">
-                                <option value="">Selecione OM</option>
-                                
-                                                       
-                                </select>
+    </div>
 
-                                @error('om')
-                                    <span class="has-error" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
 
-                    </div>
+    {{-- OM --}}
+    <div class="col-sm-4 col-md-4 col-lg-4 form-group">
 
+        {{--
+            Guarda a OM selecionada anteriormente.
+            O JavaScript utiliza exatamente este ID.
+        --}}
+        <input
+            type="hidden"
+            id="om_selecionada"
+            value="{{ old('om') }}"
+        >
+
+        <label class="control-label" for="om">
+            {{ __('OM') }}
+        </label>
+
+        <select
+            name="om"
+            id="om"
+            class="custom-select mr-sm-2 @error('om') is-invalid @enderror"
+            autocomplete="off"
+        >
+            <option value="">Selecione primeiro uma cidade</option>
+        </select>
+
+        @error('om')
+            <span class="has-error" role="alert">
+                <strong>{{ $message }}</strong>
+            </span>
+        @enderror
+
+    </div>
+
+</div>
+
+                     
                  <div class="row form-group has-error">
                          <div class="col-sm-6 col-md-8 col-lg-8 form-group">
                             <label class="control-label">{{ __('Email') }}</label>
