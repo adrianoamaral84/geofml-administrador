@@ -13,8 +13,17 @@ class ConsultaPttcController extends Controller
      */
     public function index(Request $request)
     {
-        $pesquisa = trim($request->input('pesquisa', ''));
+        /*
+         * Pesquisa digitada pelo usuário.
+         */
+        $pesquisa = trim(
+            $request->input('pesquisa', '')
+        );
 
+
+        /*
+         * Consulta base.
+         */
         $query = User::query()
             ->with([
                 'posto',
@@ -24,71 +33,175 @@ class ConsultaPttcController extends Controller
             ->where('status', 1)
             ->where('pttc', 1);
 
+
         /*
-         * Pesquisa opcional por nome, nome de guerra,
-         * CPF, identidade militar ou e-mail.
+         * Pesquisa opcional por:
+         *
+         * - Nome
+         * - CPF
+         * - Identidade militar
+         * - E-mail
          */
         if ($pesquisa !== '') {
-            $cpfNumerico = preg_replace('/\D/', '', $pesquisa);
 
-            $query->where(function ($consulta) use (
-                $pesquisa,
-                $cpfNumerico
-            ) {
-                $consulta
-                    ->where(
-                        'name',
-                        'LIKE',
-                        '%' . $pesquisa . '%'
-                    )
+            /*
+             * Remove pontos, traços e outros caracteres
+             * caso o usuário pesquise um CPF formatado.
+             */
+            $cpfNumerico = preg_replace(
+                '/\D/',
+                '',
+                $pesquisa
+            );
 
-                    ->orWhere(
-                        'email',
-                        'LIKE',
-                        '%' . $pesquisa . '%'
-                    )
-                    ->orWhere(
-                        'idtMil',
-                        'LIKE',
-                        '%' . $pesquisa . '%'
-                    );
 
-                if ($cpfNumerico !== '') {
-                    $consulta->orWhere(
-                        'cpf',
-                        'LIKE',
-                        '%' . $cpfNumerico . '%'
-                    );
+            $query->where(
+                function ($consulta) use (
+                    $pesquisa,
+                    $cpfNumerico
+                ) {
+
+                    $consulta
+                        ->where(
+                            'name',
+                            'LIKE',
+                            '%' . $pesquisa . '%'
+                        )
+
+                        ->orWhere(
+                            'email',
+                            'LIKE',
+                            '%' . $pesquisa . '%'
+                        )
+
+                        ->orWhere(
+                            'idtMil',
+                            'LIKE',
+                            '%' . $pesquisa . '%'
+                        );
+
+
+                    /*
+                     * Pesquisa CPF somente se houver
+                     * algum número digitado.
+                     */
+                    if ($cpfNumerico !== '') {
+
+                        $consulta->orWhere(
+                            'cpf',
+                            'LIKE',
+                            '%' . $cpfNumerico . '%'
+                        );
+
+                    }
+
                 }
-            });
+            );
+
         }
 
-                // Captura os parâmetros enviados pelo clique na coluna (Blade Etapa 1)
-        $ordem = $request->input('ordem', 'name');
-        $direcao = $request->input('direcao', 'asc');
 
-        // Lista de colunas permitidas para evitar injeção SQL maliciosa
-        $colunasPermitidas = ['id', 'id_posto', 'name', 'cpf', 'email', 'id_om'];
-        if (!in_array($ordem, $colunasPermitidas)) {
+        /*
+         * Ordenação.
+         *
+         * Padrão:
+         * Nome crescente.
+         */
+        $ordem = $request->input(
+            'ordem',
+            'name'
+        );
+
+        $direcao = $request->input(
+            'direcao',
+            'asc'
+        );
+
+
+        /*
+         * Apenas estas colunas podem ser
+         * utilizadas no ORDER BY.
+         *
+         * Isso também evita manipulação
+         * indevida do parâmetro da URL.
+         */
+        $colunasPermitidas = [
+            'id',
+            'id_posto',
+            'name',
+            'cpf',
+            'email',
+            'id_om',
+        ];
+
+
+        /*
+         * Se receber uma coluna inválida,
+         * volta para ordenação por nome.
+         */
+        if (!in_array(
+            $ordem,
+            $colunasPermitidas,
+            true
+        )) {
+
             $ordem = 'name';
+
         }
 
-        // Garante que a direção seja apenas 'asc' ou 'desc'
-        $direcao = ($direcao === 'desc') ? 'desc' : 'asc';
 
-        // Executa a ordenação global no MariaDB e faz a paginação de 20 em 20
+        /*
+         * Permite somente ASC ou DESC.
+         */
+        $direcao =
+            strtolower($direcao) === 'desc'
+                ? 'desc'
+                : 'asc';
+
+
+        /*
+         * A ordenação acontece no banco ANTES
+         * da paginação.
+         *
+         * Portanto:
+         *
+         * ORDER BY id ASC
+         * LIMIT 20
+         *
+         * ou
+         *
+         * ORDER BY id DESC
+         * LIMIT 20
+         */
         $usuariosPttc = $query
-            ->orderBy($ordem, $direcao)
+            ->orderBy(
+                $ordem,
+                $direcao
+            )
             ->paginate(20);
 
 
         /*
-         * Mantém o filtro ao trocar de página.
+         * Mantém:
+         *
+         * pesquisa
+         * ordem
+         * direcao
+         *
+         * ao mudar de página.
+         *
+         * Exemplo:
+         *
+         * ?pesquisa=joao&ordem=id&direcao=desc&page=2
          */
-        $usuariosPttc->appends([
-            'pesquisa' => $pesquisa,
-        ]);
+        $usuariosPttc->appends(
+            $request->except('page')
+        );
 
+
+        /*
+         * Retorna a view.
+         */
         return view(
             'usuario.consulta_pttc',
             compact(
