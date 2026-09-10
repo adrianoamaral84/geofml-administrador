@@ -60,7 +60,7 @@
 
 
                         <div class="form-group col-sm-4 col-md-4 col-lg-4">
-    <label class="control-label">Mecenas</label>
+    <label class="control-label">Mecenas DCEx / MHEx</label>
 
     <select name="mecenas" class="form-control" readonly="">
         <option value="0" @if(old('mecenas', $user->mecenas ?? 0) == 0) selected @endif>Não</option>

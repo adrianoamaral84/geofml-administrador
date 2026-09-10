@@ -259,7 +259,7 @@
                         </div>
 
                         <div class="form-group col-sm-3 col-md-3 col-lg-3">
-    <label class="control-label">Mecenas</label>
+    <label class="control-label">Mecenas DCEx / MHEx</label>
 
     <input type="text"
         class="form-control"
