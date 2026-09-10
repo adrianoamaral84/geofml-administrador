@@ -41,7 +41,7 @@ class ConsultaAtendenteController extends Controller
                     ->orWhere(
                         'email',
                         'LIKE',
-                        '%' . $pesquisa . '%'
+                        $pesquisa
                     )
 
                     ->orWhere(

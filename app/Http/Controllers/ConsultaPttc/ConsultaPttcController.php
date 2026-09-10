@@ -132,6 +132,7 @@ class ConsultaPttcController extends Controller
             'cpf',
             'email',
             'id_om',
+            'mesAnoFinal'
         ];
 
 

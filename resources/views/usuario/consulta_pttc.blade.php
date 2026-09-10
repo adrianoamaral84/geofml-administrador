@@ -353,6 +353,9 @@
                                     Organização Militar
                                 </th>
 
+                                <th class="no-sort">
+                                    Mês/Ano
+                                </th>
 
                                 {{-- Status --}}
                                 <th class="no-sort">
@@ -447,7 +450,11 @@
 
                                     </td>
 
+                                    <td>
 
+                                        {{ $usuario->mesAnoFinal ?: '-' }}
+
+                                    </td>
                                     {{-- Status --}}
                                     <td>
 
