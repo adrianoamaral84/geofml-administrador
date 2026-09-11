@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="title-block">
-    <h3 class="title"> Dados do Pedido </h3>
+    <h3 class="title"> Dados do Pedido </h3> 
     <p class="title-description">Usuário aguardando a confirmação da sua solicitação!</p>
 </div>
 
@@ -13,7 +13,7 @@
         <i class="fas fa-award fa-2x mr-3"></i>
 
         <div>
-            <strong>Usuário Mecenas DECEx / MHEx</strong><br>
+            <strong>Usuário Mecenas</strong><br>
             Este militar participa do Programa Mecenas e possui
             <strong>{{ $hospedagem->user->percentual_desconto }}% de desconto</strong>
             nas diárias.
@@ -41,19 +41,19 @@
                             <input type="text" class="form-control boxed @error('posto') is-invalid @enderror" value="{{ $hospedagem->user->posto->sigla}}" name="posto" id="posto" autofocus required readonly="" maxlength="100" onpaste="return false;" style="text-transform: uppercase;">
                             <input type="hidden" name="id1" value="{{ $hospedagem->id }}" placeholder="">
                             <input type="hidden" name="posto_id" value="{{ $hospedagem->user->posto->id}}">
-
+                            
                             @error('posto')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>
                             @enderror
                         </div>
-
+                        
                         <div class="form-group col-sm-6 col-md-6 col-lg-6">
                             <label class="control-label">{{ __('Nome') }}</label>
                             <input type="text" class="form-control boxed @error('nome') is-invalid @enderror" value="{{ $hospedagem->user->name}}" name="nome" id="nome" autofocus required readonly="" maxlength="100" onpaste="return false;" style="text-transform: uppercase;">
                             <input type="hidden" name="id" value="{{ Crypt::encrypt($hospedagem) }}" placeholder="">
-
+                            
                             @error('nome')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -70,7 +70,7 @@
                                 </span>
                             @enderror
                         </div>
-
+              
                     </div>
 
                     <div class="row has-error">
@@ -107,7 +107,7 @@
                             @enderror
                         </div>
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
-    <label class="control-label">Mecenas DCEx / MHEx</label>
+    <label class="control-label">Mecenas</label>
 
     <input type="text"
        class="form-control"
@@ -144,20 +144,20 @@
 
 
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
-
+                        
                              <label class="control-label">{{ __('PNE') }}</label>
                                 <select name="uf" id="uf" required readonly="" class="custom-select mr-sm-2 @error('pne') is-invalid @enderror" autocomplete="off">
-
+                                
                                  @if($hospedagem->pne == 1)
                                  <option value="1" selected >Sim</option>
                                 @else
                                 <option value="0">Não</option>
-                                @endif
-
-
+                                @endif   
+        
+                                
                                 </select>
-
-
+                               
+                           
                                     @error('pne')
                                     <span class="has-error" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -172,26 +172,26 @@
 
                         <label class="control-label">{{ __('PET') }}</label>
                                 <select name="pet" id="pet" required readonly="" class="custom-select mr-sm-2 @error('pet') is-invalid @enderror" autocomplete="off">
-
+                                
                                  @if($hospedagem->pet == 1)
                                  <option value="1" selected >Sim</option>
                                 @else
                                 <option value="0">Não</option>
-                                @endif
-
-
+                                @endif   
+        
+                                
                                 </select>
-
-
+                               
+                           
                                     @error('pet')
                                     <span class="has-error" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                     @enderror
-
-
-
-
+                        
+                            
+                           
+                            
                         </div>
 
 
@@ -210,7 +210,7 @@
                                 </span>
                             @enderror
                         </div>
-
+                      
                         @if($hospedagem->status == 4)
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
                             <label class="control-label">{{ __('Período Entrada') }}</label>
@@ -269,7 +269,7 @@
 
 
                     <div class="form-group col-sm-12 col-md-3 col-lg-3">
-
+                        
                              <label class="control-label" style="color: red;">{{ __('UH Distribuída') }}</label>
                                 <select name="unidadeshabitacionais" id="unidadeshabitacionais" required class="custom-select mr-sm-2 @error('unidadeshabitacionais') is-invalid @enderror" autocomplete="off" readonly="">
                                    <option value="">Selecione Unidade Habitacional</option>
@@ -278,12 +278,12 @@
                         <option value="{{$unidades_habitacional->id}}" @if($unidades_habitacional->id == $hospedagem->und_habitacionais_id) selected @endif>{{$unidades_habitacional->sigla}}{{ $unidades_habitacional->classe->classe }} - {{ $unidades_habitacional->classe->descricao }} - {{ $unidades_habitacional->tipohabitacao->descricao}} @if($unidades_habitacional->pet == 1) - Pet SIM @endif
                         </option>
                         @endforeach
-
-
-
+                                   
+        
+                                
                                 </select>
-
-
+                               
+                           
                                     @error('unidadeshabitacionais')
                                     <span class="has-error" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -294,7 +294,7 @@
                     </div>
                      <div class="form-group col-sm-12 col-md-3 col-lg-3">
 
-
+                        
 
                             <label class="control-label">{{ __('Valor Diária') }}</label>
                             <input type="text" class="form-control boxed @error('valordiaria') is-invalid @enderror" value="{{ number_format( $hospedagem->valortarifa, 2, ',', '.' )}}" name="valordiaria" id="valordiaria" required autofocus readonly onpaste="return false;">
@@ -304,12 +304,12 @@
                                 </span>
                             @enderror
 
-
+                        
 
                         </div>
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
 
-
+                        
 
                             <label class="control-label">{{ __('Quantidade de Diarias') }}</label>
                             <input type="text" class="form-control boxed @error('qntdiarias') is-invalid @enderror" value="{{  $hospedagem->qntdiarias }}" name="qntdiarias" id="qntdiarias" required autofocus readonly onpaste="return false;">
@@ -319,12 +319,12 @@
                                 </span>
                             @enderror
 
-
+                      
 
                         </div>
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
 
-
+                        
 
                             <label class="control-label">{{ __('Valor Total') }}</label>
                             <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valor, 2, ',', '.' )}}" name="valor" id="valor" required autofocus readonly onpaste="return false;">
@@ -334,15 +334,15 @@
                                 </span>
                             @enderror
 
-
+                        
 
                         </div>
 
                         </div>
                         <div class="row has-error">
 
-
-                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
+                        
+                         <div class="form-group col-sm-12 col-md-3 col-lg-3">                  
 
                             <label class="control-label">{{ __('Valor Pago') }}</label>
                             <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valor_pago, 2, ',', '.' )}}" name="valorpago" id="valorpago" required autofocus readonly onpaste="return false;">
@@ -353,7 +353,7 @@
                             @enderror
 
                         </div>
-                        <div class="form-group col-sm-12 col-md-3 col-lg-3">
+                        <div class="form-group col-sm-12 col-md-3 col-lg-3">                  
 
                             <label class="control-label">{{ __('Valor Restante') }}</label>
                             <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valor_restante, 2, ',', '.' )}}" name="valorrestante" id="valorrestante" required autofocus readonly onpaste="return false;">
@@ -363,7 +363,7 @@
                                 </span>
                             @enderror
 
-                        </div>
+                        </div>   
 
                         </div>
 
@@ -372,31 +372,31 @@
 
                         @if($hospedagem->status == 4)
                         <div class="row has-error">
-
-                        <div class="form-group col-sm-12 col-md-6 col-lg-6">
+                       
+                        <div class="form-group col-sm-12 col-md-6 col-lg-6"> 
 
                             <a href="{{ route('documentos.verdocumento', ['id' => Crypt::encrypt($comprovante->id), 'doc' => Crypt::encrypt($comprovante->tipo_doc), 'tipo' => '3' ]) }}" target="_blank" class="btn btn-secondary btn-xl rounded-s" style="margin-top: 20px;">
                                     <i class="fas fa-address-card"></i>
                                     Ver Comprovante de Pagamento
-                            </a>
+                            </a> 
 
 
 
+                           
+                        </div>   
 
-                        </div>
-
-                        </div>
+                        </div>   
                         @endif
+  
+              
+
+               
+
+                
 
 
 
-
-
-
-
-
-
-
+                 
 
                     <hr>
 @if($ultimoPagamento)
@@ -414,43 +414,43 @@
     </div>
 @endif
 
-
-
+                   
+                   
 
                 </form>
-
-
-
-
+             
+             
+                
+                
             </div>
-
+            
              <div class="form-group row">
                         <div class="col-sm-12 col-xl-12">
                             <p class="title-description">
-
+                                
                             </p><br>
-
-
+ 
+                             
                             <a href="javascript:;" data-target="#AprovaModal" data-toggle="modal" onclick="aprovapedido('{{Crypt::encrypt($hospedagem->id)}}')" title="Ver Aguardando Liberação" class="btn btn-success btn-xl" style="color: #fff">
                                    <i class="fas fa-angle-double-up"></i>
                                 Liberar Unidade Para Uso
                             </a>
 
-
-
-
+                            
+                            
+                            
                                     <a href="javascript:;" data-toggle="modal" onclick="negarpedido('{{Crypt::encrypt($hospedagem->id)}}')" data-target="#NegarModal" class="btn btn-danger" title="Negar Pedido">
                                     <i class="fas fa-ban fa-sm" ></i> Negar Solicitação!</a>
 
 
-
-
+                            
+                           
 
 
                                              <a href="javascript:;" data-toggle="modal" data-target="#ModalVoltarCancelar" style="color: white;"  class="btn btn-info" title="Retornar">
                                     <i class="fas fa-rotate-left" ></i> Retornar para Envio Comprovante </a>
 
-
+                            
 
 
 
@@ -468,7 +468,7 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}
+                                                    {{ csrf_field() }}  
                                                     {{ method_field('PUT') }}
                                                     <p>Liberar Unidade para Uso?</p>
                                                 </div>
@@ -493,7 +493,7 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}
+                                                    {{ csrf_field() }}  
                                                     {{ method_field('PUT') }}
                                                     <p>Deseja realmente Negar esse Pedido?</p>
                                                 </div>
@@ -519,13 +519,13 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}
+                                                    {{ csrf_field() }}  
                                                     {{ method_field('POST') }}
                                                     <p > Deseja retornar para Envio de Comprovante essa Reserva?</p>
                                                      <p>Motivo:</p>
                                                     <p><textarea name="motivo" id="motivo" style="width: 100%; height: 50px;" maxlength="200" ></textarea></p>
                                                     <input type="hidden" name="id" value="{{ $hospedagem->id }}">
-
+                                                    
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="formSubmitVoltarCancelar()">Sim</button>
@@ -569,7 +569,7 @@
 
      function VoltarReserva(id)
     {
-
+        
 
         var motivo = document.getElementById("motivo").value;
         var id = id;
@@ -593,14 +593,14 @@
 
 
 <script>
-
+    
 window.disableLitepickerStyles = true;
 
-const picker = new Litepicker({
+const picker = new Litepicker({ 
     element: document.getElementById('peridoinicial'),
     elementEnd: document.getElementById('final'),
     plugins: ['mobilefriendly','keyboardnav'],
-
+    
     keyboardnav: {
         firstTabIndex: 2,
     },
@@ -634,16 +634,16 @@ const picker = new Litepicker({
     //minDate: "{{ $minDate }}",
 
     lockDays: {!! $a !!},
-
+    
     //lockDays: [["2021-04-17","2021-04-19"],["2021-04-21","2021-04-23"],"2021-04-20","2021-04-28"],
 
 
     //lockDays: [["2021-04-19","2021-04-23"],["2021-05-03","2021-05-06"]],
     //lockDays: [['2021-05-01', '2021-05-05'],'2021-04-28'],
     tooltipText: {"one":"dia","other":"dias"},
-
+    
     //tooltipNumber: (totalDays) => {
-
+        
         //return totalDays - 1;
 
     //},
@@ -652,7 +652,7 @@ const picker = new Litepicker({
 });
 
 
-</script>
-
+</script>  
+    
 @endpush
 @endsection

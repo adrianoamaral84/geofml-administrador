@@ -37,7 +37,7 @@
         <li>
             <a href="{{ route('user.mecenas') }}">
                 <i class="fa fa-star"></i>
-                Mecenas DCEx / MHEx
+                Mecenas DECEx/MHEx
             </a>
         </li>
         <li>
@@ -64,7 +64,7 @@
         Pedidos Duplicados
     </a>
 </li>
-        
+
     </ul>
 </li>
 
