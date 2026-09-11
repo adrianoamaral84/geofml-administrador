@@ -30,7 +30,7 @@ class RelatorioController extends Controller
     public function verdados($id){
     
 
-        //dd('ok');
+       
         date_default_timezone_set('America/Sao_Paulo');
         $id = Crypt::decrypt($id);
         $hospedagem = \App\Hospede::where('id', $id)->with('user')->first();     
@@ -43,7 +43,7 @@ class RelatorioController extends Controller
 
     public function atualizar(Request $request){
 
-        //dd($request->all());
+       
         date_default_timezone_set('America/Sao_Paulo');
         $customMessages = [
 
@@ -111,105 +111,6 @@ class RelatorioController extends Controller
 
     }
 
-   /*public function view(Request $request){
-        
-
-        date_default_timezone_set('America/Sao_Paulo');
-        session(['ano' => $request->ano]);
-        session(['mes' => $request->mes]);
-        session(['status' => $request->status]);
-
-        $customMessages = [
-                      
-            'ano.required' => 'Campo Ano obrigatório',
-            'mes.required' => 'Campo Mês obrigatório',
-            'status.required' => 'Campo Status obrigatório',
-             
-        ];
-
-        $validatedData = [];
-        $validatedData = $request->validate($validatedData, $customMessages);
-
-        if(empty($request->all())){
-            
-            $pegaStatus = \App\Status_hospedagem::where('id', 0)->first();
-            
-            session(['ano' => $request->ano]);
-            session(['mes' => $request->mes]);
-            session(['status' => $request->status]);
-
-        }else{
-            
-            $pegaStatus = \App\Status_hospedagem::where('id', $request->status)->first();
-            session(['ano' => $request->ano]);
-            session(['mes' => $request->mes]);
-            session(['status' => $request->status]);
-        }
-        
-        $statusUG = $pegaStatus->status;
-        $ano = $request->ano;
-        $mes = $request->mes;
-        $status = $request->status;
-        $data_inicial   = $ano . '-'. $mes . '-01';
-        $data_final     = $ano . '-'. $mes . '-31';
-/*
-        $consulta = \App\Hospede::select('user_cpf', 'user_id', 'und_habitacionais_id', 'tipo_und_id', 'status', 'id', 'data_inicio', 'data_termino')
-        //$consulta = \App\Hospede::select('user_cpf', 'id')
-        //$consulta = \App\Hospede::
-        ->whereBetween('data_inicio', [$data_inicial,$data_final])
-        ->where('status', $status)
-        ->with('comprovante')
-        ->get();
-*/
-
-      /*  $consulta = DB::select("SELECT h.user_cpf, h.user_id, h.und_habitacionais_id, h.tipo_und_id, h.status, h.id, h.valor, h.data_inicio, h.data_termino, u.name, p.id as 'Posto ID', s.status as 'status', s.id as 'ID Status', t.descricao, p.sigla, h.und_habitacionais_id, c.classe, n.sigla as 'SI' FROM hospedagem h
-            INNER JOIN user u ON u.id = h.user_id
-            left JOIN tipoundhab t ON t.id = h.tipo_und_id
-            LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
-            LEFT JOIN status_hospedagem s ON s.id = h.status
-            LEFT JOIN unidades_habitacionais n ON n.id = h.und_habitacionais_id
-            LEFT JOIN classe_habitacional c ON c.id = n.classe_habitacional_id
-
-            WHERE h.status = '$status' AND date(h.data_inicio) >= '$data_inicial' AND date(h.data_inicio) <= '$data_final'");
-        // $consulta = (object) $consulta;
-
-
-
-
-/*
-        foreach ($consulta as $key => $value) {
-                $consulta2[] = ['cpf' => $value->user_cpf, 'id' => $value->user_id];
-                //$consulta2[] = $value->user_cpf;
-        }
-*/
-        //$consulta = json_encode($consulta);
-        //dd($consulta);
-        
-
-
-
-
-
-
-        /*
-        $teste[] = '';
-        $posts = \App\Hospede::select('user_cpf', 'user_id', 'und_habitacionais_id', 'tipo_und_id', 'status', 'id', 'data_inicio', 'data_termino')
-        ->whereBetween('data_inicio', [$data_inicial,$data_final])
-        ->where('status', $status)->chunk(100, function($posts){
-        foreach ($posts as $post){
-            $teste[] = $post;
-        }
-        });
-        */
-        /*
-        foreach ($consulta as $key => $value) {              
-            $data_inicio[] = $value->undHB;    
-        }
-        */
-       /* return view('relatorios.view2', compact('consulta', 'statusUG'));
-
-    }*/
-
        public function view(Request $request) {
     date_default_timezone_set('America/Sao_Paulo');
     
@@ -265,166 +166,6 @@ class RelatorioController extends Controller
 
 
 
-    /*public function arrecadacaoview(Request $request){
-
-        
-        date_default_timezone_set('America/Sao_Paulo');
-
-        if(!empty($request->all())){
-
-        session(['ano' => $request->ano]);
-        session(['mes' => $request->mes]);
-
-        }
-
-        //dd(session()->get('ano'));
-
-        if(empty($request->all())){
-
-          $request->ano = session()->get('ano');
-          $request->mes = session()->get('mes');
-
-        }
-
-        $customMessages = [
-                      
-            'ano.required' => 'Campo ano obrigatório',
-            'mes.required' => 'Campo mês obrigatório',
-             
-        ];
-
-        $validatedData = [
-
-            //'ano' => 'required',
-            //'mes' => 'required',  
-           
-        ];
-
-        $validatedData = $request->validate($validatedData, $customMessages);
-
-        $ano = $request->ano;
-        $mes = $request->mes;
-
-        $mesAtual = Date('m');
-        $anoAtual = Date('Y');
-        $proximoMes1 = date('m', strtotime('+1 months'));
-        $proximoMes = date('Y-m-d', strtotime('+1 months'));
-        $MesAnterior = date('Y-m-d', strtotime('11 months'));
-        $MesAnterior1 = date('m', strtotime('11 months'));
-
-        $proximoAno = date('Y', strtotime('+1 months'));
-        $hoje = date("Y-m-d");
-        //dd($hoje);
-        $Diahoje = date("d");
-
-        $pegaData = \App\BloqueioDia::where('id', 1)->first();
-        $proximofehamentoMes = date($proximoAno . "-" . $proximoMes1 . "-" . $pegaData->dia);
-        //dd($proximofehamentoMes);
-        $data_inicial = date($ano . "-". $mes . "-01");      
-        $data_final = date($ano . "-" . $mes. "-31");
-
-        $consulta = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h
-            INNER JOIN user u ON u.id = h.user_id 
-            LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
-            WHERE h.checkin = 2 AND h.status = 2 AND date(h.checkin_at) >= '$data_inicial' AND date(h.checkin_at) <= '$data_final'");
-
-        $consulta_valor = DB::select("SELECT SUM(valor) AS Valor FROM hospedagem WHERE checkin = 2 AND status = 2 AND date(checkin_at) >= '$data_inicial' AND date(checkin_at) <= '$data_final'");
-
-
-        $consulta2 = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h 
-            INNER JOIN user u ON u.id = h.user_id 
-            LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
-            WHERE h.checkin = 1 AND date(h.checkin_at) >= '$data_inicial' AND date(h.checkin_at) <= '$data_final'");
-
-        $consulta2_valor = DB::select("SELECT SUM(valor_pago) AS valor_pago FROM hospedagem WHERE checkin = 1 AND date(checkin_at) >= '$data_inicial' AND date(checkin_at) <= '$data_final'");
-
-
-        $consulta3 = DB::select("SELECT h.id, h.user_id, h.checkin_at, h.checkout_at, h.qntdiarias, h.valortarifa, h.valor, u.name, p.sigla FROM hospedagem h 
-            INNER JOIN user u ON u.id = h.user_id 
-            LEFT JOIN posto_graduacao p ON p.id = u.postograd_id
-            WHERE h.checkin IS NULL AND h.status = 2 AND date(h.data_inicio) >= '$data_inicial' AND date(h.data_inicio) <= '$data_final'");
-
-        $consulta3_valor = DB::select("SELECT SUM(valor_pago) as valor_pagou FROM hospedagem WHERE checkin IS NULL AND status = 2 AND date(data_inicio) >= '$data_inicial' AND date(data_inicio) <= '$data_final'");
-
-
-
-        foreach ($consulta3_valor as $key => $value) {  
-            $valor_consulta3 = $value->valor_pagou;
-        }
-        foreach ($consulta2_valor as $key => $value) {  
-            $valor_consulta2 = $value->valor_pago;
-            if(empty($value->checkout_at)){
-            }
-        }
-        foreach ($consulta_valor as $key => $value) {
-            $valor_consulta = $value->Valor;
-        }
-
-        if(isset($valor_consulta2)){
-            $valor = $valor_consulta2 + $valor_consulta;
-        }else{
-            $valor = $valor_consulta;
-        }
-
-        if(isset($valor_consulta3)){
-            $valor = $valor_consulta3 + $valor;
-        }
-        
-        $consulta = array_merge($consulta, $consulta2, $consulta3);
-        
-        
-        if($anoAtual == $ano){
-
-        if($mesAtual == $mes){
-
-        $libera = 1;
-
-        }elseif ($mes == $proximoMes1){
-
-        // dd('mes proximo');
-            
-            foreach ($consulta as $key => $value) {
-            $teste[] = $value;
-            }
-                
-
-            if(strtotime($hoje) <= strtotime($proximofehamentoMes)){
-                
-                $libera = 1;
-               
-            }else{
-                
-                $libera = 0;                
-            }
-
-        }elseif ($mes == $MesAnterior1){
-
-            
-            if($Diahoje <= 10){
-                $libera = 1;
-                
-            }else{
-                $libera = 0;
-            }
-
-            
-
-
-
-
-        }else{
-        
-             $libera = 0;
-        }
-
-    }else{
-        $libera = 0;
-    }
-
-//dd($libera);
-        return view('relatorios.arrecadacao_resultado', compact('consulta', 'valor', 'ano', 'mes', 'libera'));
-        
-    }*/
 
    public function arrecadacaoview(Request $request)
 {
@@ -718,126 +459,6 @@ class RelatorioController extends Controller
 
 
 
-    /*public function canceladosview(Request $request){
-
-        date_default_timezone_set('America/Sao_Paulo');
-        
-        $customMessages = [
-                      
-            'ano.required' => 'Campo obrigatório',
-            'mes.required' => 'Campo obrigatório',
-             
-        ];
-        $validatedData = [
-            'ano' => 'required',
-            'mes' => 'required',  
-           
-        ];
-
-        $validatedData = $request->validate($validatedData, $customMessages);
-
-        $ano = $validatedData['ano'];
-        $mes = $validatedData['mes'];
-
-        $mesAtual = Date('m');
-
-        $mesProximo = date('m', strtotime('+1 months'));
-        
-        $data_inicial = $ano . '-'. $mes . '-01' ;      
-        $ultimo_dia = date("t", mktime(0,0,0,$mesAtual,'01',$ano));
-        $data_final = date("$ano-" . "$mes". "-31");
-
-        //dd($data_inicial);
-        
-        
-        $consulta = \App\Hospede::whereBetween('data_inicio', [$data_inicial,$data_final])
-        //->where('checkin', 2)
-        ->whereNotNull('valor_pago')
-        ->where('status', 6)
-        //->with('comprovante')
-        ->get();
-        
-
-        //$consulta = DB::select("SELECT * FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$data_inicial' AND date(data_inicio) <= '$data_final'");
-
-        //dd($consulta);
-
-        foreach ($consulta as $key => $value) {
-            $va[] = $value->id;
-        }
-        //dd($va);
-
-            
-        if($mesAtual == $mes){
-            $liberaDistribuir = 1;
-        }else{
-             $liberaDistribuir = 0;
-        }
-
-        $valor_todos = 0;
-        if(count($consulta)){
-
-           
-            
-
-
-            foreach ($consulta as $key => $value) {
-
-                // PEGA SOMENTE OS VALORES QUE foram pago e estão com comprovante
-                $valor_todos += $value->valor_pago;
-                if(isset($value->comprovante)){
-                   $hospedagens[] = $value->comprovante->hospedagem_id;
-                }else{
-                   $naotem[] = $value->valor_pago;
-                }
-
-
-
-        }
-        if(isset($hospedagens)){   
-
-                foreach ($hospedagens as $key => $value) {
-                    $hospedagem[] = \App\Hospede::where('id', $value)->first();
-                }
-
-                $valor = 0;
-                foreach ($hospedagem as $key => $value) {
-               
-                $valor += $value->valor_pago;
-                $vv[] = $value->valor_pago;
-                }
-        
-
-
-        }else{
-                $valor = 0;
-                $valor_todos = 0;
-                return view('relatorios.cancelados_resultado', compact('valor','liberaDistribuir', 'valor_todos', 'mes', 'ano'));
-        
-        }
-
-
-
-
-
-                $valor1 = $valor;
-                //dd($valor1);
-
-                return view('relatorios.cancelados_resultado', compact('hospedagem', 'valor', 'valor1', 'liberaDistribuir', 'valor_todos', 'mes', 'ano'));
-
-
-
-
-        
-        }else{
-            
-                  
-                $valor = 0;
-                return view('relatorios.cancelados_resultado', compact('valor', 'liberaDistribuir', 'valor_todos', 'mes', 'ano'));
-
-        }
-
-    } */
 
 public function canceladosview(Request $request) {
     date_default_timezone_set('America/Sao_Paulo');
@@ -1338,41 +959,6 @@ public function canceladosview(Request $request) {
             $Mes11Cancelados = 0;
         }
 
-/*
-
-        $Mes12Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-12-01',$ano.'-12-31'])
-        ->whereNotNull('valor_pago')
-        ->where('status', 6)
-        ->with('comprovante')
-        ->get();
-
-        //dd($Mes12Cancelados_busca);
-        
-
-        //$Mes12Cancelados[] = 0;
-        if(count($Mes12Cancelados_busca)){
-
-
-            $Mes12Cancelados = 0;
-            foreach ($Mes12Cancelados_busca as $key => $value){
-
-                if(isset($value->comprovante)){
-
-                    $Mes12Cancelados += $value->valor_pago;
-                    
-                }
-
-            }
-
-
-        }else{
-            $Mes12Cancelados = 0;
-        }
-*/
-
-            //dd($Mes12Cancelados);
-
-
  $Mes12Cancelados_busca = \App\Hospede::whereBetween('data_inicio', [$ano.'-12-01',$ano.'-12-31'])
         ->whereNotNull('valor_pago')
         ->where('status', 6)
@@ -1418,45 +1004,6 @@ public function canceladosview(Request $request) {
         }else{
             $Mes12Cancelados = 0;
         }
-
-        
-
-        //$Mes12Cancelados = 1000;
-
-
-
-        //dd($Mes12Cancelados_busca);
-        /*
-
-        $Mes01Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-01-01' AND date(data_inicio) <= '$ano-01-31'");
-        
-        $Mes02Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-02-01' AND date(data_inicio) <= '$ano-02-31' GROUP BY MONTH(data_inicio)");
-        
-        $Mes03Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-03-01' AND date(data_inicio) <= '$ano-03-31' GROUP BY MONTH(data_inicio)");
-        
-        $Mes04Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-04-01' AND date(data_inicio) <= '$ano-04-31' GROUP BY MONTH(data_inicio)");
-        
-        $Mes05Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-05-01' AND date(data_inicio) <= '$ano-05-31' GROUP BY MONTH(data_inicio)");
-
-        $Mes06Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-06-01' AND date(data_inicio) <= '$ano-06-31' GROUP BY MONTH(data_inicio)");
-
-        $Mes07Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-07-01' AND date(data_inicio) <= '$ano-07-31' GROUP BY MONTH(data_inicio)");
-
-        $Mes08Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-08-01' AND date(data_inicio) <= '$ano-08-31' GROUP BY MONTH(data_inicio)");
-
-        $Mes09Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-09-01' AND date(data_inicio) <= '$ano-09-31' GROUP BY MONTH(data_inicio)");
-
-        $Mes10Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-10-01' AND date(data_inicio) <= '$ano-10-31' GROUP BY MONTH(data_inicio)");
-
-        $Mes11Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-11-01' AND date(data_inicio) <= '$ano-11-31' GROUP BY MONTH(data_inicio)");
-
-        $Mes12Cancelados = DB::select("SELECT MONTH(data_inicio) as mes, SUM(valor_pago) as SOMA FROM hospedagem WHERE status = 6 AND valor_pago IS NOT NULL AND date(data_inicio) >= '$ano-12-01' AND date(data_inicio) <= '$ano-12-31' GROUP BY MONTH(data_inicio)");
-
-
-
-        */
-
-
 
         $totalCancelados = $Mes01Cancelados + $Mes02Cancelados + $Mes03Cancelados + $Mes04Cancelados + $Mes05Cancelados + $Mes06Cancelados + $Mes07Cancelados + $Mes08Cancelados + $Mes09Cancelados + $Mes10Cancelados + $Mes11Cancelados + $Mes12Cancelados;
 
@@ -2586,50 +2133,6 @@ public function canceladosview(Request $request) {
             $total = $Mes01HospedadosPagos + $Mes02HospedadosPagos + $Mes03HospedadosPagos + $Mes04HospedadosPagos + $Mes05HospedadosPagos + $Mes06HospedadosPagos + $Mes07HospedadosPagos + $Mes08HospedadosPagos + $Mes09HospedadosPagos + $Mes10HospedadosPagos + $Mes11HospedadosPagos + $Mes12HospedadosPagos;
            
             
-
-            //////////////////////////////////////////////////
-            // CANCELADOS
-            /*
-            foreach ($Mes01Cancelados as $key => $value) {
-                $Mes01Cancelados = $value->SOMA;
-            }
-            foreach ($Mes02Cancelados as $key => $value) {
-                $Mes02Cancelados = $value->SOMA;
-            }
-            foreach ($Mes03Cancelados as $key => $value) {
-                $Mes03Cancelados = $value->SOMA;
-            }
-            foreach ($Mes04Cancelados as $key => $value) {
-                $Mes04Cancelados = $value->SOMA;
-            }
-            foreach ($Mes05Cancelados as $key => $value) {
-                $Mes05Cancelados = $value->SOMA;
-            }
-            foreach ($Mes06Cancelados as $key => $value) {
-                $Mes06Cancelados = $value->SOMA;
-            }
-            foreach ($Mes07Cancelados as $key => $value) {
-                $Mes07Cancelados = $value->SOMA;
-            }
-            foreach ($Mes08Cancelados as $key => $value) {
-                $Mes08Cancelados = $value->SOMA;
-            }
-            foreach ($Mes09Cancelados as $key => $value) {
-                $Mes09Cancelados = $value->SOMA;
-            }
-            foreach ($Mes10Cancelados as $key => $value) {
-                $Mes10Cancelados = $value->SOMA;
-            }
-            foreach ($Mes11Cancelados as $key => $value) {
-                $Mes11Cancelados = $value->SOMA;
-            }
-            foreach ($Mes12Cancelados as $key => $value) {
-                $Mes12Cancelados = $value->SOMA;
-            }
-            */
-            //dd($Mes01Cancelados);
-
-
 
             if(empty($Mes01HospedadosPagos)){
                 $Mes01HospedadosPagos = 0;

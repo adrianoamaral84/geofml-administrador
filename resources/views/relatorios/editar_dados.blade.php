@@ -67,16 +67,67 @@
                             @enderror
                         </div>
 
-                        <div class="form-group col-sm-2 col-md-2 col-lg-2">
-                            <label class="control-label">{{ __('Valor diária') }}</label>
-                            <input type="text" class="form-control boxed @error('valordiaria') is-invalid @enderror" value="{{ number_format($hospedagem->valortarifa, 2, ',', '.')}}" disabled="" name="valordiaria" id="valordiaria" >
+                       <div class="form-group col-sm-2 col-md-2 col-lg-2">
 
-                            @error('valordiaria')
-                                <span class="has-error" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
+    @php
+        $valorTarifaOriginal = (float) $hospedagem->valortarifa;
+
+        $valorTarifaFinal = $hospedagem->user
+            ? $hospedagem->user->aplicarDesconto($valorTarifaOriginal)
+            : $valorTarifaOriginal;
+    @endphp
+
+    <label class="control-label d-block">
+        {{ __('Valor diária') }}
+    </label>
+
+    <input
+        type="text"
+        class="form-control boxed @error('valordiaria') is-invalid @enderror"
+        value="{{ number_format($valorTarifaFinal, 2, ',', '.') }}"
+        disabled
+        name="valordiaria"
+        id="valordiaria"
+    >
+
+    <input
+        type="hidden"
+        id="valordiaria_numero"
+        value="{{ $valorTarifaFinal }}"
+    >
+
+    @if($hospedagem->user && $hospedagem->user->mecenas)
+
+        <div style="margin-top: 5px; line-height: 1.2;">
+
+            <span
+                class="badge badge-success"
+                style="font-size: 11px;"
+            >
+                Mecenas - {{ $hospedagem->user->percentual_desconto }}%
+            </span>
+
+            <div
+                class="text-muted"
+                style="font-size: 11px; margin-top: 3px;"
+            >
+                De:
+                <s>
+                    R$ {{ number_format($valorTarifaOriginal, 2, ',', '.') }}
+                </s>
+            </div>
+
+        </div>
+
+    @endif
+
+    @error('valordiaria')
+        <span class="has-error" role="alert">
+            <strong>{{ $message }}</strong>
+        </span>
+    @enderror
+
+</div>
 
                         <div class="form-group col-sm-2 col-md-2 col-lg-2">
                             <label class="control-label">{{ __('Valor') }}</label>
