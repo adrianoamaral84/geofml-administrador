@@ -166,6 +166,9 @@ Route::prefix('hospede')->group(function(){
 	Route::get('/', 'Hospede\HospedeController@index')->name('hospede.index');
 	//Route::get('/', 'HomeController@index')->name('hospede');
 	//Route::get('/solicitarinscricao', 'Hospede\HospedeController@index')->name('hospede.solicitarinscricao');
+	//Route::get('/solicitarinscricao/edita/{id}', 'Hospede\HospedeController@solicitarinscricaoEditNOVO')->name('hospede.solicitarinscricao.edit');
+	Route::post('/solicitarinscricao/edita/confirmar', 'Hospede\HospedeController@solicitarinscricaoEditConfirmar')->name('hospede.edita.confirmar');
+	//Route::post('/solicitarinscricao/edita/confirmar', 'Hospede\HospedeController@solicitarinscricaoEditConfirmarNOVO')->name('hospede.edita.confirmar');
 	
 	Route::get('/pedido', 'Pedidos\PedidosController@chamaFormularioPedido')->name('hospede.solicitarinscricao');
 	Route::post('/pedido/confirmar', 'Pedidos\PedidosController@confimrarPedido')->name('hospede.confirmar');
@@ -177,10 +180,8 @@ Route::prefix('hospede')->group(function(){
 
 
 
-	//Route::get('/solicitarinscricao/edita/{id}', 'Hospede\HospedeController@solicitarinscricaoEdit')->name('hospede.solicitarinscricao.edit');
-	//Route::get('/solicitarinscricao/edita/{id}', 'Hospede\HospedeController@solicitarinscricaoEditNOVO')->name('hospede.solicitarinscricao.edit');
-	//Route::post('/solicitarinscricao/edita/confirmar', 'Hospede\HospedeController@solicitarinscricaoEditConfirmar')->name('hospede.edita.confirmar');
-	
+
+
 	//Route::get('/store', 'Hospede\HospedeController@store')->name('hospede.store');
 	//Route::post('/store', 'Hospede\HospedeController@store')->name('hospede.store');
 
@@ -189,7 +190,6 @@ Route::prefix('hospede')->group(function(){
 	
 
 	//Route::post('/confirmar', 'Hospede\HospedeController@ConfirmarDadosAntigo')->name('hospede.confirmar');
-	
 	Route::get('/meuspedidos', 'Hospede\HospedeController@meuspedidos')->name('hospede.meuspedidos');
 	Route::get('/meupedido/{id}', 'Hospede\HospedeController@meuspedido')->name('hospede.meupedido');
 	Route::get('/delete/meupedido/{id}', 'Hospede\HospedeController@deleteInscricao')->name('hospede.delete.pedido');
