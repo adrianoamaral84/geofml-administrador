@@ -775,7 +775,12 @@ Route::post(
 	});
 	/* FIM DE GRAFICOS */
 
-
+// Consulta Pagamento
+Route::get('/consultapagamento', 'Pagamento\PagamentoController@consultapagamento')->name('pagamento.consulta');
+Route::get(
+    '/pagamento/inicial/{id}/status',
+    'Pagamento\PagamentoController@consultarStatusPagamentoInicial'
+)->name('pagamento.inicial.status');
 
 
 

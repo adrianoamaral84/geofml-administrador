@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+@section('title', 'Dados do seu pedido')
 @section('content')
 
 <style type="text/css">
@@ -117,27 +117,6 @@
 
 
 </div>
-  @if($hospedagem->user->mecenas)
-<div class="row">
-    <div class="col-md-12">
-        <div class="alert alert-success shadow-sm" role="alert" style="border-left:5px solid #28a745;">
-            <h5 class="mb-2">
-                <i class="fas fa-medal"></i>
-                Benefício Mecenas
-            </h5>
-
-            <p class="mb-1">
-                Você possui o benefício <strong>Mecenas</strong>.
-            </p>
-
-            <p class="mb-0">
-                <strong>30% de desconto</strong> será aplicado automaticamente
-                sobre o valor das diárias da hospedagem no cálculo do pagamento.
-            </p>
-        </div>
-    </div>
-</div>
-@endif
 <section class="section">
     <div class="row sameheight-container">
         <div class="col-12">
@@ -287,7 +266,7 @@
                         </div>
 
 
-                         <div class="form-group col-sm-3 col-md-3 col-lg-3">
+                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
                             <label class="control-label">{{ __('Cidade') }}</label>
                             <input type="text" class="form-control boxed @error('cidade') is-invalid @enderror" readonly="" value="{{ $hospedagem->user->cidade->descricao }}" name="cidade" id="cidade" required readonly="" autofocus onpaste="return false;">
                             @error('cidade')
@@ -307,8 +286,9 @@
                                 </span>
                             @enderror
                         </div>
+                        
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
-    <label class="control-label">Mecenas</label>
+    <label class="control-label">Mecenas DCEx / MHEx</label>
 
     <input type="text"
        class="form-control"
@@ -317,10 +297,9 @@
 
 </div>
 
+
                    </div>
 
-                   
-                 
 
 
                        <div class="row has-error">
@@ -467,7 +446,7 @@
 
                         @if($hospedagem->status == 2 or $hospedagem->status == 3 or $hospedagem->status == 4 or $hospedagem->status == 5)
                         
-                        <div class="form-group col-sm-12 col-md-3 col-lg-3">
+                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
                         
                           <label class="control-label" style="color: red;">UH Distribuída</label>
                             <select name="unidadeshabitacionais" id="unidadeshabitacionais" required class="custom-select mr-sm-2 @error('unidadeshabitacionais') is-invalid @enderror" autocomplete="off" readonly="">
@@ -544,7 +523,7 @@
                         
                         <div class="row has-error">
                         @if($hospedagem->status == 2 or $hospedagem->status == 4)
-                        @if($hospedagem->checkin == 1)
+                        @if($hospedagem->checkin == 1 or $hospedagem->checkin == null)
                           <div class="form-group col-sm-12 col-md-3 col-lg-3">                  
 
                             <label class="control-label">{{ __('Valor Pago') }}</label>
@@ -623,7 +602,23 @@
                         @endif
                         
 
-                       
+                        @if($CheckOutAtrasado == 1)
+                         @if($hospedagem->checkin_at != null)
+                         @if($hospedagem->checkin == 1)
+                                <div class="form-group col-sm-12 col-md-3 col-lg-3">                  
+
+                            <label class="control-label">{{ __('Acréscimo Check-Out') }}</label>
+                            <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valortarifa, 2, ',', '.' )}}" name="CheckOutAtrasado" id="CheckOutAtrasado" required autofocus readonly onpaste="return false;">
+                            @error('CheckOutAtrasado')
+                                <span class="has-error" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+
+                        </div>
+                        @endif
+                        @endif
+                        @endif
                         
 
                         @endif
@@ -636,16 +631,11 @@
 
                         
                       </div>
-                       
-                      
-
-
-
-
-                    <div class="row has-error">                         
-                             @if($hospedagem->status == 2)
+                      @if($hospedagem->status == 2)
                           @role('atendente|administrador_geral|administrador|auxiliar_administrador_geral')
-                     
+                           
+                              <div class="row has-error">                         
+
                                @if($hospedagem->checkin == 1)
                                 <div class="form-group col-sm-12 col-md-3 col-lg-3">  
                                   <label class="control-label">{{ __('Data Check-In') }}</label>
@@ -686,147 +676,8 @@
                           @endrole
                       @endif
 
-
-                  @if($hospedagem->status == 2)
-@role('atendente|administrador_geral|administrador|auxiliar_administrador_geral')
-
-<div class="card shadow-sm mb-3">
-    <div class="card-header bg-light">
-        <strong>
-            <i class="fas fa-receipt"></i>
-            Resumo da Hospedagem
-        </strong>
-    </div>
-
-    <div class="card-body">
-
-        <div class="row mb-2">
-            <div class="col-8">
-                <i class="fas fa-bed"></i>
-                Diárias da reserva
-            </div>
-            <div class="col-4 text-right">
-                {{ \Carbon\Carbon::parse($hospedagem->data_inicio)->diffInDays(\Carbon\Carbon::parse($hospedagem->data_termino)) }}
-            </div>
-        </div>
-
-        @if($CheckInAntecipado)
-        <div class="row mb-2 text-info">
-            <div class="col-8">
-                <i class="fas fa-sign-in-alt"></i>
-                Entrada antecipada
-            </div>
-            <div class="col-4 text-right">
-                +1 diária
-            </div>
-        </div>
-        @endif
-
-        @if($CheckOutAtrasado)
-        <div class="row mb-2 text-warning">
-            <div class="col-8">
-                <i class="fas fa-sign-out-alt"></i>
-                Saída após horário
-            </div>
-            <div class="col-4 text-right">
-                +1 diária
-            </div>
-        </div>
-        @endif
-
-        <hr>
-
-        <div class="row mb-2">
-            <div class="col-8">
-                <strong>Total de diárias</strong>
-            </div>
-            <div class="col-4 text-right">
-                <strong>{{ $hospedagem->qntdiarias }}</strong>
-            </div>
-        </div>
-
-        <div class="row mb-2">
-            <div class="col-8">
-                Diária normal
-            </div>
-            <div class="col-4 text-right">
-                R$ {{ number_format($hospedagem->valortarifa, 2, ',', '.') }}
-            </div>
-        </div>
-
-        @if($hospedagem->user->mecenas)
-        <div class="row mb-2 text-success">
-            <div class="col-8">
-                <i class="fas fa-medal"></i>
-                Desconto Mecenas
-            </div>
-            <div class="col-4 text-right">
-                <strong>30%</strong>
-            </div>
-        </div>
-
-        <div class="row mb-2">
-            <div class="col-8">
-                Sua diária
-            </div>
-            <div class="col-4 text-right">
-                <strong class="text-success">
-                    R$ {{ number_format($hospedagem->valorTarifaComDesconto(), 2, ',', '.') }}
-                </strong>
-            </div>
-        </div>
-        @endif
-
-        <hr>
-
-        <div class="row mb-2">
-            <div class="col-8">
-                Valor total
-            </div>
-            <div class="col-4 text-right">
-                <strong>R$ {{ number_format($hospedagem->valor, 2, ',', '.') }}</strong>
-            </div>
-        </div>
-
-        <div class="row mb-2">
-            <div class="col-8">
-                Valor pago
-            </div>
-            <div class="col-4 text-right">
-                R$ {{ number_format($hospedagem->valor_pago ?? 0, 2, ',', '.') }}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-8">
-                Valor restante
-            </div>
-            <div class="col-4 text-right">
-                <strong class="text-danger">
-                    R$ {{ number_format($valorPagarRestante, 2, ',', '.') }}
-                </strong>
-            </div>
-        </div>
-
-    </div>
-</div>
-
-@endrole
-@endif                
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    
+              
+  
                 <div class="row has-error">    
                     
                       
@@ -888,19 +739,10 @@
             <!-- FIM MOTIVO-->
 
          </div>
-         <div class="row has-error">
-                <div class="form-group col-sm-12 col-md-12 col-lg-12">
-                    <div class="d-flex flex-wrap align-items-center" style="gap: 3px;">
-                
-<div id="mensagem-pagamento-restante" style="margin-top: 10px;" class="mt-2" aria-live="polite"></div>
-               
-</div>
-                </div>
-            </div>
+
             <!-- LINHA DOS BOTOES -->
               <div class="row has-error">
-                <div class="form-group col-sm-12 col-md-12 col-lg-12">
-                    <div class="d-flex flex-wrap align-items-center" style="gap: 3px;">
+                    <div class="form-group col-sm-12 col-md-12 col-lg-12">
                         
                     
                             <!--
@@ -929,18 +771,16 @@
                                     @if($hospedagem->checkin == 1)
                                     @if($valorPagarRestante > 0)
                                     @role('atendente|administrador_geral|auxiliar_administrador_geral')
-                                    <button type="button"
-                                            id="btn-pagamento-restante"
-                                            class="btn btn-success"
-                                            title="Realizar Pagamento Restante"
-                                            onclick="myFunction2()" style="color: white;">
-                                        <i class="fas fa-money-bill-alt"></i>
-                                        <span id="texto-pagamento-restante">Realizar Pagamento Restante</span>
-                                    </button>
-                                     @endrole
+                                    <a class="btn btn-success" style="color: white;" target="_blank" title="Realizar Pagamento Restante" onClick="myFunction2()">
+                                    <i class="fas fa-money-bill-alt" style="color: white;" ></i> Realizar Pagamento Restante </a>
+                                    @endrole
                                     @endif
                                     @endif
                                     @endif
+
+                                    
+                                    
+                                    
 
                                     @if($hospedagem->status == 5 or $hospedagem->status == 4)
 
@@ -955,6 +795,14 @@
                                     @endif
 
 
+                                    
+
+
+
+
+                              
+
+
 
                                     @if($hospedagem->status == 2 or $hospedagem->status == 3 or $hospedagem->status == 5 or $hospedagem->status == 7 )
                                     @if($hospedagem->checkin == null)
@@ -964,6 +812,11 @@
 
                                     @endif
                                     @endif
+
+
+
+
+
 
 
                                     @if($hospedagem->status == 2)
@@ -1001,7 +854,6 @@
 
 
                         </div>
-                    </div>
                     </div>
                     <!-- FIM LINHA DOS BOTOES -->
 
@@ -1294,97 +1146,44 @@ span.onclick = function() {
 } 
 </script>
 <script>
-let janelaPagamentoRestante = null;
-let monitorPagamentoRestante = null;
-let pagamentoRestanteEmAndamento = false;
+let janelaPagamentoInicial = null;
+let monitorPagamentoInicial = null;
 
-function atualizarInterfacePagamentoRestante(tipo, mensagem) {
-    const caixa = document.getElementById('mensagem-pagamento-restante');
-    if (!caixa) return;
-    caixa.innerHTML = mensagem
-        ? `<div class="alert alert-${tipo} py-2 mb-0">${mensagem}</div>`
-        : '';
-}
+function myFunction() {
+    const urlPagamento = @json(route(
+        'pagamento.processaRequisicao',
+        ['id' => Crypt::encrypt($hospedagem->id)]
+    ));
 
-function alterarBotaoPagamentoRestante(processando, texto) {
-    const botao = document.getElementById('btn-pagamento-restante');
-    const textoBotao = document.getElementById('texto-pagamento-restante');
-    if (botao) botao.disabled = processando;
-    if (textoBotao) textoBotao.textContent = texto;
-}
+    const urlStatus = @json(route(
+        'pagamento.inicial.status',
+        ['id' => Crypt::encrypt($hospedagem->id)]
+    ));
 
-function encerrarMonitorPagamentoRestante() {
-    if (monitorPagamentoRestante) {
-        clearInterval(monitorPagamentoRestante);
-        monitorPagamentoRestante = null;
-    }
-    pagamentoRestanteEmAndamento = false;
-}
-
-function myFunction2() {
-    if (pagamentoRestanteEmAndamento) {
-        if (janelaPagamentoRestante && !janelaPagamentoRestante.closed) {
-            janelaPagamentoRestante.focus();
-        }
-        return;
-    }
-
-    const urlPagamento = @json(route('pagamento.processaPagamentoRestante', [
-        'id' => Crypt::encrypt($hospedagem->id),
-        'restante' => $valorPagarRestante
-    ]));
-
-    const urlStatus = @json(route('pagamento.status', [
-        'id' => Crypt::encrypt($hospedagem->id)
-    ]));
-
-    pagamentoRestanteEmAndamento = true;
-    alterarBotaoPagamentoRestante(true, 'Abrindo PagTesouro...');
-    atualizarInterfacePagamentoRestante('info', 'Aguarde enquanto o PagTesouro é aberto.');
-
-    const largura = 760;
-    const altura = 760;
-    const esquerda = Math.max(0, Math.round((window.screen.width - largura) / 2));
-    const topo = Math.max(0, Math.round((window.screen.height - altura) / 2));
-
-    janelaPagamentoRestante = window.open(
+    janelaPagamentoInicial = window.open(
         urlPagamento,
-        'pagamentoRestantePagTesouro',
-        [
-            `width=${largura}`,
-            `height=${altura}`,
-            `left=${esquerda}`,
-            `top=${topo}`,
-            'scrollbars=yes',
-            'resizable=yes',
-            'toolbar=no',
-            'menubar=no',
-            'location=no',
-            'status=no'
-        ].join(',')
+        'pagamentoInicialPagTesouro',
+        'width=760,height=760,scrollbars=yes,resizable=yes'
     );
 
-    if (!janelaPagamentoRestante) {
-        encerrarMonitorPagamentoRestante();
-        alterarBotaoPagamentoRestante(false, 'Realizar Pagamento Restante');
-        atualizarInterfacePagamentoRestante('warning', 'O navegador bloqueou a janela. Permita pop-ups e tente novamente.');
+    if (!janelaPagamentoInicial) {
+        alert(
+            'O navegador bloqueou a janela. Permita pop-ups e tente novamente.'
+        );
+
         return;
     }
 
-    janelaPagamentoRestante.focus();
-    alterarBotaoPagamentoRestante(true, 'Aguardando pagamento...');
-    atualizarInterfacePagamentoRestante('info', 'Conclua o pagamento na janela do PagTesouro. A confirmação será automática.');
+    janelaPagamentoInicial.focus();
 
-    let tentativas = 0;
-    let errosConsecutivos = 0;
     let consultaEmAndamento = false;
-    const limiteTentativas = 120;
 
-    const consultarStatus = async function () {
-        if (consultaEmAndamento) return;
+    const consultarPagamentoInicial = async function () {
+        if (consultaEmAndamento) {
+            return;
+        }
 
         consultaEmAndamento = true;
-        tentativas++;
 
         try {
             const resposta = await fetch(urlStatus, {
@@ -1397,134 +1196,58 @@ function myFunction2() {
                 cache: 'no-store'
             });
 
-            if (!resposta.ok) throw new Error(`Erro HTTP ${resposta.status}`);
+            if (!resposta.ok) {
+                throw new Error(
+                    'Erro HTTP ' + resposta.status
+                );
+            }
+
             const dados = await resposta.json();
-            errosConsecutivos = 0;
 
-            if (dados.sucesso === false) {
-                throw new Error(dados.mensagem || 'Falha ao consultar o pagamento.');
-            }
+            if (dados.pagamento_confirmado === true) {
+                clearInterval(monitorPagamentoInicial);
 
-                            if (dados.pagamento_confirmado === true) {
+                if (
+                    janelaPagamentoInicial &&
+                    !janelaPagamentoInicial.closed
+                ) {
+                    janelaPagamentoInicial.close();
+                }
 
-                    encerrarMonitorPagamentoRestante();
+                sessionStorage.setItem(
+                    'pagamento_confirmado',
+                    'Pagamento da diária inicial realizado com sucesso!'
+                );
 
-                    if (janelaPagamentoRestante && !janelaPagamentoRestante.closed) {
-                        janelaPagamentoRestante.close();
-                    }
-
-                    alterarBotaoPagamentoRestante(true, 'Pagamento confirmado');
-                    atualizarInterfacePagamentoRestante(
-                        'success',
-                        'Pagamento confirmado. Atualizando os valores...'
-                    );
-
-                    // grava a mensagem
-                    sessionStorage.setItem(
-                        'pagamento_confirmado',
-                        'Pagamento restante realizado com sucesso!'
-                    );
-
-                    window.setTimeout(function () {
-                        window.location.reload();
-                    }, 1200);
-
-                    return;
-                }if (dados.pagamento_confirmado === true) {
-    encerrarMonitorPagamentoRestante();
-
-    if (janelaPagamentoRestante && !janelaPagamentoRestante.closed) {
-        janelaPagamentoRestante.close();
-    }
-
-    alterarBotaoPagamentoRestante(
-        true,
-        'Pagamento confirmado'
-    );
-
-    atualizarInterfacePagamentoRestante(
-        'success',
-        '<strong>Pagamento realizado com sucesso!</strong> Os valores da hospedagem foram atualizados.'
-    );
-
-    sessionStorage.setItem(
-        'pagamento_confirmado',
-        'Pagamento restante realizado com sucesso!'
-    );
-
-    window.setTimeout(function () {
-        window.location.reload();
-    }, 2500);
-
-    return;
-}
-
-            if (janelaPagamentoRestante && janelaPagamentoRestante.closed) {
-                encerrarMonitorPagamentoRestante();
-                alterarBotaoPagamentoRestante(false, 'Realizar Pagamento Restante');
-                atualizarInterfacePagamentoRestante('info', 'A janela foi fechada. O pagamento ainda não foi confirmado.');
-                return;
-            }
-
-            if (tentativas >= limiteTentativas) {
-                encerrarMonitorPagamentoRestante();
-                alterarBotaoPagamentoRestante(false, 'Consultar novamente');
-                atualizarInterfacePagamentoRestante('warning', 'A confirmação está demorando. Clique novamente para consultar ou reabrir o pagamento.');
+                window.location.reload();
             }
         } catch (erro) {
-            errosConsecutivos++;
-            console.error('Erro ao consultar pagamento restante:', erro);
-
-            // Não interrompe tudo por uma falha temporária de rede/API.
-            if (errosConsecutivos >= 3) {
-                atualizarInterfacePagamentoRestante(
-                    'warning',
-                    'A consulta automática está temporariamente indisponível. Continuaremos tentando.'
-                );
-            }
-
-            // Mesmo após o fechamento da janela, faz novas tentativas.
-            if (errosConsecutivos >= 10) {
-                encerrarMonitorPagamentoRestante();
-                alterarBotaoPagamentoRestante(false, 'Consultar pagamento');
-                atualizarInterfacePagamentoRestante(
-                    'warning',
-                    'Não foi possível consultar o PagTesouro. Clique em “Consultar pagamento” novamente.'
-                );
-            }
+            console.error(
+                'Erro ao consultar pagamento inicial:',
+                erro
+            );
         } finally {
             consultaEmAndamento = false;
         }
     };
 
-    consultarStatus();
-    monitorPagamentoRestante = setInterval(consultarStatus, 5000);
+    consultarPagamentoInicial();
+
+    monitorPagamentoInicial = setInterval(
+        consultarPagamentoInicial,
+        5000
+    );
+}
+function myFunction2() {
+  window.open("{{ route('pagamento.processaPagamentoRestante', ['id' => Crypt::encrypt($hospedagem->id), 'restante' => $valorPagarRestante]) }}", "_blank", "status=no, location=no, menubar=no, fullscreen=no, toolbar=no,scrollbars=no,resizable=no,top=500,left=500,width=700,height=700");
+ //$('#checkout11').show();
 }
 
-window.addEventListener('beforeunload', encerrarMonitorPagamentoRestante);
+
+
+
 </script>
 <script src="{{asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js')}}"></script>
-<script>
-   
-   $(document).ready(function () {
 
-    const mensagem = sessionStorage.getItem('pagamento_confirmado');
-
-    if (mensagem) {
-
-        sessionStorage.removeItem('pagamento_confirmado');
-
-        $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
-            '<strong>Sucesso!</strong> ' + mensagem +
-            '<button type="button" class="close" data-dismiss="alert">' +
-            '<span>&times;</span>' +
-            '</button>' +
-          '</div>')
-          .prependTo('section.section');
-
-    }
-
-});
-</script>
 @endpush
 @endsection
