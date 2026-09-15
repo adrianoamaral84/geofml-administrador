@@ -24,7 +24,15 @@ class ResetPasswordPtBr extends Notification
 
     public function toMail($notifiable)
     {
-        $url = url(route('password.reset', $this->token, false).'?email='.urlencode($notifiable->email));
+        $publicUrl = rtrim(
+            (string) config('app.geofml_internet_url', env('GEOFML_INTERNET_URL', 'https://geofml.5rm.eb.mil.br')),
+            '/'
+        );
+
+        $url = $publicUrl
+            . '/password/reset/' . urlencode($this->token)
+            . '?email=' . urlencode($notifiable->email);
+
         $expire = config('auth.passwords.users.expire', 60);
 
         return (new MailMessage)
