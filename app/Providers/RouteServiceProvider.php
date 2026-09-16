@@ -59,8 +59,10 @@ class RouteServiceProvider extends ServiceProvider
     protected function mapSecureAdminPasswordResetRoute()
     {
         Route::middleware('web')
-            ->namespace($this->namespace)
-            ->get('/admin/users/{id}/reset', 'AdminPasswordResetController@send')
+            ->get(
+                '/admin/users/{id}/reset',
+                'App\\Http\\Controllers\\AdminPasswordResetController@send'
+            )
             ->name('usuario.reset');
     }
 
@@ -80,8 +82,6 @@ class RouteServiceProvider extends ServiceProvider
 
     /**
      * Define the "api" routes for the application.
-     *
-     * These routes are typically stateless.
      *
      * @return void
      */
