@@ -3377,10 +3377,28 @@ public function liberar_OLD_1(Request $request){
 
         //dd($contemplado);
 
+        $auditorias = DB::table('hospedagem_auditoria')
+            ->where('hospedagem_id', $hospedagem->id)
+            ->orWhere('hospedagem_espelho_id', $hospedagem->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $inscricoesEspelho = \App\Hospede::where(
+                'hospedagem_origem_id',
+                $hospedagem->id
+            )
+            ->with('tipouh')
+            ->orderBy('id')
+            ->get();
+
+        $inscricaoOrigem = $hospedagem->hospedagem_origem_id
+            ? \App\Hospede::with('tipouh')->find($hospedagem->hospedagem_origem_id)
+            : null;
+
         if($hospedagem->status == 4){
-           return view('hospedagem.verdados_aguardando', compact('hospedagem', 'hospedagens', 'unidades_habitacionais', 'minDate', 'maxDate', 'hoje','a', 'comprovante', 'grupo_posto', 'grupoDestino', 'mes','tipoUND', 'liberaDistribuir', 'contemplado', 'hospedagensAnoPassado', 'ContempladoNessaTemporada'));
+           return view('hospedagem.verdados_aguardando', compact('hospedagem', 'hospedagens', 'unidades_habitacionais', 'minDate', 'maxDate', 'hoje','a', 'comprovante', 'grupo_posto', 'grupoDestino', 'mes','tipoUND', 'liberaDistribuir', 'contemplado', 'hospedagensAnoPassado', 'ContempladoNessaTemporada', 'auditorias', 'inscricoesEspelho', 'inscricaoOrigem'));
         }else{
-            return view('hospedagem.verdados_aguardando', compact('hospedagem', 'hospedagens', 'unidades_habitacionais', 'minDate', 'maxDate', 'hoje','a', 'grupo_posto','grupoDestino', 'mes','tipoUND', 'liberaDistribuir', 'contemplado','hospedagensAnoPassado', 'ContempladoNessaTemporada'));
+            return view('hospedagem.verdados_aguardando', compact('hospedagem', 'hospedagens', 'unidades_habitacionais', 'minDate', 'maxDate', 'hoje','a', 'grupo_posto','grupoDestino', 'mes','tipoUND', 'liberaDistribuir', 'contemplado','hospedagensAnoPassado', 'ContempladoNessaTemporada', 'auditorias', 'inscricoesEspelho', 'inscricaoOrigem'));
         }
         
     }
