@@ -1458,6 +1458,411 @@ class HospedagemController extends Controller
 
 
 
+public function dividirInscricaoForm($id)
+{
+    try {
+        $hospedagemId = Crypt::decrypt($id);
+    } catch (\Throwable $e) {
+        abort(404);
+    }
+
+    $hospedagem = \App\Hospede::with(['user', 'tipouh'])
+        ->findOrFail($hospedagemId);
+
+    if (
+        !is_null($hospedagem->und_habitacionais_id) ||
+        !in_array((int) $hospedagem->status, [0, 7], true)
+    ) {
+        \Session::flash('message', [
+            'msg' => 'Somente inscrições ainda não distribuídas podem ser divididas.',
+            'class' => 'danger',
+        ]);
+
+        return redirect()->route(
+            'hospedagem.verdados',
+            Crypt::encrypt($hospedagem->id)
+        );
+    }
+
+    $grupoTarifaIds = \App\GrupoTarifaPostoGraduacao::where(
+            'posto_id',
+            $hospedagem->user->postograd_id
+        )
+        ->pluck('grupotarifa_id')
+        ->unique()
+        ->values();
+
+    $tiposPermitidosIds = \App\GrupoTarifa::whereIn(
+            'id',
+            $grupoTarifaIds
+        )
+        ->pluck('unidade_habitacional_id')
+        ->unique()
+        ->values();
+
+    $capacidades = \App\UnidadeHabitacional::select(
+            'tipo_und_hab_id',
+            DB::raw('MAX(CAST(capacidade_ocupacao AS UNSIGNED)) AS capacidade_maxima')
+        )
+        ->whereIn('tipo_und_hab_id', $tiposPermitidosIds)
+        ->whereNotNull('capacidade_ocupacao')
+        ->groupBy('tipo_und_hab_id')
+        ->pluck('capacidade_maxima', 'tipo_und_hab_id');
+
+    $tipos = \App\TipoUndHab::whereIn('id', $tiposPermitidosIds)
+        ->orderBy('descricao')
+        ->get()
+        ->map(function ($tipo) use ($capacidades) {
+            $tipo->capacidade_maxima = (int) $capacidades->get($tipo->id, 0);
+            return $tipo;
+        })
+        ->filter(function ($tipo) {
+            return $tipo->capacidade_maxima > 0;
+        })
+        ->values();
+
+    $capacidadeOriginal = (int) $capacidades->get(
+        $hospedagem->tipo_und_id,
+        0
+    );
+
+    return view('hospedagem.dividir_inscricao', compact(
+        'hospedagem',
+        'tipos',
+        'capacidadeOriginal'
+    ));
+}
+
+public function dividirInscricao(Request $request, $id)
+{
+    try {
+        $hospedagemId = Crypt::decrypt($id);
+    } catch (\Throwable $e) {
+        abort(404);
+    }
+
+    $validated = $request->validate([
+        'adultos_original' => 'required|integer|min:0',
+        'criancas_original' => 'required|integer|min:0',
+        'tipo_espelho_id' => 'required|integer',
+        'confirmacao_usuario' => 'accepted',
+        'observacao_auditoria' => 'nullable|string|max:1000',
+    ], [
+        'confirmacao_usuario.accepted' =>
+            'Confirme que o ajuste foi realizado após contato com o usuário.',
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        $hospedagem = \App\Hospede::with('user')
+            ->where('id', $hospedagemId)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if (
+            !is_null($hospedagem->und_habitacionais_id) ||
+            !in_array((int) $hospedagem->status, [0, 7], true)
+        ) {
+            throw new \RuntimeException(
+                'Somente inscrições ainda não distribuídas podem ser divididas.'
+            );
+        }
+
+        $adultosAtuais = (int) $hospedagem->adulto;
+        $criancasAtuais = (int) $hospedagem->crianca;
+
+        $adultosOriginal = (int) $validated['adultos_original'];
+        $criancasOriginal = (int) $validated['criancas_original'];
+
+        if (
+            $adultosOriginal > $adultosAtuais ||
+            $criancasOriginal > $criancasAtuais
+        ) {
+            throw new \RuntimeException(
+                'A quantidade mantida na inscrição original não pode ser maior que a quantidade atual.'
+            );
+        }
+
+        $adultosEspelho = $adultosAtuais - $adultosOriginal;
+        $criancasEspelho = $criancasAtuais - $criancasOriginal;
+
+        $totalOriginal = $adultosOriginal + $criancasOriginal;
+        $totalEspelho = $adultosEspelho + $criancasEspelho;
+
+        if ($totalOriginal < 1 || $totalEspelho < 1) {
+            throw new \RuntimeException(
+                'A divisão deve deixar pelo menos uma pessoa em cada inscrição.'
+            );
+        }
+
+        $capacidadeOriginalRegistro = DB::table('unidades_habitacionais')
+            ->selectRaw('MAX(CAST(capacidade_ocupacao AS UNSIGNED)) AS capacidade_maxima')
+            ->where('tipo_und_hab_id', (int) $hospedagem->tipo_und_id)
+            ->first();
+
+        $capacidadeOriginal = $capacidadeOriginalRegistro
+            ? (int) $capacidadeOriginalRegistro->capacidade_maxima
+            : 0;
+
+        if ($capacidadeOriginal <= 0 || $totalOriginal > $capacidadeOriginal) {
+            throw new \RuntimeException(
+                'A quantidade mantida na inscrição original excede a capacidade da UH atual.'
+            );
+        }
+
+        $tipoEspelhoId = (int) $validated['tipo_espelho_id'];
+
+        $grupoTarifaIds = \App\GrupoTarifaPostoGraduacao::where(
+                'posto_id',
+                $hospedagem->user->postograd_id
+            )
+            ->pluck('grupotarifa_id')
+            ->unique()
+            ->values();
+
+        $tipoPermitido = \App\GrupoTarifa::whereIn('id', $grupoTarifaIds)
+            ->where('unidade_habitacional_id', $tipoEspelhoId)
+            ->exists();
+
+        if (!$tipoPermitido) {
+            throw new \RuntimeException(
+                'O tipo de UH escolhido para a inscrição espelho não é permitido para o posto/graduação do usuário.'
+            );
+        }
+
+        $capacidadeEspelhoRegistro = DB::table('unidades_habitacionais')
+            ->selectRaw('MAX(CAST(capacidade_ocupacao AS UNSIGNED)) AS capacidade_maxima')
+            ->where('tipo_und_hab_id', $tipoEspelhoId)
+            ->first();
+
+        $capacidadeEspelho = $capacidadeEspelhoRegistro
+            ? (int) $capacidadeEspelhoRegistro->capacidade_maxima
+            : 0;
+
+        if ($capacidadeEspelho <= 0 || $totalEspelho > $capacidadeEspelho) {
+            throw new \RuntimeException(
+                'A quantidade destinada à inscrição espelho excede a capacidade da UH escolhida.'
+            );
+        }
+
+        $valoresEspelho = $this->calcularValoresTipoInscricao(
+            $hospedagem,
+            $tipoEspelhoId,
+            $grupoTarifaIds
+        );
+
+        $hospedagem->adulto = $adultosOriginal;
+        $hospedagem->crianca = $criancasOriginal;
+        $hospedagem->save();
+
+        $espelho = $hospedagem->replicate();
+        $espelho->hospedagem_origem_id = $hospedagem->id;
+        $espelho->tipo_und_id = $tipoEspelhoId;
+        $espelho->adulto = $adultosEspelho;
+        $espelho->crianca = $criancasEspelho;
+        $espelho->und_habitacionais_id = null;
+        $espelho->status = 0;
+        $espelho->valor = $valoresEspelho['valor'];
+        $espelho->valortarifa = $valoresEspelho['valortarifa'];
+        $espelho->qntdiarias = $valoresEspelho['qntdiarias'];
+
+        if (array_key_exists('valor_pago', $espelho->getAttributes())) {
+            $espelho->valor_pago = 0;
+        }
+
+        if (array_key_exists('valor_restante', $espelho->getAttributes())) {
+            $espelho->valor_restante = $valoresEspelho['valor'];
+        }
+
+        if (array_key_exists('situacao_pgto_id', $espelho->getAttributes())) {
+            $espelho->situacao_pgto_id = null;
+        }
+
+        if (array_key_exists('checkin', $espelho->getAttributes())) {
+            $espelho->checkin = null;
+        }
+
+        if (array_key_exists('checkout', $espelho->getAttributes())) {
+            $espelho->checkout = null;
+        }
+
+        if (array_key_exists('checkin_at', $espelho->getAttributes())) {
+            $espelho->checkin_at = null;
+        }
+
+        if (array_key_exists('checkout_at', $espelho->getAttributes())) {
+            $espelho->checkout_at = null;
+        }
+
+        if (array_key_exists('checkout_user_id', $espelho->getAttributes())) {
+            $espelho->checkout_user_id = null;
+        }
+
+        $espelho->save();
+
+        $detalhes = [
+            'mensagem' =>
+                'Inscrição dividida pelo administrador em ' .
+                Carbon::now('America/Sao_Paulo')->format('d/m/Y H:i') .
+                ' após confirmação do usuário.',
+            'antes' => [
+                'adultos' => $adultosAtuais,
+                'criancas' => $criancasAtuais,
+                'tipo_uh_id' => (int) $hospedagem->tipo_und_id,
+            ],
+            'original_apos_divisao' => [
+                'adultos' => $adultosOriginal,
+                'criancas' => $criancasOriginal,
+                'capacidade' => $capacidadeOriginal,
+            ],
+            'espelho' => [
+                'id' => $espelho->id,
+                'adultos' => $adultosEspelho,
+                'criancas' => $criancasEspelho,
+                'tipo_uh_id' => $tipoEspelhoId,
+                'capacidade' => $capacidadeEspelho,
+            ],
+            'observacao' => $validated['observacao_auditoria'] ?? null,
+        ];
+
+        DB::table('hospedagem_auditoria')->insert([
+            'hospedagem_id' => $hospedagem->id,
+            'hospedagem_espelho_id' => $espelho->id,
+            'administrador_id' => auth()->id(),
+            'acao' => 'dividir_inscricao',
+            'detalhes' => json_encode(
+                $detalhes,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            ),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::commit();
+
+        \Session::flash('message', [
+            'msg' =>
+                'Inscrição dividida com sucesso. Inscrição espelho #' .
+                $espelho->id .
+                ' criada para o mesmo usuário.',
+            'class' => 'success',
+        ]);
+
+        return redirect()->route(
+            'hospedagem.verdados',
+            Crypt::encrypt($hospedagem->id)
+        );
+    } catch (\Throwable $e) {
+        DB::rollBack();
+
+        report($e);
+
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors([
+                'divisao' => $e instanceof \RuntimeException
+                    ? $e->getMessage()
+                    : 'Não foi possível dividir a inscrição. Tente novamente.',
+            ]);
+    }
+}
+
+private function calcularValoresTipoInscricao(
+    \App\Hospede $hospedagem,
+    int $tipoId,
+    $grupoTarifaIds
+): array {
+    $tarifa = \App\Tarifas::where('tipoundhab_id', $tipoId)
+        ->whereIn('grupo_destinacao_id', $grupoTarifaIds)
+        ->first();
+
+    if (!$tarifa) {
+        throw new \RuntimeException(
+            'Tarifa não cadastrada para a UH escolhida e o grupo do usuário.'
+        );
+    }
+
+    $inicio = Carbon::parse($hospedagem->data_inicio)->startOfDay();
+    $fim = Carbon::parse($hospedagem->data_termino)->startOfDay();
+
+    $qntDiarias = $inicio->diffInDays($fim);
+
+    if ($qntDiarias < 1) {
+        $qntDiarias = 1;
+    }
+
+    $temporadas = \App\Temporada::whereDate(
+            'data_inicio',
+            '<',
+            $fim->format('Y-m-d')
+        )
+        ->whereDate(
+            'data_termino',
+            '>=',
+            $inicio->format('Y-m-d')
+        )
+        ->get();
+
+    $diasAlta = 0;
+    $diasBaixa = 0;
+
+    for ($data = $inicio->copy(); $data->lt($fim); $data->addDay()) {
+        $temporada = $temporadas->first(function ($item) use ($data) {
+            return $data->between(
+                Carbon::parse($item->data_inicio)->startOfDay(),
+                Carbon::parse($item->data_termino)->endOfDay()
+            );
+        });
+
+        if (!$temporada) {
+            throw new \RuntimeException(
+                'Não existe temporada cadastrada para todo o período da inscrição.'
+            );
+        }
+
+        if ((int) $temporada->tipo_temporada_id === 1) {
+            $diasAlta++;
+        } elseif ((int) $temporada->tipo_temporada_id === 2) {
+            $diasBaixa++;
+        } else {
+            throw new \RuntimeException(
+                'Existe uma temporada com tipo inválido no período da inscrição.'
+            );
+        }
+    }
+
+    $valorAlta = round((float) $tarifa->valor, 2);
+    $valorBaixa = round((float) $tarifa->valor_baixa, 2);
+
+    $totalBruto = round(
+        ($diasAlta * $valorAlta) +
+        ($diasBaixa * $valorBaixa),
+        2
+    );
+
+    $totalLiquido = round(
+        (float) $hospedagem->user->aplicarDesconto($totalBruto),
+        2
+    );
+
+    if ($diasAlta > 0 && $diasBaixa === 0) {
+        $valorReferencia = $hospedagem->user->aplicarDesconto($valorAlta);
+    } elseif ($diasBaixa > 0 && $diasAlta === 0) {
+        $valorReferencia = $hospedagem->user->aplicarDesconto($valorBaixa);
+    } else {
+        $valorReferencia = $hospedagem->user->aplicarDesconto($valorAlta);
+    }
+
+    return [
+        'valor' => $totalLiquido,
+        'valortarifa' => round((float) $valorReferencia, 2),
+        'qntdiarias' => $qntDiarias,
+    ];
+}
+
+
 public function liberar(Request $request)
 {
     date_default_timezone_set('America/Sao_Paulo');
