@@ -3304,6 +3304,15 @@ public function liberar_OLD_1(Request $request){
             return redirect()->back();
         }
 
+        if (!in_array((int) $hospedagem->status, [0, 7], true)) {
+            \Session::flash('message', [
+                'msg' => 'A divisão só pode ser feita enquanto a inscrição estiver em distribuição ou fila de espera.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()->back();
+        }
+
         $capacidadeOriginal = 0;
 
         if ($hospedagem->undHB) {
@@ -3356,6 +3365,15 @@ public function liberar_OLD_1(Request $request){
                 ->withInput()
                 ->withErrors([
                     'id' => 'Não é possível dividir uma inscrição após o check-in.',
+                ]);
+        }
+
+        if (!in_array((int) $hospedagem->status, [0, 7], true)) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'id' => 'A divisão só pode ser feita enquanto a inscrição estiver em distribuição ou fila de espera.',
                 ]);
         }
 
