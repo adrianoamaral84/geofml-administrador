@@ -591,7 +591,7 @@
                                     @foreach($auditorias as $auditoria)
                                         @php
                                             $detalhesAuditoria = json_decode($auditoria->detalhes, true) ?: [];
-                                            $dataAuditoria = CarbonCarbon::parse($auditoria->created_at);
+                                            $dataAuditoria = \Carbon\Carbon::parse($auditoria->created_at);
                                         @endphp
 
                                         <div class="card mb-3 border">
