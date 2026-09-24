@@ -431,7 +431,7 @@
                                     </div>
                                     <small class="text-muted">
                                         Administrador ID: {{ $auditoria->administrador_id ?: 'não identificado' }}
-                                        — {{ CarbonCarbon::parse($auditoria->created_at)->format('d/m/Y H:i') }}
+                                        — {{ \Carbon\Carbon::parse($auditoria->created_at)->format('d/m/Y H:i') }}
                                     </small>
 
                                     @if(!empty($detalhesAuditoria['observacao']))
