@@ -385,67 +385,6 @@
                     
 
 
-                        @if($inscricaoOrigem || $inscricoesEspelho->count() || $auditorias->count())
-                <div class="card mt-4 mb-4">
-                    <div class="card-header">
-                        <strong>Histórico de desmembramento</strong>
-                    </div>
-                    <div class="card-body">
-                        @if($inscricaoOrigem)
-                            <div class="alert alert-info">
-                                Esta é uma inscrição espelho da inscrição
-                                <a href="{{ route('hospedagem.verdados', Crypt::encrypt($inscricaoOrigem->id)) }}">
-                                    #{{ $inscricaoOrigem->id }}
-                                </a>.
-                            </div>
-                        @endif
-
-                        @if($inscricoesEspelho->count())
-                            <p><strong>Inscrições espelho vinculadas:</strong></p>
-                            <ul>
-                                @foreach($inscricoesEspelho as $espelho)
-                                    <li>
-                                        <a href="{{ route('hospedagem.verdados', Crypt::encrypt($espelho->id)) }}">
-                                            #{{ $espelho->id }}
-                                        </a>
-                                        — {{ $espelho->adulto }} adulto(s),
-                                        {{ $espelho->crianca }} criança(s)
-                                        @if($espelho->tipouh)
-                                            — {{ $espelho->tipouh->descricao }}
-                                        @endif
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        @if($auditorias->count())
-                            <hr>
-                            <p><strong>Auditoria:</strong></p>
-                            @foreach($auditorias as $auditoria)
-                                @php
-                                    $detalhesAuditoria = json_decode($auditoria->detalhes, true);
-                                @endphp
-                                <div class="border rounded p-3 mb-2">
-                                    <div>
-                                        <strong>{{ $detalhesAuditoria['mensagem'] ?? 'Alteração administrativa registrada.' }}</strong>
-                                    </div>
-                                    <small class="text-muted">
-                                        Administrador ID: {{ $auditoria->administrador_id ?: 'não identificado' }}
-                                        — {{ \Carbon\Carbon::parse($auditoria->created_at)->format('d/m/Y H:i') }}
-                                    </small>
-
-                                    @if(!empty($detalhesAuditoria['observacao']))
-                                        <div class="mt-2">
-                                            Observação: {{ $detalhesAuditoria['observacao'] }}
-                                        </div>
-                                    @endif
-                                </div>
-                            @endforeach
-                        @endif
-                    </div>
-                </div>
-            @endif
-
             @role('administrador_geral|auxiliar_administrador_geral')
                         
                          @if($hospedagem->checkin == null)
@@ -478,10 +417,66 @@
 
                     </div>
 
-
-
-
-
+                    @if($inscricaoOrigem || $inscricoesEspelho->count() || $auditorias->count())
+                        <div class="card mt-4 mb-4">
+                            <div class="card-header">
+                    <strong>Histórico de desmembramento</strong>
+                            </div>
+                            <div class="card-body">
+                    @if($inscricaoOrigem)
+                        <div class="alert alert-info">
+                            Esta é uma inscrição espelho da inscrição
+                            <a href="{{ route('hospedagem.verdados', Crypt::encrypt($inscricaoOrigem->id)) }}">
+                    #{{ $inscricaoOrigem->id }}
+                            </a>.
+                        </div>
+                    @endif
+                    
+                    @if($inscricoesEspelho->count())
+                        <p><strong>Inscrições espelho vinculadas:</strong></p>
+                        <ul>
+                            @foreach($inscricoesEspelho as $espelho)
+                    <li>
+                        <a href="{{ route('hospedagem.verdados', Crypt::encrypt($espelho->id)) }}">
+                            #{{ $espelho->id }}
+                        </a>
+                        — {{ $espelho->adulto }} adulto(s),
+                        {{ $espelho->crianca }} criança(s)
+                        @if($espelho->tipouh)
+                            — {{ $espelho->tipouh->descricao }}
+                        @endif
+                    </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    
+                    @if($auditorias->count())
+                        <hr>
+                        <p><strong>Auditoria:</strong></p>
+                        @foreach($auditorias as $auditoria)
+                            @php
+                    $detalhesAuditoria = json_decode($auditoria->detalhes, true);
+                            @endphp
+                            <div class="border rounded p-3 mb-2">
+                    <div>
+                        <strong>{{ $detalhesAuditoria['mensagem'] ?? 'Alteração administrativa registrada.' }}</strong>
+                    </div>
+                    <small class="text-muted">
+                        Administrador ID: {{ $auditoria->administrador_id ?: 'não identificado' }}
+                        — {{ \Carbon\Carbon::parse($auditoria->created_at)->format('d/m/Y H:i') }}
+                    </small>
+                    
+                    @if(!empty($detalhesAuditoria['observacao']))
+                        <div class="mt-2">
+                            Observação: {{ $detalhesAuditoria['observacao'] }}
+                        </div>
+                    @endif
+                            </div>
+                        @endforeach
+                    @endif
+                            </div>
+                        </div>
+                    @endif
 
                     @role('administrador_geral|auxiliar_administrador_geral')                 
                     
