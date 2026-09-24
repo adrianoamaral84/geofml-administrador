@@ -611,6 +611,15 @@
                             @endif        
                                    
                                     @if($hospedagem->status == 0 or $hospedagem->status == 7)
+
+                                        @if(is_null($hospedagem->und_habitacionais_id))
+                                            <a
+                                                href="{{ route('hospedagem.dividir.form', Crypt::encrypt($hospedagem->id)) }}"
+                                                class="btn btn-warning"
+                                                title="Dividir Inscrição">
+                                                <i class="fas fa-code-branch"></i> Dividir Inscrição
+                                            </a>
+                                        @endif
                                     
                                         <a href="{{ route('envia.mail.espera', ['id' => Crypt::encrypt($hospedagem->id)])  }}" class="btn btn-success" style="color: white;" id="enviar_mensagem" title="Enviar Mensagem">
                                         <i class="fas fa-envelope" style="color: white;" ></i> Fila de Espera </a>
