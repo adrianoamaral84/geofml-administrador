@@ -46,7 +46,24 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapWebRoutes();
 
-        //
+        // Sobrescreve a rota legada de reset administrativo depois do web.php.
+        // O URI e o nome permanecem os mesmos para não quebrar links/views existentes,
+        // mas a senha nunca mais é alterada diretamente para o CPF.
+        $this->mapSecureAdminPasswordResetRoute();
+    }
+
+    /**
+     * Mantém o mesmo URI e nome usados pela interface administrativa, mas direciona
+     * a requisição para o fluxo seguro de redefinição por e-mail.
+     */
+    protected function mapSecureAdminPasswordResetRoute()
+    {
+        Route::middleware('web')
+            ->get(
+                '/admin/users/{id}/reset',
+                'App\\Http\\Controllers\\AdminPasswordResetController@send'
+            )
+            ->name('usuario.reset');
     }
 
     /**
@@ -65,8 +82,6 @@ class RouteServiceProvider extends ServiceProvider
 
     /**
      * Define the "api" routes for the application.
-     *
-     * These routes are typically stateless.
      *
      * @return void
      */
