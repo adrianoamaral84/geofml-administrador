@@ -14,7 +14,7 @@
 
         <div>
             <strong>Usuário Mecenas DECEx / MHEx</strong><br>
-            Este militar participa do Programa Mecenas e possui
+            Este militar participa do Programa Mecenas DECEx / MHEx e possui
             <strong>{{ $hospedagem->user->percentual_desconto }}% de desconto</strong>
             nas diárias.
             <br>
@@ -107,7 +107,7 @@
                             @enderror
                         </div>
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
-    <label class="control-label">Mecenas DCEx / MHEx</label>
+    <label class="control-label">Mecenas DECEx / MHEx</label>
 
     <input type="text"
        class="form-control"

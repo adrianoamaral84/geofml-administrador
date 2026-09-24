@@ -117,8 +117,6 @@
 
 
 </div>
-<<<<<<< HEAD
-=======
   @if($hospedagem->user->mecenas)
 <div class="row">
     <div class="col-md-12">
@@ -140,7 +138,6 @@
     </div>
 </div>
 @endif
->>>>>>> 212d8940836ec530a56f12f0591d5f3311408e5b
 <section class="section">
     <div class="row sameheight-container">
         <div class="col-12">
@@ -324,11 +321,8 @@
 
                    </div>
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> 212d8940836ec530a56f12f0591d5f3311408e5b
 
 
                        <div class="row has-error">
@@ -474,15 +468,9 @@
 
 
                         @if($hospedagem->status == 2 or $hospedagem->status == 3 or $hospedagem->status == 4 or $hospedagem->status == 5)
-<<<<<<< HEAD
-
-                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
-
-=======
 
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
 
->>>>>>> 212d8940836ec530a56f12f0591d5f3311408e5b
                           <label class="control-label" style="color: red;">UH Distribuída</label>
                             <select name="unidadeshabitacionais" id="unidadeshabitacionais" required class="custom-select mr-sm-2 @error('unidadeshabitacionais') is-invalid @enderror" autocomplete="off" readonly="">
                             <option value="">Selecione Unidade Habitacional</option>
@@ -558,13 +546,8 @@
 
                         <div class="row has-error">
                         @if($hospedagem->status == 2 or $hospedagem->status == 4)
-<<<<<<< HEAD
-                        @if($hospedagem->checkin == 1 or $hospedagem->checkin == null)
-                          <div class="form-group col-sm-12 col-md-3 col-lg-3">
-=======
                         @if($hospedagem->checkin == 1)
                           <div class="form-group col-sm-12 col-md-3 col-lg-3">
->>>>>>> 212d8940836ec530a56f12f0591d5f3311408e5b
 
                             <label class="control-label">{{ __('Valor Pago') }}</label>
                             <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valor_pago, 2, ',', '.' )}}" name="valorpago" id="valorpago" required autofocus readonly onpaste="return false;">
@@ -641,30 +624,9 @@
                         @endif
                         @endif
 
-<<<<<<< HEAD
-                        @if($CheckOutAtrasado == 1)
-                         @if($hospedagem->checkin_at != null)
-                         @if($hospedagem->checkin == 1)
-                                <div class="form-group col-sm-12 col-md-3 col-lg-3">
-
-                            <label class="control-label">{{ __('Acréscimo Check-Out') }}</label>
-                            <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valortarifa, 2, ',', '.' )}}" name="CheckOutAtrasado" id="CheckOutAtrasado" required autofocus readonly onpaste="return false;">
-                            @error('CheckOutAtrasado')
-                                <span class="has-error" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-
-                        </div>
-                        @endif
-                        @endif
-                        @endif
-
-=======
 
 
 
->>>>>>> 212d8940836ec530a56f12f0591d5f3311408e5b
 
                         @endif
                         @endif
@@ -676,12 +638,6 @@
 
 
                       </div>
-<<<<<<< HEAD
-                      @if($hospedagem->status == 2)
-                          @role('atendente|administrador_geral|administrador|auxiliar_administrador_geral')
-
-                              <div class="row has-error">
-=======
 
 
 
@@ -691,7 +647,6 @@
                     <div class="row has-error">
                              @if($hospedagem->status == 2)
                           @role('atendente|administrador_geral|administrador|auxiliar_administrador_geral')
->>>>>>> 212d8940836ec530a56f12f0591d5f3311408e5b
 
                                @if($hospedagem->checkin == 1)
                                 <div class="form-group col-sm-12 col-md-3 col-lg-3">
@@ -733,13 +688,6 @@
                           @endrole
                       @endif
 
-<<<<<<< HEAD
-
-
-                <div class="row has-error">
-
-
-=======
 
                   @if($hospedagem->status == 2)
 @role('atendente|administrador_geral|administrador|auxiliar_administrador_geral')
@@ -884,7 +832,6 @@
                 <div class="row has-error">
 
 
->>>>>>> 212d8940836ec530a56f12f0591d5f3311408e5b
 
                         @if($hospedagem->status == 4)
                          <div class="form-group col-sm-12 col-md-12 col-lg-6">
@@ -943,14 +890,6 @@
             <!-- FIM MOTIVO-->
 
          </div>
-<<<<<<< HEAD
-
-            <!-- LINHA DOS BOTOES -->
-              <div class="row has-error">
-                    <div class="form-group col-sm-12 col-md-12 col-lg-12">
-
-
-=======
          <div class="row has-error">
                 <div class="form-group col-sm-12 col-md-12 col-lg-12">
                     <div class="d-flex flex-wrap align-items-center" style="gap: 3px;">
@@ -966,7 +905,6 @@
                     <div class="d-flex flex-wrap align-items-center" style="gap: 3px;">
 
 
->>>>>>> 212d8940836ec530a56f12f0591d5f3311408e5b
                             <!--
                              <a href="javascript:;" data-toggle="modal" onclick="aprovapedido('{{Crypt::encrypt($hospedagem->id)}}')" class="btn btn-primary" data-target="#AprovaModal" title="Aprovar Pedido">
                                     <i class="fas @endrolefa-check-square" style="color: #ffffff"></i> Liberar Acesso!</a>

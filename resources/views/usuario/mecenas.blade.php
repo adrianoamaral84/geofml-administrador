@@ -20,7 +20,7 @@
                         <div>
 
                             <h4 class="card-title mb-1">
-                                Usuários Mecenas DECEx/MHEx
+                                Usuários Mecenas DECEx / MHEx
                             </h4>
 
                             <p class="text-muted mb-0">
