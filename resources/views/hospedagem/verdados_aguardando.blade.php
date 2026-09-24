@@ -72,7 +72,7 @@
              <div class="card card-block sameheight-item">
                 <p class="title-description">Lista de datas contempladas</p>
                 <hr>
-              
+
 
 <table class="table table-striped">
   <thead>
@@ -80,18 +80,18 @@
       <th scope="col">Tipo Unidade Habitacional</th>
       <th scope="col">Data Início</th>
       <th scope="col">Data Final</th>
-     
+
     </tr>
   </thead>
 
   <tbody>
-    @foreach ($hospedagensAnoPassado as $item) 
+    @foreach ($hospedagensAnoPassado as $item)
 
     <tr>
       <td>{{ $item->tipouh->descricao }}</td>
       <td>{{ \Carbon\Carbon::parse($item->data_inicio)->format('d/m/Y') }}</td>
       <td>{{ \Carbon\Carbon::parse($item->data_termino)->format('d/m/Y') }}</td>
-     
+
     </tr>
     @endforeach
 
@@ -123,7 +123,7 @@
              <div class="card card-block sameheight-item">
                 <p class="title-description">Lista de datas contempladas</p>
                 <hr>
-              
+
 
 <table class="table table-striped">
   <thead>
@@ -131,18 +131,18 @@
       <th scope="col">Tipo Unidade Habitacional</th>
       <th scope="col">Data Início</th>
       <th scope="col">Data Final</th>
-     
+
     </tr>
   </thead>
 
   <tbody>
-    @foreach ($ContempladoNessaTemporada as $item) 
+    @foreach ($ContempladoNessaTemporada as $item)
 
     <tr>
       <td>{{ $item->tipouh->descricao }}</td>
       <td>{{ \Carbon\Carbon::parse($item->data_inicio)->format('d/m/Y') }}</td>
       <td>{{ \Carbon\Carbon::parse($item->data_termino)->format('d/m/Y') }}</td>
-     
+
     </tr>
     @endforeach
 
@@ -162,7 +162,7 @@
         <i class="fas fa-award fa-2x mr-3"></i>
 
         <div>
-            <strong>Usuário Mecenas</strong><br>
+            <strong>Usuário Mecenas DECEx / MHEx</strong><br>
             Este militar participa do Programa Mecenas e possui
             <strong>{{ $hospedagem->user->percentual_desconto }}% de desconto</strong>
             nas diárias.
@@ -179,9 +179,9 @@
 <section class="section">
     <div class="row sameheight-container">
         <div class="col-12">
-           
+
             <div class="card card-block sameheight-item">
-                
+
                 <p class="title-description">  </p><br>
                 <form id="profile-form" action="{{ route('hospedagem.liberar')}}" method="POST" enctype="multipart/form-data">
                     @csrf
@@ -192,19 +192,19 @@
                             <input type="text" class="form-control boxed @error('posto') is-invalid @enderror" value="{{ $hospedagem->user->posto->sigla}}" name="posto" id="posto" autofocus required readonly="" maxlength="100" onpaste="return false;" style="text-transform: uppercase;">
                             <input type="hidden" name="id1" value="{{ $hospedagem->id }}" placeholder="">
                             <input type="hidden" name="posto_id" value="{{ $hospedagem->user->posto->id}}">
-                            
+
                             @error('posto')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>
                             @enderror
                         </div>
-                        
+
                         <div class="form-group col-sm-6 col-md-6 col-lg-6">
                             <label class="control-label">{{ __('Nome') }}</label>
                             <input type="text" class="form-control boxed @error('nome') is-invalid @enderror" value="{{ $hospedagem->user->name}}" name="nome" id="nome" autofocus required readonly="" maxlength="100" onpaste="return false;" style="text-transform: uppercase;">
                             <input type="hidden" name="id" value="{{ Crypt::encrypt($hospedagem) }}" placeholder="">
-                            
+
                             @error('nome')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -221,7 +221,7 @@
                                 </span>
                             @enderror
                         </div>
-              
+
                     </div>
 
                     <div class="row has-error">
@@ -259,7 +259,11 @@
                         </div>
 
                         <div class="form-group col-sm-3 col-md-3 col-lg-3">
+<<<<<<< HEAD
+    <label class="control-label">Mecenas DECEx / MHEx</label>
+=======
     <label class="control-label">Mecenas DCEx / MHEx</label>
+>>>>>>> origin/master
 
     <input type="text"
         class="form-control"
@@ -298,19 +302,19 @@
 
 
                         <div class="form-group col-sm-12 col-md-3 col-lg-3">
-                        
+
                             <label class="control-label">{{ __('PNE') }}</label>
                                 <select id="pne_visual" class="custom-select mr-sm-2 @error('pne') is-invalid @enderror" disabled>
-                                
+
                                  @if($hospedagem->pne == 1)
                                  <option value="1" selected >Sim</option>
                                 @else
                                 <option value="0">Não</option>
-                                @endif   
-                                
+                                @endif
+
                                 </select>
-                                
-                                
+
+
                                     @error('pne')
                                     <span class="has-error" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -323,27 +327,27 @@
 
                         <label class="control-label">{{ __('PET') }}</label>
                                 <select id="pet_visual" class="custom-select mr-sm-2 @error('pet') is-invalid @enderror" disabled>
-                                
+
                                  @if($hospedagem->pet == 1)
                                  <option value="1" selected >Sim</option>
                                 @else
                                 <option value="0">Não</option>
-                                @endif   
+                                @endif
 
-                                
+
                                 </select>
-                               
-                           
+
+
                                     @error('pet')
                                     <span class="has-error" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
 
                                     @enderror
-                        
-                            
-                           
-                            
+
+
+
+
                         </div>
 
 
@@ -367,7 +371,7 @@
 
 
                     </div>
-                    
+
                     <div class="row has-error">
 
                         <div class="form-group col-sm-12 col-md-6 col-lg-6">
@@ -380,13 +384,13 @@
                                 </span>
                             @enderror
                         </div>
-                         
-                        
-                    
+
+
+
 
 
                         @role('administrador_geral|auxiliar_administrador_geral')
-                        
+
                          @if($hospedagem->checkin == null)
                          @if($hospedagem->status != 6  or $liberaDistribuir == 1)
                          <div class="form-group col-sm-12 col-md-3 col-lg-3">
@@ -411,9 +415,9 @@
                         @endif
                         @endif
                         @endrole
-                        
-                         
-                        
+
+
+
 
                     </div>
 
@@ -422,26 +426,26 @@
 
 
 
-                    @role('administrador_geral|auxiliar_administrador_geral')                 
-                    
+                    @role('administrador_geral|auxiliar_administrador_geral')
+
                     <div class="row has-error">
 
                         @if($hospedagem->checkin == null)
                         @if($hospedagem->status != 6  or $liberaDistribuir == 1)
                         <div class="form-group col-sm-12 col-md-6 col-lg-6">
-                                
+
                              <label class="control-label">{{ __('Grupo Destinação') }}</label>
                                 <select name="grupodestinacao" id="grupodestinacao" required class="custom-select mr-sm-2 @error('grupodestinacao') is-invalid @enderror" autocomplete="off">
                                    <option value="">Selecione Grupo Destinação</option>
-                                    
+
                                     @foreach($grupoDestino as $grupo)
                                           <option value="{{$grupo->id}}">{{$grupo->descricao}}</option>
                                     @endforeach
 
-                                                                                   
+
                                 </select>
-                               
-                           
+
+
                                     @error('grupodestinacao')
                                     <span class="has-error" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -451,9 +455,9 @@
 
                         </div>
 
-                       
+
                         <div class="form-group col-sm-12 col-md-6 col-lg-6">
-                               
+
                             <div id="unidadeshabitacionaisdiv">
                                 <label class="control-label">{{ __('Unidades Habitacionais') }}</label>
 
@@ -501,7 +505,7 @@
     Ver mapa de ocupação
 </button>
                                 </div>
-                            </div> 
+                            </div>
                         </div>
                         @endif
                         @endif
@@ -510,7 +514,7 @@
                         @if($hospedagem->status == 4)
                         <div class="form-group col-sm-12 col-md-6 col-lg-6">
 
-                                
+
 
                                     <label class="control-label">{{ __('Valor') }}</label>
                                     <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valor, 2, ',', '.' )}}" name="valor" id="valor" required autofocus readonly onpaste="return false;">
@@ -520,28 +524,28 @@
                                     </span>
                                     @enderror
 
-                                
 
-                        </div> 
-                        @endif   
+
+                        </div>
+                        @endif
 
                     </div>
-                   
+
                     @endrole
-                    
+
 
                         @if($hospedagem->status == 4)
                         @if($comprovante)
-                            
 
-                            
+
+
                              <a href="data:image/png;base64, {{ $comprovante->arquivo }}" target="_blank" title="Ver Comprovante de Pagamento" class="btn btn-secondary btn-xl" style="margin-top: 20px;"><i class="fas fa-address-card"></i>
                                 Ver Comprovante de Pagamento
-                            </a> 
+                            </a>
                         @else
                             <a href="#" target="_blank" title="Ver Comprovante de Pagamento" class="btn btn-secondary btn-xl" style="margin-top: 20px; color: red;"><i class="fas fa-address-card"></i>
                                 SEM Comprovante de Pagamento
-                            </a> 
+                            </a>
 
 
                         @endif
@@ -563,21 +567,21 @@
                         </div>
                         @endif
                         @endrole
-                    
+
                     <hr>
-                
-                
-                                    
-               
-             
-                
-              
+
+
+
+
+
+
+
             </div>
 
             @role('administrador_geral|auxiliar_administrador_geral')
                     <div class="row mt-4">
     <div class="col-12">
-                            <p class="title-description"> 
+                            <p class="title-description">
 
                              </p><br>
 
@@ -607,34 +611,34 @@
 
                                     <a href="javascript:;" data-toggle="modal" onclick="negarpedido('{{Crypt::encrypt($hospedagem->id)}}')" data-target="#NegarModal" class="btn btn-danger" title="Negar Pedido">
                                     <i class="fas fa-ban fa-sm" ></i> Negar Solicitação! </a>
-                            @endif 
-                            @endif        
-                                   
+                            @endif
+                            @endif
+
                                     @if($hospedagem->status == 0 or $hospedagem->status == 7)
-                                    
+
                                         <a href="{{ route('envia.mail.espera', ['id' => Crypt::encrypt($hospedagem->id)])  }}" class="btn btn-success" style="color: white;" id="enviar_mensagem" title="Enviar Mensagem">
                                         <i class="fas fa-envelope" style="color: white;" ></i> Fila de Espera </a>
-                                    
+
                                     @endif
 
                                     @if($hospedagem->status == 7 or $hospedagem->status == 3)
-                                        
+
 
                                         <a href="javascript:;" data-toggle="modal" onclick="VoltarReserva('{{ Crypt::encrypt($hospedagem->id) }}')" data-target="#ModalVoltarCancelar" style="color: white;"  class="btn btn-info" title="Cancelar Reserva">
-                                            <i class="fas fa-rotate-left"></i> Retornar Para Distribuição </a> 
+                                            <i class="fas fa-rotate-left"></i> Retornar Para Distribuição </a>
 
 
                                     @endif
-                                    
+
                                     @if($hospedagem->status == 2 or $hospedagem->status == 3 or $hospedagem->status == 5)
                                         @if($hospedagem->checkin == null)
 
                                     <a href="javascript:;" data-toggle="modal" onclick="CancelarReserva('{{ Crypt::encrypt($hospedagem->id) }}')" data-target="#ModalCancelar" style="background-color: red" class="btn btn-danger" title="Cancelar Reserva">
-                                            <i class="fas fa-bed" ></i> Cancelar Reserva </a> 
+                                            <i class="fas fa-bed" ></i> Cancelar Reserva </a>
 
                                         @endif
                                     @endif
-                           
+
 
 
 
@@ -700,7 +704,7 @@
         </div>
     </div>
 </div>
-            
+
                                     <div class="modal fade" id="modalMapaOcupacao" tabindex="-1" role="dialog"
     aria-labelledby="modalMapaOcupacaoTitulo" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document" style="max-width:98%;">
@@ -776,7 +780,7 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}  
+                                                    {{ csrf_field() }}
                                                     {{ method_field('PUT') }}
                                                     <p>Deseja realmente Aprovar esse Pedido?</p>
                                                 </div>
@@ -790,9 +794,9 @@
                                 </div>
 
 
-    
 
- 
+
+
 
 
                                 <div class="modal fade" id="NegarModal">
@@ -806,7 +810,7 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}  
+                                                    {{ csrf_field() }}
                                                     {{ method_field('PUT') }}
                                                     <p>Deseja realmente Negar esse Pedido?</p>
                                                 </div>
@@ -831,11 +835,11 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}  
+                                                    {{ csrf_field() }}
                                                     {{ method_field('DELETE') }}
                                                     <p >Antes de cancelar sua reserva por motivo de <b style="color: red;">mudança de período ou Unidade Habitacional,</b> consulte a Seção FML para os ajustes necessários.</p><br><br>
                                                       <p style="color: red;"> Caso efetue o cancelamento da reserva aprovada e fizer nova soicitação, terá de pagar nova diária para aprovação.</p>
-                                                    
+
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="formSubmitCancelar()">Sim</button>
@@ -860,11 +864,11 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}  
+                                                    {{ csrf_field() }}
                                                     {{ method_field('DELETE') }}
                                                     <p > Deseja retornar para Distribuição essa Reserva?</p>
-                                                   
-                                                    
+
+
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="formSubmitVoltarCancelar()">Sim</button>
@@ -913,7 +917,7 @@
          $("#negarpedido").submit();
      }
 </script>
-    
+
 
 
 
@@ -1689,6 +1693,6 @@
     }
 })(jQuery);
 </script>
-    
+
 @endpush
 @endsection

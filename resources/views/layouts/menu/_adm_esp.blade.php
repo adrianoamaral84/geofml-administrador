@@ -3,11 +3,11 @@
         <i class="fa fa-users"></i> Usuários <i class="fa arrow"></i>
     </a>
     <ul class="sidebar-nav">
-        
+
         <li>
              <a href="{{ route('user.index') }}"> Gerenciar </a>
         </li>
-          
+
         <li>
             <a href="{{ route('lista.pedidos') }}"> Validar </a>
         </li>
@@ -17,7 +17,7 @@
         <li>
     <a href="{{ route('user.mecenas') }}">
         <i class="fa fa-star"></i>
-        <span>Mecenas DCEx / MHEx</span>
+        <span>Mecenas DECEx/MHEx</span>
     </a>
 </li>
 
@@ -44,7 +44,7 @@
          <li>
             <a href="{{ route('uh.index') }}"> Unidade Habitacional </a>
         </li>
-          
+
          <li>
             <a href="{{ route('grupo_tarifa.index') }}"> Grupo Tarifa </a>
         </li>
@@ -65,7 +65,7 @@
         <i class="fa fa-cogs"></i> Administração <i class="fa arrow"></i>
     </a>
     <ul class="sidebar-nav">
-        
+
         <li>
             <a href="{{ route('indexuf') }}"> UF</a>
         </li>
@@ -73,26 +73,26 @@
         <li>
             <a href="{{ route('guarnicao.index') }}">- Guarnição </a>
         </li>
-    
+
         <li>
             <a href="{{ route('forca.index') }}">- Força </a>
         </li>
-          -->     
-        
+          -->
+
         <li>
             <a href="{{ route('postograduacao.list') }}"> Posto / Graduação </a>
-        </li>     
+        </li>
          <li>
             <a href="{{ route('gerenciarom.listOMs') }}"> Gerenciar OMs </a>
         </li>
-        
+
         <li>
             <a href="{{ route('dadosgerais.index') }}"> Dados Gerais </i></a>
         </li>
         <li>
             <a href="{{route('configurarhospedagem.index')}}"> Configurar Hospedagem</a>
-        </li> 
-           
+        </li>
+
         <li>
             <a href="{{route('pagamento.index')}}"> PagTesouro Configuração</a>
         </li>
@@ -119,31 +119,31 @@
 
 
 
-        
+
         <li>
             <a href="{{route('hospedagem.index')}}"> Aguardando Liberação </a>
         </li>
 
-   
-        
-
-        
-        
-       
-
-       
 
 
 
 
 
-        
+
+
+
+
+
+
+
+
+
     <li>
     <a href="">
         Distribuição  <i class="fa arrow"></i>
     </a>
     <ul class="sidebar-nav">
-        
+
         <li>
             <a href="{{route('hospedagem.distribuicao.gen')}}"> Oficiais Generais </a>
         </li>
@@ -162,12 +162,12 @@
         <li>
             <a href="{{route('hospedagem.distribuicao.camping')}}"> Camping</a>
         </li>
-        
-        
+
+
     </ul>
 </li>
 
-        
+
     </ul>
 </li>
 
@@ -178,7 +178,7 @@
         <i class="fa fa-pie-chart" aria-hidden="true"></i> Relatórios <i class="fa arrow"></i>
     </a>
     <ul class="sidebar-nav">
-        
+
         <li>
             <a href="{{route('relatorio.index')}}"> Mensal </a>
         </li>

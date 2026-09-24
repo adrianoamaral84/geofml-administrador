@@ -18,7 +18,7 @@
                             <label class="control-label">{{ __('Nome') }}</label>
                             <input type="text" class="form-control boxed @error('nome') is-invalid @enderror" value="{{ $user->name }}" name="nome" id="nome" autofocus required readonly="" maxlength="100" onpaste="return false;" style="text-transform: uppercase;">
                             <input type="hidden" name="id" value="{{ Crypt::encrypt($user->id) }}" placeholder="">
-                            
+
                             @error('nome')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -35,17 +35,17 @@
                                 </span>
                             @enderror
                         </div>
-              
+
                     </div>
 
                     <div class="row has-error">
 
                         <div class="form-group col-sm-8 col-md-8 col-lg-8">
                             <label class="control-label">{{ __('Situação') }}</label>
-                
+
                                 <select name="situacao" id="situacao" required class="custom-select mr-sm-2 @error('situacao') is-invalid @enderror" readonly="" autocomplete="off">
                                      <option value="">Selecione Situação</option>
-                                
+
                                     @foreach($situacoes as $situacao)
 
                                          <option value="{{$situacao->id}}" @if($user->situacao_id == $situacao->id)selected @endif>{{$situacao->situacao}}</option>
@@ -60,7 +60,7 @@
 
 
                         <div class="form-group col-sm-4 col-md-4 col-lg-4">
-    <label class="control-label">Mecenas DCEx / MHEx</label>
+    <label class="control-label">Mecenas DECEx / MHEx</label>
 
     <select name="mecenas" class="form-control" readonly="">
         <option value="0" @if(old('mecenas', $user->mecenas ?? 0) == 0) selected @endif>Não</option>
@@ -68,18 +68,18 @@
     </select>
 </div>
 
-                    </div>                   
-               
+                    </div>
+
                     <div class="row has-error milReserva">
                             <div class="col-sm-12 col-md-12 col-lg-12">
-                               
+
                             <label class="form-check">
                             @if($user->pttc === 1)
                             <input type="checkbox" readonly="" id="pttc" name="pttc" value="1" checked="" class="form-check-input" required="no">
                             @else
-                            <input type="checkbox" readonly="" id="pttc" name="pttc" value="1" class="form-check-input" required="no"> 
+                            <input type="checkbox" readonly="" id="pttc" name="pttc" value="1" class="form-check-input" required="no">
                             @endif
-                            PTTC 
+                            PTTC
                             </label>
                                     @error('pttc')
                                     <span class="has-error" role="alert">
@@ -87,11 +87,11 @@
                                     </span>
                                     @enderror
                             </div>
-                    </div>      
-                  
-                
+                    </div>
 
-               
+
+
+
 
                     <div class="row has-error">
 
@@ -99,12 +99,12 @@
 
 
                         <div class="col-sm-4 col-md-4 col-lg-4 form-group ForcaOmPosto">
-                             
+
                             <input type="hidden" name="posto" value="{{$user->postograd_id}}">
                             <label class="control-label" id="nivel">{{ __('Posto / Graduação') }}</label>
                                 <select name="posto" id="posto" class="custom-select mr-sm-2 @error('posto') is-invalid @enderror" readonly="" autocomplete="off">
                                 <option value="">Selecione</option>
-                                
+
                             </select>
                             @error('posto')
                                 <span class="has-error" role="alert">
@@ -113,7 +113,7 @@
                             @enderror
                         </div>
 
-                        
+
                          <div class="col-sm-4 col-md-4 col-lg-4 form-group militarAtiva">
                             <label class="control-label">{{ __('Data Última Promoção') }}</label>
                             <input type="date" class="form-control boxed @error('dtUltPromo') is-invalid @enderror" value="{{$user->dtUltPromo}}" name="dtUltPromo" id="dtUltPromo" autofocus onpaste="return false;" placeholder="dd-mm-yyyy" readonly="">
@@ -147,7 +147,7 @@
                         <input type="checkbox" name="indeterminado" id="indeterminado" value="1"> <label for="indeterminado">
                             Indeterminada </label>
                         @endif
-                        
+
                         </small></div>
 
                             <input type="date" class="form-control boxed @error('validade') is-invalid @enderror" value="{{$user->validade}}" name="validade" id="validade" placeholder="dd-mm-yyyy" required="required" onpaste="return false;" @if($user->indeterminado == 1) readonly="readonly" @endif>
@@ -159,26 +159,26 @@
                         </div>
 
 
-                       
-                     
 
-                          
 
-                 
+
+
+
+
 
                         <div class="col-sm-4 col-md-4 col-lg-4 form-group nivelescola">
                             <label class="control-label">{{ __('Nivel') }}</label>
-                
+
                                 <select name="nivel" id="nivel" readonly="" class="custom-select mr-sm-2 @error('nivel') is-invalid @enderror" autocomplete="off">
                                      <option value="">Nivel </option>
-                                
+
                                     @foreach($nivels as $nivel)
 
                                          <option value="{{$nivel->id}}" @if($user->nivel == $nivel->id)selected @endif>{{$nivel->nivel}}</option>
                                     @endforeach
 
-                                         
-                                    
+
+
                             </select>
                             @error('nivel')
                                 <span class="has-error" role="alert">
@@ -188,7 +188,7 @@
                         </div>
 
 
-                      
+
                         <div class="col-sm-4 col-md-4 col-lg-4 form-group siape">
                             <label class="control-label">{{ __('Siape') }}</label>
                                 <input type="text" class="form-control boxed @error('siape') is-invalid @enderror" value="{{ ($user->siape) ? $user->siape : old('siape') }}" name="siape" id="siape" autofocus readonly="" maxlength="14" onpaste="return false;" @if($user->siape) readonly @endif>
@@ -201,7 +201,7 @@
                         </div>
 
                 </div>
-  
+
                      <div class="row has-error">
 
 
@@ -210,10 +210,10 @@
                                 <select name="uf" id="uf" readonly="" required class="custom-select mr-sm-2 @error('uf') is-invalid @enderror" autocomplete="off">
                                 <option value="">Selecione UF</option>
                                     @foreach($ufs as $uf)
-                                    
+
                             <option value="{{$uf->id}}" @if($user->uf_id == $uf->id)selected @endif>{{$uf->sigla}}</option>
-                                   
-        
+
+
                                     @endforeach
                                 </select>
 
@@ -226,13 +226,13 @@
 
                               <div class="col-sm-4 col-md-4 col-lg-4 form-group">
                                 <input type="hidden" name="cidade" id="cidade" value="{{ ($user->cidade_id) ? $user->cidade_id : old('cidade') }}">
-                                
+
                                 <input type="hidden" name="cidadee" id="cidadee" value="{{ ($user->cidade_id) ? $user->cidade_id : old('cidade') }}">
-                                
+
                                 <label class="control-label">{{ __('Cidade') }}</label>
                                 <select name="cidade" readonly="" id="cidade" required="required" class="custom-select mr-sm-2 @error('cidade') is-invalid @enderror" autocomplete="off">
                                 <option value="">Selecione Cidade</option>
-                                   
+
                                 </select>
 
                                 @error('cidade')
@@ -243,13 +243,13 @@
                             </div>
 
                             <div class="col-sm-4 col-md-4 col-lg-4 form-group">
-                          
+
                                 <input type="hidden" name="om" value="{{$user->om_id}}">
                                 <label class="control-label">{{ __('OM') }}</label>
                                 <select name="om" id="om" readonly="" required class="custom-select mr-sm-2 @error('om') is-invalid @enderror" autocomplete="off">
                                 <option value="">Selecione OM</option>
-                                
-                                                       
+
+
                                 </select>
 
                                 @error('om')
@@ -271,10 +271,10 @@
                                 </span>
                             @enderror
                         </div>
-                        
+
                         <div class="col-sm-6 col-md-4 col-lg-4 form-group">
                             <label class="control-label">{{ __('Telefone C/ WhatsApp') }}</label>
-                            <input type="text" class="form-control boxed @error('telefone') is-invalid @enderror" 
+                            <input type="text" class="form-control boxed @error('telefone') is-invalid @enderror"
                             value="@if($user->telefone){{$user->telefone}}@endif" name="telefone" id="telefone" readonly="" maxlength="11" onpaste="return false;" required="required" data-mask="(00) 00000-0000" autocomplete="off">
                             @error('telefone')
                                 <span class="has-error" role="alert">
@@ -290,7 +290,7 @@
                          <label class="control-label">{{ __('Documento') }}</label><br>
                      </div>
                      </div>
-            
+
                    <div class="row form-group has-error">
                         <div class="col-3 form-group">
 
@@ -340,18 +340,18 @@
                         </span>
                         @enderror
                        </div>
-                    </div>              
+                    </div>
                     -->
 
                     <hr>
                     <div class="form-group row">
                         <div class="col-sm-12 col-xl-12">
-                            <p class="title-description"> 
+                            <p class="title-description">
 
                              </p><br>
                              <!--
                              <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-check-circle fa-sm"></i>  
+                                <i class="fas fa-check-circle fa-sm"></i>
                                     Salvar Alterações
                             </button>
                             -->
@@ -361,16 +361,16 @@
                                     <a href="javascript:;" data-toggle="modal" data-target="#NegarModal" class="btn btn-danger" title="Negar Pedido">
                                     <i class="fas fa-ban fa-sm" ></i> Negar Acesso!</a>
 
-                            
+
                             <a href="{{ route('usuario.reset', ['id' => Crypt::encrypt($user->id)]) }}" class="btn btn-dark"><i class="fas fa-check-circle fa-sm"></i>  Resetar Senha! </a>
                         </div>
                     </div>
 
 
                 </form>
-             
-             
-                
+
+
+
                 <p></p>
                 <p></p>
 
@@ -380,7 +380,7 @@
 
                 <p>&nbsp;</p>
             </div>
-            
+
                                     <div class="modal fade" id="AprovaModal">
                                     <div class="modal-dialog" role="document">
                                         <form action="" id="aprovapedido" method="get">
@@ -392,7 +392,7 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}  
+                                                    {{ csrf_field() }}
                                                     {{ method_field('PUT') }}
                                                     <p>Deseja realmente Aprovar esse Pedido?</p>
                                                 </div>
@@ -409,7 +409,7 @@
                                 <div class="modal fade" id="NegarModal">
                                     <div class="modal-dialog" role="document">
                                     <form id="negarpedido" action="{{ route('envia.mail.negado') }}" method="POST" enctype="multipart/form-data">
-                                       
+
                                             <div class="modal-content">
                                                 <div class="modal-header-dangeri">
                                                     <h4 class="modal-title"><i class="fa fa-warning"></i> Atenção</h4>
@@ -418,12 +418,12 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {{ csrf_field() }}  
+                                                    {{ csrf_field() }}
                                                     {{ method_field('POST') }}
                                                     <p>Deseja realmente Negar esse Pedido?</p>
-                                                    
+
                                                 </div>
-                                                
+
 
                                                 <div style="width: 100%;">
                                                 <div style="margin-left: 10px;"><b>Motivo:</b></div>
@@ -431,7 +431,7 @@
                                                     <div style="margin-left: 10px; font-size: 11px;">máximo 255 caracteres</div>
                                                     <input type="hidden" name="id" value="{{ $user->id }}">
                                                 </div>
-                                                
+
 
                                                 <div class="modal-footer">
 
@@ -479,20 +479,20 @@
      }
 
      $('#indeterminado').on('change', ()=>{
-    
+
         if($('#indeterminado').is(':checked')){
-            
+
                 $('#validade').attr('readonly', true);
 
         }else{
 
                 $('#validade').attr('readonly', false);
         }
-            
+
     });
 </script>
     <script src="{{asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js')}}"></script>
-    <script src="{{ asset('js/script_cadastro.js') }}" ></script>   
-    
+    <script src="{{ asset('js/script_cadastro.js') }}" ></script>
+
 @endpush
 @endsection
