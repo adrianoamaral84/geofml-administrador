@@ -1715,11 +1715,16 @@ public function dividirInscricao(Request $request, $id)
 
         $espelho->save();
 
+        $administradorNome = auth()->user()->name ?? 'Administrador';
+
         $detalhes = [
             'mensagem' =>
-                'Inscrição dividida pelo administrador em ' .
+                'Inscrição dividida por ' .
+                $administradorNome .
+                ' em ' .
                 Carbon::now('America/Sao_Paulo')->format('d/m/Y H:i') .
                 ' após confirmação do usuário.',
+            'administrador_nome' => $administradorNome,
             'antes' => [
                 'adultos' => $adultosAtuais,
                 'criancas' => $criancasAtuais,
@@ -3392,10 +3397,32 @@ public function liberar_OLD_1(Request $request){
         //dd($contemplado);
 
         $auditorias = DB::table('hospedagem_auditoria')
-            ->where('hospedagem_id', $hospedagem->id)
-            ->orWhere('hospedagem_espelho_id', $hospedagem->id)
+            ->where(function ($query) use ($hospedagem) {
+                $query->where('hospedagem_id', $hospedagem->id)
+                    ->orWhere('hospedagem_espelho_id', $hospedagem->id);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
+
+        $administradorIds = $auditorias
+            ->pluck('administrador_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $nomesAdministradores = \App\User::whereIn('id', $administradorIds)
+            ->pluck('name', 'id');
+
+        $auditorias = $auditorias->map(function ($auditoria) use ($nomesAdministradores) {
+            $detalhes = json_decode($auditoria->detalhes, true) ?: [];
+
+            $auditoria->administrador_nome =
+                $detalhes['administrador_nome']
+                ?? $nomesAdministradores->get($auditoria->administrador_id)
+                ?? 'Administrador não identificado';
+
+            return $auditoria;
+        });
 
         $inscricoesEspelho = \App\Hospede::where(
                 'hospedagem_origem_id',
