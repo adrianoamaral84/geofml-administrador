@@ -299,6 +299,8 @@ Route::get(
 		Route::post('/liberar', 'Hospedagem\HospedagemController@liberar')->name('hospedagem.liberar');
 		Route::get('/{id}/verdados', 'Hospedagem\HospedagemController@verdados')->name('hospedagem.verdados');
 		Route::get('/aguardando', 'Hospedagem\HospedagemController@aguardando_liberacao')->name('hospedagem.aguardando_liberacao');
+		Route::get('/{id}/dividir', 'Hospedagem\\HospedagemController@dividirInscricaoForm')->name('hospedagem.dividir');
+		Route::post('/dividir', 'Hospedagem\\HospedagemController@dividirInscricao')->name('hospedagem.dividir.salvar');
 		Route::get('/{id}/verdados_aguardando', 'Hospedagem\HospedagemController@verdados_aguardando_liberacao')->name('hospedagem.verdados_aguardando_liberacao');
 		Route::get('/{id}/liberar', 'Hospedagem\HospedagemController@liberar_uso')->name('hospedagem.liberar_uso');
 		Route::get('/{id}/negar/uso', 'Hospedagem\HospedagemController@negar_uso')->name('hospedagem.negar_uso');

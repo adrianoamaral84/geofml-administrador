@@ -581,6 +581,14 @@
 
                              </p><br>
 
+                             @if($hospedagem->checkin == null && in_array((int) $hospedagem->status, [0, 7], true) && ((int) $hospedagem->adulto + (int) $hospedagem->crianca) > 1)
+                                <a href="{{ route('hospedagem.dividir', ['id' => Crypt::encrypt($hospedagem->id)]) }}"
+                                   class="btn btn-warning"
+                                   title="Dividir inscrição em duas acomodações">
+                                    <i class="fas fa-code-branch"></i> Dividir Inscrição
+                                </a>
+                             @endif
+
                              <!-- SE USUARIO NAO FEZ CHECK IN APARECE O BOTAO APROVAR E NEGAR -->
                             @if($hospedagem->checkin == null)
                             @if($hospedagem->status != 6 or $liberaDistribuir == 1)

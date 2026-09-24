@@ -3287,5 +3287,267 @@ public function liberar_OLD_1(Request $request){
 
 
      }
+
+    public function dividirInscricaoForm($id)
+    {
+        $id = Crypt::decrypt($id);
+
+        $hospedagem = \App\Hospede::with(['user', 'tipouh', 'undHB'])
+            ->findOrFail($id);
+
+        if ($hospedagem->checkin !== null) {
+            \Session::flash('message', [
+                'msg' => 'Não é possível dividir uma inscrição após o check-in.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()->back();
+        }
+
+        if (!in_array((int) $hospedagem->status, [0, 7], true)) {
+            \Session::flash('message', [
+                'msg' => 'A divisão só pode ser feita enquanto a inscrição estiver em distribuição ou fila de espera.',
+                'class' => 'danger',
+            ]);
+
+            return redirect()->back();
+        }
+
+        $capacidadeOriginal = 0;
+
+        if ($hospedagem->undHB) {
+            $capacidadeOriginal = (int) $hospedagem->undHB->capacidade_ocupacao;
+        } else {
+            $capacidadeOriginal = (int) \App\UnidadeHabitacional::where('disponivel', 1)
+                ->where('tipo_und_hab_id', $hospedagem->tipo_und_id)
+                ->max('capacidade_ocupacao');
+        }
+
+        $queryUnidades = \App\UnidadeHabitacional::where('disponivel', 1);
+
+        if (!empty($hospedagem->und_habitacionais_id)) {
+            $queryUnidades->where('id', '<>', $hospedagem->und_habitacionais_id);
+        }
+
+        $unidades = $queryUnidades
+            ->with('tipohabitacao')
+            ->orderBy('sigla')
+            ->get();
+
+        return view(
+            'hospedagem.dividir_inscricao',
+            compact('hospedagem', 'capacidadeOriginal', 'unidades')
+        );
+    }
+
+    public function dividirInscricao(Request $request)
+    {
+        $validated = $request->validate(
+            [
+                'id' => 'required|integer|exists:hospedagem,id',
+                'adulto_original' => 'required|integer|min:0',
+                'crianca_original' => 'required|integer|min:0',
+                'unidade_destino' => 'required|integer|exists:unidades_habitacionais,id',
+            ],
+            [
+                'adulto_original.required' => 'Informe quantos adultos permanecerão na inscrição original.',
+                'crianca_original.required' => 'Informe quantas crianças permanecerão na inscrição original.',
+                'unidade_destino.required' => 'Selecione a unidade habitacional para a inscrição espelho.',
+            ]
+        );
+
+        $hospedagem = \App\Hospede::with(['user', 'undHB'])
+            ->findOrFail($validated['id']);
+
+        if ($hospedagem->checkin !== null) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'id' => 'Não é possível dividir uma inscrição após o check-in.',
+                ]);
+        }
+
+        if (!in_array((int) $hospedagem->status, [0, 7], true)) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'id' => 'A divisão só pode ser feita enquanto a inscrição estiver em distribuição ou fila de espera.',
+                ]);
+        }
+
+        if ($hospedagem->remanejamento_status === 'pendente') {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'id' => 'Esta inscrição já possui um remanejamento pendente de aceite.',
+                ]);
+        }
+
+        $adultosAtuais = (int) $hospedagem->adulto;
+        $criancasAtuais = (int) $hospedagem->crianca;
+        $adultosOriginal = (int) $validated['adulto_original'];
+        $criancasOriginal = (int) $validated['crianca_original'];
+
+        if (
+            $adultosOriginal > $adultosAtuais ||
+            $criancasOriginal > $criancasAtuais
+        ) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'adulto_original' => 'A divisão não pode aumentar a quantidade atual de hóspedes.',
+                ]);
+        }
+
+        $totalAtual = $adultosAtuais + $criancasAtuais;
+        $totalOriginal = $adultosOriginal + $criancasOriginal;
+
+        if ($totalOriginal <= 0 || $totalOriginal >= $totalAtual) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'adulto_original' => 'A inscrição original deve manter pelo menos um hóspede e deixar pelo menos um hóspede para a inscrição espelho.',
+                ]);
+        }
+
+        $capacidadeOriginal = 0;
+
+        if ($hospedagem->undHB) {
+            $capacidadeOriginal = (int) $hospedagem->undHB->capacidade_ocupacao;
+        } else {
+            $capacidadeOriginal = (int) \App\UnidadeHabitacional::where('disponivel', 1)
+                ->where('tipo_und_hab_id', $hospedagem->tipo_und_id)
+                ->max('capacidade_ocupacao');
+        }
+
+        if ($capacidadeOriginal <= 0 || $totalOriginal > $capacidadeOriginal) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'adulto_original' => 'A quantidade mantida na inscrição original ainda excede a capacidade permitida.',
+                ]);
+        }
+
+        $adultosRestantes = $adultosAtuais - $adultosOriginal;
+        $criancasRestantes = $criancasAtuais - $criancasOriginal;
+        $totalRestante = $adultosRestantes + $criancasRestantes;
+
+        $unidadeDestino = \App\UnidadeHabitacional::where('disponivel', 1)
+            ->findOrFail($validated['unidade_destino']);
+
+        if ($totalRestante > (int) $unidadeDestino->capacidade_ocupacao) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'unidade_destino' => 'A unidade selecionada não comporta os '
+                        . $totalRestante
+                        . ' hóspede(s) restantes. Capacidade: '
+                        . (int) $unidadeDestino->capacidade_ocupacao
+                        . '.',
+                ]);
+        }
+
+        $destinoOcupado = \App\Hospede::where(
+                'und_habitacionais_id',
+                $unidadeDestino->id
+            )
+            ->whereIn('status', [2, 3, 4, 5])
+            ->where(function ($query) use ($hospedagem) {
+                $query
+                    ->where('data_inicio', '<', $hospedagem->data_termino)
+                    ->where('data_termino', '>', $hospedagem->data_inicio);
+            })
+            ->exists();
+
+        if ($destinoOcupado) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'unidade_destino' => 'A unidade selecionada já possui hospedagem no período solicitado.',
+                ]);
+        }
+
+        $token = bin2hex(random_bytes(24));
+        $hospedagemEspelho = null;
+
+        DB::transaction(function () use (
+            $hospedagem,
+            $adultosOriginal,
+            $criancasOriginal,
+            $adultosRestantes,
+            $criancasRestantes,
+            $unidadeDestino,
+            $token,
+            &$hospedagemEspelho
+        ) {
+            $hospedagem->adulto = $adultosOriginal;
+            $hospedagem->crianca = $criancasOriginal;
+            $hospedagem->remanejamento_token = $token;
+            $hospedagem->remanejamento_status = 'pendente';
+            $hospedagem->remanejamento_aceito_at = null;
+            $hospedagem->save();
+
+            $hospedagemEspelho = $hospedagem->replicate();
+            $hospedagemEspelho->hospedagem_origem_id = $hospedagem->id;
+            $hospedagemEspelho->adulto = $adultosRestantes;
+            $hospedagemEspelho->crianca = $criancasRestantes;
+            $hospedagemEspelho->und_habitacionais_id = $unidadeDestino->id;
+            $hospedagemEspelho->tipo_und_id = $unidadeDestino->tipo_und_hab_id;
+            $hospedagemEspelho->remanejamento_token = $token;
+            $hospedagemEspelho->remanejamento_status = 'pendente';
+            $hospedagemEspelho->remanejamento_aceito_at = null;
+            $hospedagemEspelho->checkin = null;
+            $hospedagemEspelho->checkout_at = null;
+            $hospedagemEspelho->save();
+
+            DB::table('hospedagem_auditoria')->insert([
+                'hospedagem_id' => $hospedagem->id,
+                'admin_user_id' => \Illuminate\Support\Facades\Auth::id(),
+                'acao' => 'divisao_inscricao',
+                'detalhes' => json_encode([
+                    'inscricao_original_id' => $hospedagem->id,
+                    'inscricao_espelho_id' => $hospedagemEspelho->id,
+                    'adultos_original' => $adultosOriginal,
+                    'criancas_original' => $criancasOriginal,
+                    'adultos_espelho' => $adultosRestantes,
+                    'criancas_espelho' => $criancasRestantes,
+                    'unidade_destino_id' => $unidadeDestino->id,
+                    'confirmacao_usuario' => 'pendente',
+                ], JSON_UNESCAPED_UNICODE),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+        });
+
+        $hospedagem->refresh();
+        $hospedagemEspelho->refresh();
+
+        \Illuminate\Support\Facades\Mail::queue(
+            new \App\Mail\RemanejamentoHospedagem(
+                $hospedagem,
+                $hospedagemEspelho,
+                $token
+            )
+        );
+
+        \Session::flash('message', [
+            'msg' => 'Inscrição dividida com sucesso. O usuário recebeu o link para aceitar o remanejamento.',
+            'class' => 'success',
+        ]);
+
+        return redirect()->route(
+            'hospedagem.verdados_aguardando_liberacao',
+            ['id' => Crypt::encrypt($hospedagem->id)]
+        );
+    }
+
 }
 
