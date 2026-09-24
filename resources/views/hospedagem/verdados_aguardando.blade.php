@@ -385,7 +385,7 @@
                     
 
 
-                        @role('administrador_geral|auxiliar_administrador_geral')
+            @role('administrador_geral|auxiliar_administrador_geral')
                         
                          @if($hospedagem->checkin == null)
                          @if($hospedagem->status != 6  or $liberaDistribuir == 1)
@@ -416,11 +416,6 @@
                         
 
                     </div>
-
-
-
-
-
 
                     @role('administrador_geral|auxiliar_administrador_geral')                 
                     
@@ -526,7 +521,122 @@
                         @endif   
 
                     </div>
-                   
+
+                    @if($inscricaoOrigem || $inscricoesEspelho->count() || $auditorias->count())
+                        <div class="card mt-4 mb-4 shadow-sm">
+                            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                                <div>
+                                    <strong>
+                                        <i class="fas fa-code-branch mr-2"></i>
+                                        Histórico de desmembramento
+                                    </strong>
+                                </div>
+                                <span class="badge badge-secondary">
+                                    {{ $auditorias->count() }} registro(s)
+                                </span>
+                            </div>
+
+                            <div class="card-body">
+                                @if($inscricaoOrigem)
+                                    <div class="alert alert-info d-flex align-items-center">
+                                        <i class="fas fa-link mr-2"></i>
+                                        <div>
+                                            Esta é uma inscrição espelho da inscrição
+                                            <a href="{{ route('hospedagem.verdados', Crypt::encrypt($inscricaoOrigem->id)) }}">
+                                                <strong>#{{ $inscricaoOrigem->id }}</strong>
+                                            </a>.
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if($inscricoesEspelho->count())
+                                    <div class="mb-4">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-copy mr-1"></i>
+                                            <strong>Inscrições espelho vinculadas</strong>
+                                        </h6>
+
+                                        <div class="list-group">
+                                            @foreach($inscricoesEspelho as $espelho)
+                                                <a
+                                                    href="{{ route('hospedagem.verdados', Crypt::encrypt($espelho->id)) }}"
+                                                    class="list-group-item list-group-item-action">
+                                                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                                        <div>
+                                                            <strong>#{{ $espelho->id }}</strong>
+                                                            <span class="ml-2">
+                                                                {{ $espelho->adulto }} adulto(s),
+                                                                {{ $espelho->crianca }} criança(s)
+                                                            </span>
+                                                        </div>
+
+                                                        @if($espelho->tipouh)
+                                                            <span class="badge badge-light border mt-1 mt-md-0">
+                                                                {{ $espelho->tipouh->descricao }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if($auditorias->count())
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-history mr-1"></i>
+                                        <strong>Auditoria</strong>
+                                    </h6>
+
+                                    @foreach($auditorias as $auditoria)
+                                        @php
+                                            $detalhesAuditoria = json_decode($auditoria->detalhes, true) ?: [];
+                                            $dataAuditoria = \Carbon\Carbon::parse($auditoria->created_at);
+                                        @endphp
+
+                                        <div class="card mb-3 border">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start flex-wrap mb-2">
+                                                    <div class="mb-2 mb-md-0">
+                                                        <div class="font-weight-bold">
+                                                            <i class="fas fa-user-shield mr-1"></i>
+                                                            {{ $auditoria->administrador_nome }}
+                                                        </div>
+                                                        <small class="text-muted">
+                                                            Administrador responsável
+                                                        </small>
+                                                    </div>
+
+                                                    <span class="badge badge-secondary">
+                                                        {{ $dataAuditoria->format('d/m/Y H:i') }}
+                                                    </span>
+                                                </div>
+
+                                                <div class="alert alert-light border mb-2">
+                                                    <strong>
+                                                        Inscrição dividida por {{ $auditoria->administrador_nome }}
+                                                        em {{ $dataAuditoria->format('d/m/Y H:i') }}
+                                                        após confirmação do usuário.
+                                                    </strong>
+                                                </div>
+
+                                                @if(!empty($detalhesAuditoria['observacao']))
+                                                    <div class="mt-2">
+                                                        <strong>
+                                                            <i class="fas fa-comment-alt mr-1"></i>
+                                                            Observação:
+                                                        </strong>
+                                                        {{ $detalhesAuditoria['observacao'] }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
                     @endrole
                     
 
@@ -611,6 +721,15 @@
                             @endif        
                                    
                                     @if($hospedagem->status == 0 or $hospedagem->status == 7)
+
+                                        @if(is_null($hospedagem->und_habitacionais_id))
+                                            <a
+                                                href="{{ route('hospedagem.dividir.form', Crypt::encrypt($hospedagem->id)) }}"
+                                                class="btn btn-warning"
+                                                title="Dividir Inscrição">
+                                                <i class="fas fa-code-branch"></i> Dividir Inscrição
+                                            </a>
+                                        @endif
                                     
                                         <a href="{{ route('envia.mail.espera', ['id' => Crypt::encrypt($hospedagem->id)])  }}" class="btn btn-success" style="color: white;" id="enviar_mensagem" title="Enviar Mensagem">
                                         <i class="fas fa-envelope" style="color: white;" ></i> Fila de Espera </a>
