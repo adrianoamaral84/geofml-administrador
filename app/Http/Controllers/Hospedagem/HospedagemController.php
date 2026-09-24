@@ -1460,6 +1460,13 @@ class HospedagemController extends Controller
 
 public function dividirInscricaoForm($id)
 {
+    if (
+        !auth()->user()->hasRole('administrador_geral') &&
+        !auth()->user()->hasRole('auxiliar_administrador_geral')
+    ) {
+        abort(403);
+    }
+
     try {
         $hospedagemId = Crypt::decrypt($id);
     } catch (\Throwable $e) {
@@ -1480,7 +1487,7 @@ public function dividirInscricaoForm($id)
 
         return redirect()->route(
             'hospedagem.verdados',
-            Crypt::encrypt($hospedagem->id)
+            ['id' => Crypt::encrypt($hospedagem->id)]
         );
     }
 
@@ -1535,6 +1542,13 @@ public function dividirInscricaoForm($id)
 
 public function dividirInscricao(Request $request, $id)
 {
+    if (
+        !auth()->user()->hasRole('administrador_geral') &&
+        !auth()->user()->hasRole('auxiliar_administrador_geral')
+    ) {
+        abort(403);
+    }
+
     try {
         $hospedagemId = Crypt::decrypt($id);
     } catch (\Throwable $e) {
