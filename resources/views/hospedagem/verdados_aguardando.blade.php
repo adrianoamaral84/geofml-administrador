@@ -581,7 +581,7 @@
 
                              </p><br>
 
-                             @if($hospedagem->checkin == null && ((int) $hospedagem->adulto + (int) $hospedagem->crianca) > 1)
+                             @if($hospedagem->checkin == null && in_array((int) $hospedagem->status, [0, 7], true) && ((int) $hospedagem->adulto + (int) $hospedagem->crianca) > 1)
                                 <a href="{{ route('hospedagem.dividir', ['id' => Crypt::encrypt($hospedagem->id)]) }}"
                                    class="btn btn-warning"
                                    title="Dividir inscrição em duas acomodações">
