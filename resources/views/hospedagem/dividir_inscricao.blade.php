@@ -51,9 +51,9 @@
                             <div class="col-md-6">
                                 <h5>Período</h5>
                                 <p>
-                                    {{ CarbonCarbon::parse($hospedagem->data_inicio)->format('d/m/Y') }}
+                                    {{ \Carbon\Carbon::parse($hospedagem->data_inicio)->format('d/m/Y') }}
                                     até
-                                    {{ CarbonCarbon::parse($hospedagem->data_termino)->format('d/m/Y') }}
+                                    {{ \Carbon\Carbon::parse($hospedagem->data_termino)->format('d/m/Y') }}
                                 </p>
                             </div>
                         </div>
