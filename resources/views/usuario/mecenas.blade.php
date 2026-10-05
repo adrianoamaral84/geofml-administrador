@@ -142,14 +142,10 @@
                                         </td>
 
 
-<<<<<<< HEAD
-
-=======
                                         {{-- NOME --}}
                                         <td>
                                             {{ $usuario->name ?: '-' }}
                                         </td>
->>>>>>> origin/master
 
 
                                         {{-- OM --}}
@@ -174,10 +170,7 @@
                                         </td>
 
 
-<<<<<<< HEAD
-=======
                                         {{-- STATUS --}}
->>>>>>> origin/master
                                         <td>
 
                                             @if ((int) $usuario->status === 1)

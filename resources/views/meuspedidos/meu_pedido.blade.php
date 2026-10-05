@@ -1404,7 +1404,8 @@ window.addEventListener('beforeunload', encerrarMonitorPagamentoRestante);
 
     if (mensagem) {
 
-
+ }
+   });
 
 
 </script>
