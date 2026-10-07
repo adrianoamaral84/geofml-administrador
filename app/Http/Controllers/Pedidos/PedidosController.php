@@ -1584,7 +1584,7 @@ public function store(Request $request)
 
     if ($validator->fails()) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withErrors($validator)
             ->withInput();
     }
@@ -1608,7 +1608,7 @@ public function store(Request $request)
 
     if ($capacidadeMaxima <= 0) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withErrors([
                 'tipo' => 'Não foi possível identificar a capacidade da unidade habitacional selecionada. Selecione outra unidade ou entre em contato com o administrador.',
             ])
@@ -1617,7 +1617,7 @@ public function store(Request $request)
 
     if ($totalHospedes > $capacidadeMaxima) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withErrors([
                 'adultos' => 'O número de hóspedes excede a capacidade máxima desta unidade (' . $capacidadeMaxima . ' pessoas). Solicite uma unidade adicional ou altere sua seleção para melhor acomodá-los.',
             ])
@@ -1713,7 +1713,7 @@ public function store(Request $request)
         }
     } catch (\Throwable $e) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput()
             ->withErrors([
                 'peridoinicial' =>
@@ -1723,7 +1723,7 @@ public function store(Request $request)
 
     if ($dataInicio->gte($dataTermino)) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput()
             ->withErrors([
                 'peridoinicial' =>
@@ -1795,7 +1795,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -1825,7 +1825,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -1843,7 +1843,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -1867,7 +1867,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -1884,7 +1884,7 @@ public function store(Request $request)
         $dataTermino->gt($maxDate)
     ) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput()
             ->withErrors([
                 'peridoinicial' =>
@@ -1927,7 +1927,7 @@ public function store(Request $request)
 
         if ($periodoPassaPorDezembro) {
             return redirect()
-                ->back()
+            ->route('hospede.solicitarinscricao')
                 ->withInput()
                 ->withErrors([
                     'peridoinicial' =>
@@ -1951,7 +1951,7 @@ public function store(Request $request)
         )
     ) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput()
             ->withErrors([
                 'peridoinicial' =>
@@ -1992,7 +1992,7 @@ public function store(Request $request)
 
     if ($consultaDuplicidade->exists()) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput()
             ->withErrors([
                 'peridoinicial' =>
@@ -2024,7 +2024,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -2046,7 +2046,7 @@ public function store(Request $request)
 
     if (!$grupoUnidade) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput()
             ->withErrors([
                 'tipo' =>
@@ -2080,7 +2080,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -2112,7 +2112,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -2160,7 +2160,7 @@ public function store(Request $request)
             ]);
 
             return redirect()
-                ->back()
+            ->route('hospede.solicitarinscricao')
                 ->withInput();
         }
 
@@ -2180,7 +2180,7 @@ public function store(Request $request)
             ]);
 
             return redirect()
-                ->back()
+            ->route('hospede.solicitarinscricao')
                 ->withInput();
         }
     }
@@ -2197,7 +2197,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -2215,7 +2215,7 @@ public function store(Request $request)
         $diasHospedagem > 7
     ) {
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput()
             ->withErrors([
                 'peridoinicial' =>
@@ -2241,7 +2241,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
@@ -2287,7 +2287,7 @@ public function store(Request $request)
     if ($tipoCampingMotorhome) {
         if ($pedidosCampingMotorhome >= 2) {
             return redirect()
-                ->back()
+            ->route('hospede.solicitarinscricao')
                 ->withInput()
                 ->withErrors([
                     'tipo' =>
@@ -2303,7 +2303,7 @@ public function store(Request $request)
 
         if ($pedidosDoMes >= $limiteMensal) {
             return redirect()
-                ->back()
+            ->route('hospede.solicitarinscricao')
                 ->withInput()
                 ->withErrors([
                     'peridoinicial' =>
@@ -2470,7 +2470,7 @@ public function store(Request $request)
         ]);
 
         return redirect()
-            ->back()
+            ->route('hospede.solicitarinscricao')
             ->withInput();
     }
 
