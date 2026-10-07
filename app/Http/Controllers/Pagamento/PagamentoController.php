@@ -691,7 +691,7 @@ curl_close($ch);
 );
     }
 
-            $valorDiaria = $hospedagem->valorTarifaComDesconto();
+            $valorDiaria = $hospedagem->valorPrimeiraDiariaComDesconto();
 
             if(Auth::id() <> $hospedagem->user_id){
                 
@@ -703,7 +703,7 @@ curl_close($ch);
 
            
             $valorDiaria = round(
-    (float) $hospedagem->valorTarifaComDesconto(),
+    (float) $hospedagem->valorPrimeiraDiariaComDesconto(),
     2
 );
 
@@ -917,7 +917,7 @@ return redirect()->to($result->proximaUrl);
 );
         $today = Carbon::now()->addDays(0);
         $vencimento = $today->format('dmY');
-        $valorDiaria = $hospedagem->valorTarifaComDesconto();
+        $valorDiaria = $hospedagem->valorPrimeiraDiariaComDesconto();
         
         return array(
             "codigoServico" => $codigo->codservico,
@@ -926,7 +926,7 @@ return redirect()->to($result->proximaUrl);
             "vencimento" => $vencimento,
             "cnpjCpf" => $hospedagem->user_cpf, // colocar o cpf do militar cadastrado
             "nomeContribuinte" =>  $hospedagem->user->name, // Colocar o nome do militar 
-            "valorPrincipal" =>  $hospedagem->valorTarifaComDesconto(),
+            "valorPrincipal" =>  $valorDiaria,
             "valorDescontos" => "",
             "valorOutrasDeducoes" => "",
             "valorMulta" => "",
@@ -1614,7 +1614,7 @@ if (config('services.pagtesouro.modo_teste')) {
                 $valorDiaria = round(
                     (float) (
                         $pagamentoBanco->valor
-                        ?? $hospedagemBanco->valorTarifaComDesconto()
+                        ?? $hospedagemBanco->valorPrimeiraDiariaComDesconto()
                     ),
                     2
                 );
