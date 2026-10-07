@@ -1965,9 +1965,22 @@ public function store(Request $request)
     | Verifica duplicidade
     |--------------------------------------------------------------------------
     |
-    | Na edição, exclui o próprio registro.
+    | Para pedidos comuns, permanece permitido apenas um pedido no mesmo
+    | período.
+    |
+    | Para Box Camping e Box Motor Home (tipos 11 e 12), são permitidos
+    | até dois pedidos no mesmo período, tanto na alta quanto na baixa
+    | temporada.
+    |
+    | Na edição, exclui o próprio registro da contagem.
     |
     */
+
+    $tipoCampingMotorhome = in_array(
+        (int) $request->tipo,
+        [11, 12],
+        true
+    );
 
     $consultaDuplicidade = \App\Hospede::where(
             'data_inicio',
@@ -1990,7 +2003,25 @@ public function store(Request $request)
         );
     }
 
-    if ($consultaDuplicidade->exists()) {
+    if ($tipoCampingMotorhome) {
+        $pedidosCampingMotorhomeMesmoPeriodo =
+            (clone $consultaDuplicidade)
+                ->whereIn(
+                    'tipo_und_id',
+                    [11, 12]
+                )
+                ->count();
+
+        if ($pedidosCampingMotorhomeMesmoPeriodo >= 2) {
+            return redirect()
+                ->route('hospede.solicitarinscricao')
+                ->withInput()
+                ->withErrors([
+                    'peridoinicial' =>
+                        'Você já possui 2 pedidos de Camping e/ou Motor-Home para esse mesmo período.',
+                ]);
+        }
+    } elseif ($consultaDuplicidade->exists()) {
         return redirect()
             ->route('hospede.solicitarinscricao')
             ->withInput()
@@ -2277,12 +2308,6 @@ public function store(Request $request)
                 [11, 12]
             )
             ->count();
-
-    $tipoCampingMotorhome = in_array(
-        (int) $request->tipo,
-        [11, 12],
-        true
-    );
 
     if ($tipoCampingMotorhome) {
         if ($pedidosCampingMotorhome >= 2) {
