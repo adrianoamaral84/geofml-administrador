@@ -475,6 +475,50 @@
         </div>
     </div>
 </section>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const inputMesAno = document.getElementById('mesAnoFinal');
+
+    if (inputMesAno) {
+        inputMesAno.addEventListener('input', function(e) {
+            // Remove tudo o que não for número
+            let valor = e.target.value.replace(/\D/g, '');
+
+            // Validação do Mês (Primeiros 2 dígitos)
+            if (valor.length >= 2) {
+                const mes = parseInt(valor.substring(0, 2), 10);
+
+                // Se o mês for maior que 12 ou for '00', reseta o campo para os primeiros dígitos válidos
+                if (mes > 12 || valor.substring(0, 2) === '00') {
+                    // Mantém apenas o primeiro dígito digitado para o usuário corrigir
+                    valor = valor.substring(0, 1);
+                }
+            } else if (valor.length === 1) {
+                // Se o primeiro dígito for maior que 1 (ex: 2, 3... 9), assume que é o mês limpo (ex: 02, 03)
+                // Isso ajuda na usabilidade, mas se preferir rígido, pode deixar passar para validar com 2 dígitos
+                if (parseInt(valor, 10) > 1) {
+                    valor = '0' + valor;
+                }
+            }
+
+            // Aplica a máscara de separação por barra (MM/AAAA)
+            if (valor.length > 2) {
+                valor = valor.substring(0, 2) + '/' + valor.substring(2, 6);
+            }
+
+            // Atualiza o valor do campo na tela
+            e.target.value = valor;
+        });
+
+        // Tratamento para a tecla Backspace não ficar presa na barra
+        inputMesAno.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && e.target.value.length === 4) {
+                e.target.value = e.target.value.substring(0, 2);
+            }
+        });
+    }
+});
+</script>
 
 
 @push('javascript')
