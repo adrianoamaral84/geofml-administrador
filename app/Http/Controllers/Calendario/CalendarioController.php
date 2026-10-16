@@ -112,33 +112,52 @@ class CalendarioController extends Controller
 
             $query
                 ->whereDate('data_inicio', '<', $fim->format('Y-m-d'))
-                ->whereDate('data_termino', '>', $inicio->format('Y-m-d'));
+                ->whereDate('data_termino', '>=', $inicio->format('Y-m-d'));
         }
 
         $eventos = $query
             ->orderBy('data_inicio')
             ->get()
-            ->map(function (Hospede $hospedagem) {
+            ->flatMap(function (Hospede $hospedagem) {
                 $usuario = $hospedagem->usuario;
                 $nome = optional($usuario)->name ?: 'Hospedagem';
                 $posto = optional(optional($usuario)->posto)->sigla;
                 $titulo = trim(($posto ? $posto . ' - ' : '') . $nome);
+                $entrada = Carbon::parse($hospedagem->data_inicio)->format('Y-m-d');
+                $saida = Carbon::parse($hospedagem->data_termino)->format('Y-m-d');
 
-                return [
-                    'id' => $hospedagem->id,
-                    'title' => 'Ocupada - ' . $titulo,
-                    'start' => Carbon::parse($hospedagem->data_inicio)
-                        ->format('Y-m-d'),
-                    'end' => Carbon::parse($hospedagem->data_termino)
-                        ->format('Y-m-d'),
+                $eventos = [];
+                if ($entrada < $saida) {
+                    $eventos[] = [
+                        'id' => 'ocupacao-' . $hospedagem->id,
+                        'title' => 'Ocupada - ' . $titulo,
+                        'start' => $entrada,
+                        'end' => $saida,
+                        'allDay' => true,
+                        'color' => '#dc3545',
+                        'textColor' => '#ffffff',
+                        'status' => $hospedagem->status,
+                    ];
+                }
+
+                $eventos[] = [
+                    'id' => 'entrada-' . $hospedagem->id,
+                    'title' => 'Check-in - ' . $titulo,
+                    'start' => $entrada,
                     'allDay' => true,
-                    'color' => '#dc3545',
-                    'textColor' => '#ffffff',
-                    'status' => $hospedagem->status,
-                    'posto_graduacao' => $posto,
-                    'checkin' => Carbon::parse($hospedagem->data_inicio)->format('Y-m-d'),
-                    'checkout' => Carbon::parse($hospedagem->data_termino)->format('Y-m-d'),
+                    'color' => '#20c997',
+                    'textColor' => '#102a22',
                 ];
+                $eventos[] = [
+                    'id' => 'saida-' . $hospedagem->id,
+                    'title' => 'Check-out - ' . $titulo,
+                    'start' => $saida,
+                    'allDay' => true,
+                    'color' => '#ffc107',
+                    'textColor' => '#212529',
+                ];
+
+                return $eventos;
             })
             ->values();
 
