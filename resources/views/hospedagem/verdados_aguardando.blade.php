@@ -801,6 +801,13 @@
 
                 <div id="resultadoDisponibilidadeModal" class="alert mb-3"></div>
 
+                <div class="mapa-legenda" aria-label="Legenda do calendário">
+                    <span class="mapa-legenda__item"><span class="mapa-legenda__cor" style="background:#dc3545;"></span>Ocupada</span>
+                    <span class="mapa-legenda__item"><span class="mapa-legenda__cor" style="background:#20c997;"></span>Check-in</span>
+                    <span class="mapa-legenda__item"><span class="mapa-legenda__cor" style="background:#ffc107;"></span>Check-out</span>
+                    <span class="mapa-legenda__item"><span class="mapa-legenda__cor" style="background:#007bff;"></span>Período solicitado</span>
+                </div>
+
                 <div id="calendarioLoading" class="availability-loading" style="display:none;">
                     <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
                     <div>Carregando calendário...</div>
