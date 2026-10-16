@@ -1,101 +1,60 @@
-
-
-
 <script>
-
-		function modalShow() {
-		$('#modalShow').modal('show');
-	}
-
-	$(document).ready(function() {
-	$protocol = window.location.protocol;
-    $host = $protocol+ '//'+$(location).attr('host')+'/GEOFML2.1/public';
-	// trocar host
-
-	if($('select[name="unidadeshabitacionais"] option:selected').val() != '') {
-        var unidadeshabitacionais = $('select[name="unidadeshabitacionais"] option:selected').val();
-        //changeFields(unidadeshabitacionais);
-        //validarUF(situacao, 'cidadeEndereco_id');
-        //alert(unidadeshabitacionais);
-        //validaPostoSituacao(situacao, 'posto');
-    }
-    
-
-    $('#unidadeshabitacionais').on('change', ()=>{
-        id_situacao = $('#unidadeshabitacionais').val();
-        //changeFields(id_situacao);
-        //alert(id_situacao);
-       
-        //trocaCalendario(id_situacao, 'unidadeshabitacionais');
-        trocaCalendarios(id_situacao);
-
-    });
-
-
-
-</script>
-<script>
-
-  	document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     var calendarEl = document.getElementById('calendars');
+    if (!calendarEl || typeof FullCalendar === 'undefined') return;
+
+    var eventos = [];
+    @foreach(($hospedagens ?? collect()) as $hospedagem)
+        @php
+            $usuario = $hospedagem->usuario;
+            $posto = optional(optional($usuario)->posto)->sigla;
+            $nome = trim(($posto ? $posto . ' - ' : '') . (optional($usuario)->name ?: 'Hospedagem'));
+            $entrada = \Carbon\Carbon::parse($hospedagem->data_inicio)->format('Y-m-d');
+            $saida = \Carbon\Carbon::parse($hospedagem->data_termino)->format('Y-m-d');
+        @endphp
+        (function () {
+            var id = @json($hospedagem->id);
+            var nome = @json($nome);
+            var entrada = @json($entrada);
+            var saida = @json($saida);
+            // A saída é exclusiva: uma nova hospedagem pode iniciar no mesmo dia.
+            if (entrada < saida) {
+                eventos.push({
+                    id: 'ocupacao-' + id, title: nome,
+                    start: entrada, end: saida, allDay: true,
+                    backgroundColor: '#ba5b32', borderColor: '#ba5b32',
+                    extendedProps: { tipo: 'ocupacao' }
+                });
+            }
+            eventos.push({
+                id: 'entrada-' + id, title: 'Check-in: ' + nome,
+                start: entrada, allDay: true,
+                backgroundColor: '#198754', borderColor: '#198754',
+                extendedProps: { tipo: 'checkin' }
+            });
+            eventos.push({
+                id: 'saida-' + id, title: 'Check-out: ' + nome,
+                start: saida, allDay: true,
+                backgroundColor: '#0d6efd', borderColor: '#0d6efd',
+                extendedProps: { tipo: 'checkout' }
+            });
+        })();
+    @endforeach
+
     var calendar = new FullCalendar.Calendar(calendarEl, {
-    	
-      	headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
-      },
-
-      initialDate: '{{ $mes }}',
-      navLinks: false, // can click day/week names to navigate views
-      businessHours: false, // display business hours
-      editable: false,
-      selectable: false,
-      events: [
-
-
-      				@php 
-					$cores = ['#000000', '#0000FF', '#4682B4', '#008000', '#FF0000', '#6959CD','#363636', '#A9A9A9', '#836FFF', '#000080', '#6495ED', '#00BFFF', '#ADD8E6', '#4682B4', '#708090', '#40E0D0', '#008080', '#98FB98', '#3CB371', '#006400', '#228B22', '#00FF00', '#7FFF00', '#808000', '#B8860B', '#A0522D', '#CD853F', '#F4A460', '#7B68EE', '#800000', '#FAF0E6', '#FFE4C4', '#FFDAB9', '#E6E6FA', '#E6E6FA', '#F0FFF0'];
-					
-					$quantidade = count($cores);
-					
-					@endphp
-													
-					@foreach($hospedagens as $hospedagem)
-
-					{
-						@php 
-						$gera = rand(1,35);
-						
-						$Date1 = $hospedagem->data_termino;
-						$date = new DateTime($Date1);
-						$date->add(new DateInterval('P1D')); // P1D means a period of 1 day
-						$DataFinal = $date->format('Y-m-d');							
-					
-						$Date2 = $hospedagem->data_inicio;
-						$datainicial = new DateTime($Date2);
-						$datainicial->sub(new DateInterval('P1D'));
-						$datainicial1 = $datainicial->format('Y-m-d');							
-
-						@endphp
-
-						
-						id: {{ $hospedagem->id }},
-						title: '{{ $hospedagem->usuario->name }}',
-						description: '{{ $hospedagem->usuario->name }}',
-						start: '{{ $hospedagem->data_inicio }}',
-						end: '{{$DataFinal}}',
-						color: '{{ $cores[$gera] }}',						
-					},
-					
-					@endforeach
-        
-      	]
-    	});
-
-    	calendar.render();
-
-  		});
-
-		</script>
-						
+        locale: 'pt-br',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        initialDate: @json($mes ?? date('Y-m-d')),
+        navLinks: false,
+        editable: false,
+        selectable: false,
+        dayMaxEvents: false,
+        events: eventos
+    });
+    calendar.render();
+});
+</script>
