@@ -45,7 +45,7 @@ class CalendarioController extends Controller
         $mes = Carbon::createFromFormat('d-m-Y', $data_ini)->format('Y-m-d');
 
         $hospedagens = Hospede::query()
-            ->with(['usuario', 'tipouh'])
+            ->with(['usuario.posto', 'tipouh'])
             ->where('und_habitacionais_id', $unidade)
             ->whereIn('status', [2, 3, 4, 5])
             ->whereNull('checkout_at')
@@ -68,7 +68,7 @@ class CalendarioController extends Controller
         $mes = date('Y-m-d');
 
         $hospedagens = Hospede::query()
-            ->with('usuario')
+            ->with('usuario.posto')
             ->where('und_habitacionais_id', $unidade)
             ->where('status', 0)
             ->orderBy('data_inicio')
@@ -93,7 +93,7 @@ class CalendarioController extends Controller
     public function eventosUnidade(Request $request, $unidade)
     {
         $query = Hospede::query()
-            ->with('usuario')
+            ->with('usuario.posto')
             ->where('und_habitacionais_id', $unidade)
             ->whereIn('status', [2, 3, 4, 5])
             ->whereNull('checkout_at');
@@ -112,22 +112,26 @@ class CalendarioController extends Controller
 
             $query
                 ->whereDate('data_inicio', '<', $fim->format('Y-m-d'))
-                ->whereDate('data_termino', '>', $inicio->format('Y-m-d'));
+                ->whereDate('data_termino', '>=', $inicio->format('Y-m-d'));
         }
 
         $eventos = $query
             ->orderBy('data_inicio')
             ->get()
             ->map(function (Hospede $hospedagem) {
-                $nome = optional($hospedagem->usuario)->name ?: 'Hospedagem';
+                $usuario = $hospedagem->usuario;
+                $nome = optional($usuario)->name ?: 'Hospedagem';
+                $posto = optional(optional($usuario)->posto)->sigla;
+                $titulo = trim(($posto ? $posto . ' - ' : '') . $nome);
 
                 return [
                     'id' => $hospedagem->id,
-                    'title' => 'Ocupada - ' . $nome,
-                    'start' => Carbon::parse($hospedagem->data_inicio)
-                        ->format('Y-m-d'),
+                    'title' => $titulo,
+                    'start' => Carbon::parse($hospedagem->data_inicio)->format('Y-m-d'),
+                    // FullCalendar utiliza a data final exclusiva. Somar um dia
+                    // apresenta também a data da saída sem alterar a ocupação real.
                     'end' => Carbon::parse($hospedagem->data_termino)
-                        ->format('Y-m-d'),
+                        ->addDay()->format('Y-m-d'),
                     'allDay' => true,
                     'color' => '#dc3545',
                     'textColor' => '#ffffff',

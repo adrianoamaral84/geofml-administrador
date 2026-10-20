@@ -27,6 +27,8 @@
     .mapa-dia--livre { background: #edfdf3; }
     .mapa-dia--ocupada { background: #dc3545; color: #fff; }
     .mapa-dia--checkout { background: #ffc107; color: #212529; }
+.mapa-dia--checkin { background: #20c997; color: #102a22; }
+.mapa-dia--transicao { background: linear-gradient(135deg, #ffc107 0 50%, #20c997 50% 100%); color: #111827; }
     .mapa-dia--solicitado { box-shadow: inset 0 0 0 3px #007bff; }
     .mapa-dia--conflito { box-shadow: inset 0 0 0 3px #111827; }
     .mapa-dia--fim-semana { background-image: linear-gradient(rgba(0,0,0,.035), rgba(0,0,0,.035)); }
@@ -799,6 +801,11 @@
 
                 <div id="resultadoDisponibilidadeModal" class="alert mb-3"></div>
 
+                <div class="mapa-legenda" aria-label="Legenda do calendário">
+                    <span class="mapa-legenda__item"><span class="mapa-legenda__cor" style="background:#dc3545;"></span>Hospedagem (entrada até saída)</span>
+                    <span class="mapa-legenda__item"><span class="mapa-legenda__cor" style="background:#007bff;"></span>Período solicitado</span>
+                </div>
+
                 <div id="calendarioLoading" class="availability-loading" style="display:none;">
                     <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
                     <div>Carregando calendário...</div>
@@ -852,6 +859,14 @@
                     <span class="mapa-legenda__item">
                         <span class="mapa-legenda__cor" style="background:#ffc107;"></span>
                         Check-out
+                    </span>
+                    <span class="mapa-legenda__item">
+                        <span class="mapa-legenda__cor" style="background:#20c997;"></span>
+                        Check-in
+                    </span>
+                    <span class="mapa-legenda__item">
+                        <span class="mapa-legenda__cor" style="background:linear-gradient(135deg,#ffc107 0 50%,#20c997 50% 100%);"></span>
+                        Saída / Entrada
                     </span>
                     <span class="mapa-legenda__item">
                         <span class="mapa-legenda__cor" style="box-shadow:inset 0 0 0 3px #007bff;"></span>
@@ -1242,7 +1257,7 @@
                         end: moment(
                             datas.fim,
                             'DD-MM-YYYY'
-                        ).format('YYYY-MM-DD'),
+                        ).add(1, 'day').format('YYYY-MM-DD'),
                         allDay: true,
                         color: '#007bff',
                         textColor: '#ffffff'
@@ -1295,27 +1310,23 @@
     }
 
     function encontrarReservaDoDia(reservas, data) {
-        var encontrada = null;
-
+        var entradas = [], saidas = [], ocupadas = [];
         $.each(reservas || [], function (_, reserva) {
-            if (dataEntre(data, reserva.inicio, reserva.fim)) {
-                encontrada = {
-                    tipo: 'ocupada',
-                    reserva: reserva
-                };
-                return false;
-            }
-
-            if (data === reserva.fim) {
-                encontrada = {
-                    tipo: 'checkout',
-                    reserva: reserva
-                };
-                return false;
-            }
+            if (data === reserva.inicio) entradas.push(reserva);
+            if (data === reserva.fim) saidas.push(reserva);
+            if (dataEntre(data, reserva.inicio, reserva.fim)) ocupadas.push(reserva);
         });
+        if (entradas.length && saidas.length) {
+            return { tipo: 'transicao', entradas: entradas, saidas: saidas };
+        }
+        if (entradas.length) return { tipo: 'checkin', entradas: entradas, reserva: entradas[0] };
+        if (ocupadas.length) return { tipo: 'ocupada', reserva: ocupadas[0] };
+        if (saidas.length) return { tipo: 'checkout', saidas: saidas, reserva: saidas[0] };
+        return null;
+    }
 
-        return encontrada;
+    function nomeReserva(reserva) {
+        return [reserva.posto_graduacao, reserva.hospede].filter(Boolean).join(' - ');
     }
 
     function montarMapaOcupacao(resposta) {
@@ -1384,18 +1395,25 @@
                 var classes = ['mapa-dia'];
                 var titulo = 'Livre';
 
-                if (ocorrencia && ocorrencia.tipo === 'ocupada') {
+                var marca = '';
+                if (ocorrencia && ocorrencia.tipo === 'transicao') {
+                    classes.push('mapa-dia--transicao');
+                    titulo = 'Check-out: ' + ocorrencia.saidas.map(nomeReserva).join(', ') +
+                        ' | Check-in: ' + ocorrencia.entradas.map(nomeReserva).join(', ');
+                    marca = 'S/E';
+                } else if (ocorrencia && ocorrencia.tipo === 'checkin') {
+                    classes.push('mapa-dia--checkin');
+                    titulo = 'Check-in: ' + ocorrencia.entradas.map(nomeReserva).join(', ');
+                    marca = 'E';
+                } else if (ocorrencia && ocorrencia.tipo === 'ocupada') {
                     classes.push('mapa-dia--ocupada');
-                    titulo =
-                        'Ocupada: ' +
-                        ocorrencia.reserva.inicio_formatado +
-                        ' até ' +
-                        ocorrencia.reserva.fim_formatado;
+                    titulo = 'Ocupada: ' + nomeReserva(ocorrencia.reserva) +
+                        ' (' + ocorrencia.reserva.inicio_formatado + ' até ' +
+                        ocorrencia.reserva.fim_formatado + ')';
                 } else if (ocorrencia && ocorrencia.tipo === 'checkout') {
                     classes.push('mapa-dia--checkout');
-                    titulo =
-                        'Check-out em ' +
-                        ocorrencia.reserva.fim_formatado;
+                    titulo = 'Check-out: ' + ocorrencia.saidas.map(nomeReserva).join(', ');
+                    marca = 'S';
                 } else {
                     classes.push('mapa-dia--livre');
                 }
@@ -1403,7 +1421,7 @@
                 if (dia.solicitado) {
                     classes.push('mapa-dia--solicitado');
 
-                    if (ocorrencia && ocorrencia.tipo === 'ocupada') {
+                    if (ocorrencia && (ocorrencia.tipo === 'ocupada' || ocorrencia.tipo === 'checkin' || ocorrencia.tipo === 'transicao')) {
                         classes.push('mapa-dia--conflito');
                     }
                 }
@@ -1414,7 +1432,7 @@
 
                 html += '<td class="' + classes.join(' ') + '" ' +
                     'title="' + $('<div>').text(titulo).html() + '">' +
-                    (ocorrencia && ocorrencia.tipo === 'checkout' ? 'S' : '') +
+                    marca +
                     '</td>';
             });
 

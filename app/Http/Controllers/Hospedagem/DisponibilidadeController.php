@@ -193,7 +193,7 @@ class DisponibilidadeController extends Controller
         $unidadeIds = $unidades->pluck('id');
 
         $reservasQuery = Hospede::query()
-            ->with('usuario')
+            ->with('usuario.posto')
             ->ativas()
             ->whereIn('und_habitacionais_id', $unidadeIds)
             ->whereDate('data_inicio', '<', $fimMapa->format('Y-m-d'))
@@ -268,6 +268,9 @@ class DisponibilidadeController extends Controller
                             ->format('d/m/Y'),
                         'hospede' => optional($reserva->usuario)->name
                             ?: 'Hospedagem',
+                        'posto_graduacao' => optional(optional($reserva->usuario)->posto)->sigla,
+                        'checkin' => Carbon::parse($reserva->data_inicio)->format('Y-m-d'),
+                        'checkout' => Carbon::parse($reserva->data_termino)->format('Y-m-d'),
                         'status' => $reserva->status,
                     ];
                 })->values(),
@@ -281,6 +284,13 @@ class DisponibilidadeController extends Controller
             ],
             'dias' => $dias,
             'unidades' => $linhas,
+            'legenda' => [
+                'livre' => 'Livre',
+                'ocupada' => 'Ocupada',
+                'checkin' => 'Check-in',
+                'checkout' => 'Check-out',
+                'solicitado' => 'Período solicitado',
+            ],
         ]);
     }
 
