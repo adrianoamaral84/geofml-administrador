@@ -118,46 +118,25 @@ class CalendarioController extends Controller
         $eventos = $query
             ->orderBy('data_inicio')
             ->get()
-            ->flatMap(function (Hospede $hospedagem) {
+            ->map(function (Hospede $hospedagem) {
                 $usuario = $hospedagem->usuario;
                 $nome = optional($usuario)->name ?: 'Hospedagem';
                 $posto = optional(optional($usuario)->posto)->sigla;
                 $titulo = trim(($posto ? $posto . ' - ' : '') . $nome);
-                $entrada = Carbon::parse($hospedagem->data_inicio)->format('Y-m-d');
-                $saida = Carbon::parse($hospedagem->data_termino)->format('Y-m-d');
 
-                $eventos = [];
-                if ($entrada < $saida) {
-                    $eventos[] = [
-                        'id' => 'ocupacao-' . $hospedagem->id,
-                        'title' => 'Ocupada - ' . $titulo,
-                        'start' => $entrada,
-                        'end' => $saida,
-                        'allDay' => true,
-                        'color' => '#dc3545',
-                        'textColor' => '#ffffff',
-                        'status' => $hospedagem->status,
-                    ];
-                }
-
-                $eventos[] = [
-                    'id' => 'entrada-' . $hospedagem->id,
-                    'title' => 'Check-in - ' . $titulo,
-                    'start' => $entrada,
+                return [
+                    'id' => $hospedagem->id,
+                    'title' => $titulo,
+                    'start' => Carbon::parse($hospedagem->data_inicio)->format('Y-m-d'),
+                    // FullCalendar utiliza a data final exclusiva. Somar um dia
+                    // apresenta também a data da saída sem alterar a ocupação real.
+                    'end' => Carbon::parse($hospedagem->data_termino)
+                        ->addDay()->format('Y-m-d'),
                     'allDay' => true,
-                    'color' => '#20c997',
-                    'textColor' => '#102a22',
+                    'color' => '#dc3545',
+                    'textColor' => '#ffffff',
+                    'status' => $hospedagem->status,
                 ];
-                $eventos[] = [
-                    'id' => 'saida-' . $hospedagem->id,
-                    'title' => 'Check-out - ' . $titulo,
-                    'start' => $saida,
-                    'allDay' => true,
-                    'color' => '#ffc107',
-                    'textColor' => '#212529',
-                ];
-
-                return $eventos;
             })
             ->values();
 
