@@ -1257,7 +1257,7 @@
                         end: moment(
                             datas.fim,
                             'DD-MM-YYYY'
-                        ).format('YYYY-MM-DD'),
+                        ).add(1, 'day').format('YYYY-MM-DD'),
                         allDay: true,
                         color: '#007bff',
                         textColor: '#ffffff'
