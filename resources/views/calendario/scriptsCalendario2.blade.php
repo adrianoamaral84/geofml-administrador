@@ -17,26 +17,23 @@ document.addEventListener('DOMContentLoaded', function () {
             var nome = @json($nome);
             var entrada = @json($entrada);
             var saida = @json($saida);
-            // A saída é exclusiva: uma nova hospedagem pode iniciar no mesmo dia.
-            if (entrada < saida) {
-                eventos.push({
-                    id: 'ocupacao-' + id, title: nome,
-                    start: entrada, end: saida, allDay: true,
-                    backgroundColor: '#ba5b32', borderColor: '#ba5b32',
-                    extendedProps: { tipo: 'ocupacao' }
-                });
-            }
+            // A data final dos eventos no FullCalendar é exclusiva.
+            // O dia de saída deve aparecer na barra de hospedagem.
+            var fimVisual = new Date(saida + 'T12:00:00');
+            fimVisual.setDate(fimVisual.getDate() + 1);
+            var fimFormatado = fimVisual.getFullYear() + '-' +
+                String(fimVisual.getMonth() + 1).padStart(2, '0') + '-' +
+                String(fimVisual.getDate()).padStart(2, '0');
+
             eventos.push({
-                id: 'entrada-' + id, title: 'Check-in: ' + nome,
-                start: entrada, allDay: true,
-                backgroundColor: '#198754', borderColor: '#198754',
-                extendedProps: { tipo: 'checkin' }
-            });
-            eventos.push({
-                id: 'saida-' + id, title: 'Check-out: ' + nome,
-                start: saida, allDay: true,
-                backgroundColor: '#0d6efd', borderColor: '#0d6efd',
-                extendedProps: { tipo: 'checkout' }
+                id: 'ocupacao-' + id,
+                title: nome,
+                start: entrada,
+                end: fimFormatado,
+                allDay: true,
+                backgroundColor: '#ba5b32',
+                borderColor: '#ba5b32',
+                extendedProps: { tipo: 'ocupacao' }
             });
         })();
     @endforeach
