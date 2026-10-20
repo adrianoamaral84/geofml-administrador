@@ -9,6 +9,4 @@
 </div>
 @endsection
 
-@push('javascript')
-    @include('calendario.scriptsCalendario')
-@endpush
+{{-- O layout carrega o FullCalendar 5 por scriptsCalendario2. --}}
