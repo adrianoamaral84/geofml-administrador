@@ -13,7 +13,6 @@ use \App\Nivel;
 use Carbon\Carbon;
 use \App\Http\Controllers\Mail\MailController;
 use Illuminate\Support\Facades\Hash;
-use Laratrust;
 use Config;
 use App\Services\DocumentoService;
 use Illuminate\Support\Facades\DB;
@@ -226,26 +225,26 @@ while ($diaAtual->lte($ultimoDia)) {
     public function homehome()
 {
     // Mantém o fluxo original do sistema para os perfis antigos
-    if(\Laratrust::hasRole('administrador_especial')) {
+    if(Auth::user()->hasRole('administrador_especial')) {
         return redirect('/admin');
     }
-    if(\Laratrust::hasRole('administrador_geral')) {
+    if(Auth::user()->hasRole('administrador_geral')) {
         return redirect('/admin');
     }
 
     // NOVO: Envia os novos administradores para o index carregar todas as variáveis
-    if(\Laratrust::hasRole('administrador') || \Laratrust::hasRole('auxiliar_administrador_geral')) {
+    if(Auth::user()->hasRole('administrador') || Auth::user()->hasRole('auxiliar_administrador_geral')) {
         return $this->index();
     }
 
     // Mantém o fluxo original para os demais perfis
-    if(\Laratrust::hasRole('atendente')) {
+    if(Auth::user()->hasRole('atendente')) {
         return redirect('/atendente');
     }
-    if(\Laratrust::hasRole('hospede')) {
+    if(Auth::user()->hasRole('hospede')) {
         return redirect('/hospede');
     }
-    if(\Laratrust::hasRole('precadastro')) {
+    if(Auth::user()->hasRole('precadastro')) {
         return redirect()->route('precadastro');
     }
 }
