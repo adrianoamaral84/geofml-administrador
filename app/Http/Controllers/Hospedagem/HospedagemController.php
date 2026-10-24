@@ -2090,7 +2090,7 @@ public function liberar(Request $request)
      *
      * Total: 4 diárias.
      */
-    $diasHospedagem = $dataInicio->diffInDays(
+    $diasHospedagem = (int) $dataInicio->diffInDays(
         $dataTermino
     );
 
