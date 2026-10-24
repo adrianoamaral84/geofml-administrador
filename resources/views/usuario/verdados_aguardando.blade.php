@@ -294,7 +294,7 @@
     'id' => Crypt::encrypt($user->id),
     'doc' => Crypt::encrypt($docFrente->mime),
     'tipo' => '1'
-]) }}" class="btn js-ver-documento" data-documento-titulo="Documento - Frente">
+]) }}" class="btn btn-secondary btn-xl rounded-s js-ver-documento" data-documento-titulo="Documento - Frente">
     <i class="fas fa-address-card"></i>
     Frente
 </a>
@@ -308,7 +308,7 @@
     'id' => Crypt::encrypt($user->id),
     'doc' => Crypt::encrypt($docVerso->mime),
     'tipo' => '2'
-]) }}" class="btn btn-outline-primary btn-xl rounded-s js-ver-documento" data-documento-titulo="Documento - Verso">
+]) }}" class="btn btn-secondary btn-xl rounded-s js-ver-documento" data-documento-titulo="Documento - Verso">
     <i class="fas fa-address-card"></i>
     Verso
 </a>
@@ -442,29 +442,20 @@
 
 
 <style>
-/* Visualizador de documentos: estilos isolados do tema legado do Admin. */
+/* Mantem o visual padrao dos botoes do GeoFML; corrige apenas o contraste. */
 a.js-ver-documento, a.js-ver-documento:link, a.js-ver-documento:visited {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 8px;
-    background-color: #2563eb !important;
-    border: 1px solid #1d4ed8 !important;
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
     color: #ffffff !important;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none !important;
-    margin-right: 8px;
 }
 a.js-ver-documento:hover, a.js-ver-documento:focus {
-    background-color: #1d4ed8 !important;
+    background-color: #545b62 !important;
+    border-color: #4e555b !important;
     color: #ffffff !important;
-    border-color: #1e40af !important;
 }
 #modalDocumentoUsuario .modal-header, #modalDocumentoUsuario .modal-header * {
     color: #334155 !important;
 }
-#modalDocumentoUsuario .modal-header .close { opacity: .8; }
 #modalDocumentoUsuario .modal-footer .btn {
     background-color: #475569 !important;
     border-color: #475569 !important;
