@@ -43,7 +43,7 @@
             </div>
         </div>
     @endif
-@if(\Laratrust::hasRole('administrador_geral') || \Laratrust::hasRole('administrador_especial') || \Laratrust::hasRole('administrador') || \Laratrust::hasRole('auxiliar_administrador_geral'))
+@if(auth()->user()->hasRole('administrador_geral') || auth()->user()->hasRole('administrador_especial') || auth()->user()->hasRole('administrador') || auth()->user()->hasRole('auxiliar_administrador_geral'))
     <h4 class="section-title"><i class="fa fa-bed"></i> Operação de hospedagem</h4>
     <div class="row sameheight-container">
         @foreach([
