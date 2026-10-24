@@ -7,11 +7,9 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Auth;
-use Laratrust\Traits\LaratrustUserTrait;
 
 class User extends Authenticatable
 {
-    use LaratrustUserTrait;
     use Notifiable;
     protected $table = "user";
 
@@ -102,6 +100,39 @@ class User extends Authenticatable
     public function roles()
     {
         return $this->belongsToMany('App\Models\Role');
+    }
+
+    public function hasRole($role)
+    {
+        $roles = is_array($role) ? $role : [$role];
+        if (!$roles) {
+            return false;
+        }
+        return $this->roles()->where(function ($query) use ($roles) {
+            foreach ($roles as $item) {
+                if (is_numeric($item)) {
+                    $query->orWhere('roles.id', (int) $item);
+                } else {
+                    $query->orWhere('roles.name', (string) $item);
+                }
+            }
+        })->exists();
+    }
+
+    public function syncRoles($roles)
+    {
+        $ids = [];
+        foreach ((array) $roles as $role) {
+            $model = is_numeric($role)
+                ? \App\Models\Role::find((int) $role)
+                : \App\Models\Role::where('name', (string) $role)->first();
+            if (!$model) {
+                throw new \InvalidArgumentException('Perfil inexistente: ' . $role);
+            }
+            $ids[] = $model->getKey();
+        }
+        $this->roles()->sync($ids);
+        return $this;
     }
 
     public function status()
