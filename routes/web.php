@@ -90,7 +90,7 @@ Route::get('/mail', 'Mail\MailController@testeEmail')->name('envia.mail.teste');
 Route::get('/envio/libera/{id}/acesso', 'Mail\MailController@liberaAcesso')->name('libera.acesso');
 
 Route::get('/envio/negado/{id}', 'Mail\MailController@enviaMailNegado')->name('envia.mail.negado');
-Route::post('/envio/negado', 'Mail\MailController@enviaMailNegado')->name('envia.mail.negado');
+Route::post('/envio/negado', 'Mail\MailController@enviaMailNegado')->name('envia.mail.negado.post');
 Route::get('/envio/espera/{id}', 'Mail\MailController@enviaMailEspera')->name('envia.mail.espera');
 Route::get('/envio/documento/vencido/{id}', 'Mail\MailController@enviaMailDataDocumentoVencido')->name('envia.enviaMailDataDocumentoVencido');
 
