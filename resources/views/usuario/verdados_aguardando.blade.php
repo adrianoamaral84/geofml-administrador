@@ -408,7 +408,7 @@
 
                                 <div class="modal fade" id="NegarModal">
                                     <div class="modal-dialog" role="document">
-                                    <form id="negarpedido" action="{{ route('envia.mail.negado') }}" method="POST" enctype="multipart/form-data">
+                                    <form id="negarpedido" action="{{ route('envia.mail.negado.post') }}" method="POST" enctype="multipart/form-data">
                                        
                                             <div class="modal-content">
                                                 <div class="modal-header-dangeri">
@@ -458,14 +458,8 @@
      }
      function negarpedido(id)
      {
-        var motivo = document.getElementById("motivo").value;
-        var id = id;
-        var url = '{{ route("envia.mail.negado", ":id", ":motivo") }}';
-        url = url.replace(':id', id);
-        url = url.replace(':motivo', motivo);
-        //alert(url);
-
-        $("#negarpedido").attr('action', url);
+         // ID e motivo sao enviados pelo formulario POST.
+         $("#negarpedido input[name='id']").val(id);
      }
 
      function formSubmitAprova()
