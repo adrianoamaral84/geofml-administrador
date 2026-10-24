@@ -10,7 +10,6 @@ use \App\User;
 use \App\Models\Role;
 use Crypt;
 use Config;
-use Laratrust;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -47,14 +46,14 @@ class UsuarioController extends Controller
         //dd('oj');
       /*  $menuAtivo = "usuarios";
         $user = Auth::user();
-        if(Laratrust::hasRole('administrador_especial')) {
+        if(auth()->user()->hasRole('administrador_especial')) {
             
             $consulta = User::where('status', 1)
             ->paginate(50);          
             $search = '';
             return view('usuario.consulta', compact('menuAtivo', 'consulta'));
 
-        }elseif (Laratrust::hasRole('administrador_geral')){
+        }elseif (auth()->user()->hasRole('administrador_geral')){
             //dd('adm geral');
             //$consulta = User::where('status', 1)->get();
             //$consulta = DB::table('user')
@@ -80,19 +79,19 @@ class UsuarioController extends Controller
             //$search = '';
             return view('usuario.consulta', compact('consulta'));
 
-        }elseif (Laratrust::hasRole('atendente')){
+        }elseif (auth()->user()->hasRole('atendente')){
             abort(403, "Desculpa, você não tem autorização!");
             $consulta = User::whereRoleIs('atendente')->paginate(20);
             //dd($consulta);
             return view('usuario.consulta', compact('menuAtivo', 'consulta', 'search'));
         
-        }elseif (Laratrust::hasRole('hospede')){
+        }elseif (auth()->user()->hasRole('hospede')){
             
             abort(403, "Desculpa, você não tem autorização!");
             $consulta = User::whereRoleIs('hospede')->get();
             return view('usuario.consulta', compact('menuAtivo', 'consulta', 'search'));
         
-        }elseif (Laratrust::hasRole('auxiliar_administrador_geral')){
+        }elseif (auth()->user()->hasRole('auxiliar_administrador_geral')){
             
             //abort(403, "Desculpa, você não tem autorização!");
             $consulta = \App\User::where('status', 1)
@@ -100,7 +99,7 @@ class UsuarioController extends Controller
             ->get();
             return view('usuario.consulta', compact('menuAtivo', 'consulta'));
         
-        }elseif (Laratrust::hasRole('administrador')){
+        }elseif (auth()->user()->hasRole('administrador')){
             
 
             $consulta = \App\User::where('status', 1)
@@ -160,13 +159,13 @@ class UsuarioController extends Controller
 
 
 
-    if(Laratrust::hasRole('administrador_especial')) {
+    if(auth()->user()->hasRole('administrador_especial')) {
         
         $consulta = $query->paginate(50);          
         // Garantindo que a variável $search seja passada para repopular o campo
         return view('usuario.consulta', compact('menuAtivo', 'consulta', 'search'));
 
-    }elseif (Laratrust::hasRole('administrador_geral')){
+    }elseif (auth()->user()->hasRole('administrador_geral')){
         //dd('adm geral');
         //$consulta = User::where('status', 1)->get();
         //$consulta = DB::table('user')
@@ -202,7 +201,7 @@ class UsuarioController extends Controller
 
 
 
-    }elseif (Laratrust::hasRole('atendente')){
+    }elseif (auth()->user()->hasRole('atendente')){
         abort(403, "Desculpa, você não tem autorização!");
         
         // Mantendo a lógica original (whereRoleIs) e adicionando o filtro de pesquisa, se houver
@@ -215,7 +214,7 @@ class UsuarioController extends Controller
         //dd($consulta);
         return view('usuario.consulta', compact('menuAtivo', 'consulta', 'search'));
     
-    }elseif (Laratrust::hasRole('hospede')){
+    }elseif (auth()->user()->hasRole('hospede')){
         
         abort(403, "Desculpa, você não tem autorização!");
         
@@ -228,14 +227,14 @@ class UsuarioController extends Controller
         
         return view('usuario.consulta', compact('menuAtivo', 'consulta', 'search'));
     
-    }elseif (Laratrust::hasRole('auxiliar_administrador_geral')){
+    }elseif (auth()->user()->hasRole('auxiliar_administrador_geral')){
         
         //abort(403, "Desculpa, você não tem autorização!");
         $consulta = $query->select('id', 'name', 'cpf', 'status')
         ->get();
         return view('usuario.consulta', compact('menuAtivo', 'consulta', 'search')); // Passando $search
     
-    }elseif (Laratrust::hasRole('administrador')){
+    }elseif (auth()->user()->hasRole('administrador')){
         
 
         $consulta = $query->select('id', 'name', 'cpf', 'status')
