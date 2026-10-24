@@ -102,9 +102,7 @@
                              
                             <input type="hidden" name="posto_selecionado" id="posto_selecionado" value="{{$user->postograd_id}}">
                             <label class="control-label" id="nivel">{{ __('Posto / Graduação') }}</label>
-                                <select name="posto" id="posto" disabled aria-readonly="true" class="custom-select mr-sm-2 @error('posto') is-invalid @enderror" readonly="" autocomplete="off">
-<option value="{{ $user->postograd_id }}" selected>{{ optional($user->posto)->descricao ?? "Não informado" }}</option>
-</select>
+                                <div class="form-control boxed" style="background:#e9ecef;cursor:default" aria-readonly="true">{{ optional($user->posto)->descricao ?? 'Não informado' }}</div>
                             @error('posto')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -296,7 +294,7 @@
     'id' => Crypt::encrypt($user->id),
     'doc' => Crypt::encrypt($docFrente->mime),
     'tipo' => '1'
-]) }}" target="_blank" class="btn btn-secondary btn-xl rounded-s">
+]) }}" class="btn btn-outline-primary btn-xl rounded-s js-ver-documento" data-documento-titulo="Documento - Frente">
     <i class="fas fa-address-card"></i>
     Frente
 </a>
@@ -310,7 +308,7 @@
     'id' => Crypt::encrypt($user->id),
     'doc' => Crypt::encrypt($docVerso->mime),
     'tipo' => '2'
-]) }}" target="_blank" class="btn btn-secondary btn-xl rounded-s">
+]) }}" class="btn btn-outline-primary btn-xl rounded-s js-ver-documento" data-documento-titulo="Documento - Verso">
     <i class="fas fa-address-card"></i>
     Verso
 </a>
@@ -443,6 +441,21 @@
 </section>
 
 
+<div class="modal fade" id="modalDocumentoUsuario" tabindex="-1" role="dialog" aria-labelledby="tituloDocumentoUsuario" aria-hidden="true">
+  <div class="modal-dialog modal-xl" role="document" style="max-width:min(1100px,96vw)">
+    <div class="modal-content" style="border:0;border-radius:12px;overflow:hidden;box-shadow:0 20px 70px rgba(0,0,0,.25)">
+      <div class="modal-header" style="background:#f8fafc">
+        <h5 class="modal-title" id="tituloDocumentoUsuario">Documento</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body p-2 p-md-3" style="background:#e9edf2">
+        <iframe id="previewDocumentoUsuario" title="Visualizador do documento" style="width:100%;height:70vh;border:0;background:white;border-radius:6px"></iframe>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button></div>
+    </div>
+  </div>
+</div>
+
 @push('javascript')
 <script type="text/javascript">
      function aprovapedido(id)
@@ -484,5 +497,16 @@
     <script src="{{asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js')}}"></script>
 
 <script src="{{ asset('js/script_cadastro.js') }}"></script>
+<script>
+  $(document).on('click', '.js-ver-documento', function (event) {
+    event.preventDefault();
+    $('#tituloDocumentoUsuario').text($(this).attr('data-documento-titulo') || 'Documento');
+    $('#previewDocumentoUsuario').attr('src', $(this).attr('href'));
+    $('#modalDocumentoUsuario').modal('show');
+  });
+  $('#modalDocumentoUsuario').on('hidden.bs.modal', function () {
+    $('#previewDocumentoUsuario').attr('src', 'about:blank');
+  });
+</script>
 @endpush
 @endsection
