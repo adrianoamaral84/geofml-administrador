@@ -294,7 +294,7 @@
     'id' => Crypt::encrypt($user->id),
     'doc' => Crypt::encrypt($docFrente->mime),
     'tipo' => '1'
-]) }}" class="btn btn-outline-primary btn-xl rounded-s js-ver-documento" data-documento-titulo="Documento - Frente">
+]) }}" class="btn js-ver-documento" data-documento-titulo="Documento - Frente">
     <i class="fas fa-address-card"></i>
     Frente
 </a>
@@ -441,6 +441,36 @@
 </section>
 
 
+<style>
+/* Visualizador de documentos: estilos isolados do tema legado do Admin. */
+a.js-ver-documento, a.js-ver-documento:link, a.js-ver-documento:visited {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    background-color: #2563eb !important;
+    border: 1px solid #1d4ed8 !important;
+    color: #ffffff !important;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none !important;
+    margin-right: 8px;
+}
+a.js-ver-documento:hover, a.js-ver-documento:focus {
+    background-color: #1d4ed8 !important;
+    color: #ffffff !important;
+    border-color: #1e40af !important;
+}
+#modalDocumentoUsuario .modal-header, #modalDocumentoUsuario .modal-header * {
+    color: #334155 !important;
+}
+#modalDocumentoUsuario .modal-header .close { opacity: .8; }
+#modalDocumentoUsuario .modal-footer .btn {
+    background-color: #475569 !important;
+    border-color: #475569 !important;
+    color: #ffffff !important;
+}
+</style>
 <div class="modal fade" id="modalDocumentoUsuario" tabindex="-1" role="dialog" aria-labelledby="tituloDocumentoUsuario" aria-hidden="true">
   <div class="modal-dialog modal-xl" role="document" style="max-width:min(1100px,96vw)">
     <div class="modal-content" style="border:0;border-radius:12px;overflow:hidden;box-shadow:0 20px 70px rgba(0,0,0,.25)">
