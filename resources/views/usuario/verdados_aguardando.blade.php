@@ -102,7 +102,7 @@
                              
                             <input type="hidden" name="posto_selecionado" id="posto_selecionado" value="{{$user->postograd_id}}">
                             <label class="control-label" id="nivel">{{ __('Posto / Graduação') }}</label>
-                                <select name="posto" id="posto" class="custom-select mr-sm-2 @error('posto') is-invalid @enderror" readonly="" autocomplete="off">
+                                <select name="posto" id="posto" disabled aria-readonly="true" class="custom-select mr-sm-2 @error('posto') is-invalid @enderror" readonly="" autocomplete="off">
 <option value="{{ $user->postograd_id }}" selected>{{ optional($user->posto)->descricao ?? "Não informado" }}</option>
 </select>
                             @error('posto')
