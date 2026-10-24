@@ -103,9 +103,8 @@
                             <input type="hidden" name="posto" value="{{$user->postograd_id}}">
                             <label class="control-label" id="nivel">{{ __('Posto / Graduação') }}</label>
                                 <select name="posto" id="posto" class="custom-select mr-sm-2 @error('posto') is-invalid @enderror" readonly="" autocomplete="off">
-                                <option value="">Selecione</option>
-                                
-                            </select>
+<option value="{{ $user->postograd_id }}" selected>{{ optional($user->posto)->descricao ?? "Não informado" }}</option>
+</select>
                             @error('posto')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -231,9 +230,8 @@
                                 
                                 <label class="control-label">{{ __('Cidade') }}</label>
                                 <select name="cidade" readonly="" id="cidade" required="required" class="custom-select mr-sm-2 @error('cidade') is-invalid @enderror" autocomplete="off">
-                                <option value="">Selecione Cidade</option>
-                                   
-                                </select>
+<option value="{{ $user->cidade_id }}" selected>{{ optional($user->cidade)->descricao ?? "Não informado" }}</option>
+</select>
 
                                 @error('cidade')
                                     <span class="has-error" role="alert">
@@ -247,10 +245,8 @@
                                 <input type="hidden" name="om" value="{{$user->om_id}}">
                                 <label class="control-label">{{ __('OM') }}</label>
                                 <select name="om" id="om" readonly="" required class="custom-select mr-sm-2 @error('om') is-invalid @enderror" autocomplete="off">
-                                <option value="">Selecione OM</option>
-                                
-                                                       
-                                </select>
+<option value="{{ $user->om_id }}" selected>{{ optional($user->om)->descricao ?? "Não informado" }}</option>
+</select>
 
                                 @error('om')
                                     <span class="has-error" role="alert">
@@ -486,7 +482,7 @@
     });
 </script>
     <script src="{{asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js')}}"></script>
-    <script src="{{ asset('js/script_cadastro.js') }}" ></script>   
-    
+
+{{-- Esta tela exibe dados cadastrados; nao precisa alterar selects via AJAX. --}}
 @endpush
 @endsection
