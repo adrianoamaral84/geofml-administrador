@@ -21,7 +21,7 @@ class HospedagemController extends Controller
     	$consulta = \App\Hospede::where('status', 4)
         ->with('user')->get()->sortBy('user.postograd_id');
 
-    	return view('hospedagem.aguardandoliberacao', compact('consulta', $consulta));
+    	return view('hospedagem.aguardandoliberacao', compact('consulta'));
     }
 
 
@@ -1439,7 +1439,7 @@ class HospedagemController extends Controller
          ->with('user')->get()->sortBy('user.postograd_id');
      
 
-        return view('hospedagem.aguardandoliberacao', compact('consulta', $consulta));
+        return view('hospedagem.aguardandoliberacao', compact('consulta'));
     }
 /////////////////////////////////////////////////////////////////////////////////////
 
