@@ -1619,7 +1619,7 @@ public function dividirInscricao(Request $request, $id)
             ? (int) $capacidadeOriginalRegistro->capacidade_maxima
             : 0;
 
-        if ($capacidadeOriginal <= 0 || $totalOriginal > $capacidadeOriginal) {
+        if ($capacidadeOriginal <= 0 || $adultosOriginal > $capacidadeOriginal || $totalOriginal > $capacidadeOriginal + min($criancasOriginal, 2)) {
             throw new \RuntimeException(
                 'A quantidade mantida na inscrição original excede a capacidade da UH atual.'
             );
@@ -1654,7 +1654,7 @@ public function dividirInscricao(Request $request, $id)
             ? (int) $capacidadeEspelhoRegistro->capacidade_maxima
             : 0;
 
-        if ($capacidadeEspelho <= 0 || $totalEspelho > $capacidadeEspelho) {
+        if ($capacidadeEspelho <= 0 || $adultosEspelho > $capacidadeEspelho || $totalEspelho > $capacidadeEspelho + min($criancasEspelho, 2)) {
             throw new \RuntimeException(
                 'A quantidade destinada à inscrição espelho excede a capacidade da UH escolhida.'
             );
