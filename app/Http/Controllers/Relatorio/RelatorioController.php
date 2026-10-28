@@ -561,7 +561,7 @@ public function canceladosview(Request $request) {
          * a regra anterior de contabilizar somente registros com comprovante.
          * Evita carregar todas as hospedagens e executar consultas por registro.
          */
-        $canceladosPorMes = \\App\\Hospede::query()
+        $canceladosPorMes = \App\Hospede::query()
             ->selectRaw('MONTH(data_inicio) AS mes, SUM(valor_pago) AS soma')
             ->whereYear('data_inicio', $ano)
             ->where('status', 6)
