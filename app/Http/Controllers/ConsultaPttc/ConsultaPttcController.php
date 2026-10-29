@@ -174,9 +174,15 @@ class ConsultaPttcController extends Controller
          * ORDER BY id DESC
          * LIMIT 20
          */
+        // Os identificadores usados na view diferem dos campos reais de user.
+        $colunaOrdenacao = [
+            'id_posto' => 'postograd_id',
+            'id_om' => 'om_id',
+        ][$ordem] ?? $ordem;
+
         $usuariosPttc = $query
             ->orderBy(
-                $ordem,
+                $colunaOrdenacao,
                 $direcao
             )
             ->paginate(20);
