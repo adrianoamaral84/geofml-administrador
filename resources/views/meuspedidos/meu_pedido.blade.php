@@ -521,6 +521,29 @@
 
                         </div>
                         
+                        @if(!empty($calculo))
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <strong>Composição da hospedagem</strong><br>
+                                    Diárias contratadas: {{ $calculo['diarias_contratadas'] }} ·
+                                    Extras de entrada: {{ $calculo['diarias_extra_entrada'] }} ·
+                                    Extras de saída: {{ $calculo['diarias_extra_saida'] }}<br>
+                                    Diária normal: R$ {{ number_format($calculo['tarifa_bruta'], 2, ',', '.') }}.
+                                    @if($calculo['percentual_desconto'] > 0)
+                                        <br>Desconto Mecenas ({{ $calculo['percentual_desconto'] }}%):
+                                        R$ {{ number_format($calculo['desconto_diaria'], 2, ',', '.') }} por diária.
+                                        Diária com desconto: R$ {{ number_format($calculo['valor_tarifa'], 2, ',', '.') }}.
+                                        <br>Desconto total: R$ {{ number_format($calculo['desconto_total'], 2, ',', '.') }}.
+                                        O desconto também está aplicado às diárias extras.
+                                    @endif
+                                    <br>O total mantém as diárias contratadas, mesmo na saída antecipada,
+                                    e inclui os extras apurados até o momento.
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="row has-error">
                         @if($hospedagem->status == 2 or $hospedagem->status == 4)
                         @if($hospedagem->checkin == 1 or $hospedagem->checkin == null)
@@ -589,7 +612,7 @@
 
                             <div class="form-group col-sm-12 col-md-3 col-lg-3">                  
                             <label class="control-label">{{ __('Acréscimo Check-in') }}</label>
-                            <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valortarifa, 2, ',', '.' )}}" name="checkinAntecipado" id="checkinAntecipado" required autofocus readonly onpaste="return false;">
+                            <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( !empty($calculo) ? $calculo['valor_tarifa'] * $calculo['diarias_extra_entrada'] : $hospedagem->valortarifa, 2, ',', '.' )}}" name="checkinAntecipado" id="checkinAntecipado" required autofocus readonly onpaste="return false;">
                             @error('checkinAntecipado')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -608,7 +631,7 @@
                                 <div class="form-group col-sm-12 col-md-3 col-lg-3">                  
 
                             <label class="control-label">{{ __('Acréscimo Check-Out') }}</label>
-                            <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( $hospedagem->valortarifa, 2, ',', '.' )}}" name="CheckOutAtrasado" id="CheckOutAtrasado" required autofocus readonly onpaste="return false;">
+                            <input type="text" class="form-control boxed @error('valor') is-invalid @enderror" value="{{ number_format( !empty($calculo) ? $calculo['valor_tarifa'] * $calculo['diarias_extra_saida'] : $hospedagem->valortarifa, 2, ',', '.' )}}" name="CheckOutAtrasado" id="CheckOutAtrasado" required autofocus readonly onpaste="return false;">
                             @error('CheckOutAtrasado')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>

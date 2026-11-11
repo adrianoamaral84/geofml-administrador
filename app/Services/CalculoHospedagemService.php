@@ -201,7 +201,18 @@ class CalculoHospedagemService
             $valorRestante = 0;
         }
 
+        $percentualDesconto = $hospedagem->user
+            ? (float) $hospedagem->user->percentual_desconto
+            : 0;
+        $tarifaBruta = $percentualDesconto > 0
+            ? round($valorTarifa / (1 - $percentualDesconto / 100), 2)
+            : $valorTarifa;
+
         return [
+            'percentual_desconto' => $percentualDesconto,
+            'tarifa_bruta' => $tarifaBruta,
+            'desconto_diaria' => round($tarifaBruta - $valorTarifa, 2),
+            'desconto_total' => round(($tarifaBruta * $dias) - $valorTotal, 2),
             'dias' => $dias,
             'diarias_contratadas' => $diariasContratadas,
             'diarias_extra_entrada' => $extraEntrada,

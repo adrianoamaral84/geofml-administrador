@@ -2378,15 +2378,13 @@ public function liberar(Request $request)
      * Em período misto, será mantida a tarifa alta,
      * seguindo o comportamento anterior.
      */
-    if ($diasBaixaTemporada > 0) {
-        $hospedagem->valortarifa =
-            $tarifa->valor_baixa;
-    }
+    $tarifaReferencia = $diasAltaTemporada > 0
+        ? $tarifa->valor
+        : $tarifa->valor_baixa;
 
-    if ($diasAltaTemporada > 0) {
-        $hospedagem->valortarifa =
-            $tarifa->valor;
-    }
+    $hospedagem->valortarifa = $hospedagem->user
+        ? $hospedagem->user->aplicarDesconto($tarifaReferencia)
+        : round((float) $tarifaReferencia, 2);
 
     $hospedagem->valor = $totalValor;
     $hospedagem->qntdiarias = $diasHospedagem;

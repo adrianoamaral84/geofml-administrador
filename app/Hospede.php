@@ -63,12 +63,19 @@ class Hospede extends Model
 
     public function valorTarifaComDesconto()
     {
-        /*
-         * A tarifa salva em hospedagem.valortarifa ja deve refletir o valor
-         * unitario usado no pedido. Reaplicar Mecenas aqui causa desconto
-         * duplicado nos recalculos de hospedagem.
-         */
-        return round((float) $this->valortarifa, 2);
+        $salva = round((float) $this->valortarifa, 2);
+
+        // Pedidos antigos liberados gravavam a tarifa bruta, embora o total
+        // já tivesse desconto. Só converte quando ela coincide com a bruta.
+        if ($this->user && $this->user->mecenas) {
+            $bruta = $this->tarifaPrimeiraDiariaSemDesconto();
+
+            if ($bruta !== null && abs($salva - $bruta) < 0.005) {
+                return $this->user->aplicarDesconto($salva);
+            }
+        }
+
+        return $salva;
     }
 
     public function valorPrimeiraDiariaComDesconto()
@@ -84,7 +91,7 @@ class Hospede extends Model
         return $this->valorTarifaSalvaComDesconto();
     }
 
-    private function tarifaPrimeiraDiariaSemDesconto()
+    protected function tarifaPrimeiraDiariaSemDesconto()
     {
         if (!$this->data_inicio || !$this->tipo_und_id || !$this->user) {
             return null;

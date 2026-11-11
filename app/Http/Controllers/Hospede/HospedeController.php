@@ -88,6 +88,10 @@ class HospedeController extends Controller
     $hospedagem->checkin = 2;
     $hospedagem->checkout_user_id = Auth::user()->id;
     $hospedagem->checkout_at = $hora;
+    $calculo = app(\App\Services\CalculoHospedagemService::class)->calcular($hospedagem);
+    $hospedagem->valor = $calculo['valor_total'];
+    $hospedagem->qntdiarias = $calculo['dias'];
+    $hospedagem->valor_restante = $calculo['valor_restante'];
     $hospedagem->update();
 
     \Session::flash('message', ['msg'=>"Check-Out realizado com sucesso!", 'class'=>'success']);
@@ -5372,6 +5376,7 @@ public function meuspedido($id)
     $CheckInAntecipado = false;
     $CheckOutAtrasado = false;
     $valorPagarRestante = 0;
+    $calculo = null;
 
     if ($hospedagem->checkin_at != null && $hospedagem->checkin == 1) {
 
@@ -5399,7 +5404,8 @@ public function meuspedido($id)
         'arquivo',
         'cancelar',
         'hoje',
-        'valorPagarRestante'
+        'valorPagarRestante',
+        'calculo'
     ));
 }
     public function meuspedido_OLD($id){
