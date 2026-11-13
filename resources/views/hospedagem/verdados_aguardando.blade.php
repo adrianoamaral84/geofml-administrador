@@ -32,6 +32,10 @@
     .mapa-dia--solicitado { box-shadow: inset 0 0 0 3px #007bff; }
     .mapa-dia--conflito { box-shadow: inset 0 0 0 3px #111827; }
     .mapa-dia--fim-semana { background-image: linear-gradient(rgba(0,0,0,.035), rgba(0,0,0,.035)); }
+    /* Preserva as cores de saída/entrada quando a data cai no fim de semana. */
+    .mapa-dia--transicao.mapa-dia--fim-semana {
+        background-image: linear-gradient(135deg, #ffc107 0 50%, #20c997 50% 100%);
+    }
     .mapa-uh__status { display: block; font-size: 12px; margin-top: 3px; }
     .mapa-uh__status--livre { color: #198754; }
     .mapa-uh__status--ocupada { color: #dc3545; }
