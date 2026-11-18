@@ -509,7 +509,7 @@
                 {{-- Paginação --}}
                 <div class="mt-3">
 
-                    {{ $usuariosPttc->links() }}
+                    {{ $usuariosPttc->links('pagination::bootstrap-4') }}
 
                 </div>
 
