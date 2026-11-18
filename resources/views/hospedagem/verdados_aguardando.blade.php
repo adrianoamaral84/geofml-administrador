@@ -1649,6 +1649,11 @@
 
                 event.preventDefault();
 
+                // Impede verificações paralelas e aprovações duplicadas.
+                if ($(form).data('verificacao-em-andamento')) {
+                    return;
+                }
+
                 var unidadeId = $('#unidadeshabitacionais').val();
                 var datas = periodo();
 
@@ -1657,6 +1662,7 @@
                     return;
                 }
 
+                $(form).data('verificacao-em-andamento', true);
                 $('#btnAprovarSolicitacao').prop('disabled', true);
                 $('#textoBtnAprovar').html(
                     '<i class="fas fa-spinner fa-spin"></i> Verificando...'
@@ -1682,7 +1688,7 @@
                         unidade_id: unidadeId,
                         data_inicio: datas.inicio,
                         data_final: datas.fim,
-                        ignorar_hospedagem: $('input[name="id1"]').val()
+                        hospedagem_id: $('input[name="id1"]').val()
                     },
                     success: function (resposta) {
                         if (!resposta.disponivel) {
@@ -1747,6 +1753,7 @@
                         );
                     },
                     complete: function () {
+                        $(form).data('verificacao-em-andamento', false);
                         if (!$(form).data('disponibilidade-confirmada')) {
                             var podeAprovar =
                                 unidadeAtual &&
