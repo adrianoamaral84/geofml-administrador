@@ -13,7 +13,7 @@
             </div>
         </div>
         <div class="items-search">
-            
+
         </div>
     </div>
     <section class="section">
@@ -25,19 +25,19 @@
                             <div class="table-flip-scroll">
                                 <form onsubmit="return bloquearEnvioFinalPedido(this)" id="password-form" action="{{ route('hospede.store') }}" method="POST">
                                     @csrf
-                                 
-                                    
+
+
         <div class="row has-error">
 
 
              <div class="form-group col-sm-12 col-md-12 col-lg-6">
-               
-                 <label class="control-label">{{ __('Período de Entrada e Saída') }}</label>
-                
 
-                 
-                 <input type="text" name="peridoinicial" id="peridoinicial" value="{{ $consulta->peridoinicial }}" class="form-control boxed @error('peridoinicial') is-invalid @enderror" readonly="" required onpaste="return false;" style="touch-action: none; pointer-events: none;"> 
-                
+                 <label class="control-label">{{ __('Período de Entrada e Saída') }}</label>
+
+
+
+                 <input type="text" name="peridoinicial" id="peridoinicial" value="{{ $consulta->peridoinicial }}" class="form-control boxed @error('peridoinicial') is-invalid @enderror" readonly="" required onpaste="return false;" style="touch-action: none; pointer-events: none;">
+
                  <small>Período máximo é de 10 dias!</small>
                             @error('peridoinicial')
                                 <span class="has-error" role="alert">
@@ -53,7 +53,7 @@
                     <input type="hidden" name="valortarifa" value="{{ $valorTarifa }}">
                                 <select name="tipo" id="tipo" required class="custom-select mr-sm-2 @error('tipo') is-invalid @enderror" readonly="readonly" autocomplete="off">
                                      <option value="">Selecione</option>
-                                
+
                                     @foreach($tipos as $tipo)
 
                                          <option value="{{$tipo->id}}" @if($consulta->tipo == $tipo->id)selected @endif>{{$tipo->descricao}}</option>
@@ -69,21 +69,21 @@
 
 
 
-           
-           
+
+
         </div>
 
-       
-      
 
-         
-       
-        
+
+
+
+
+
 
         <div class="row form-group has-error">
 
              <div class="form-group col-sm-12 col-md-12 col-lg-6">
-                            <label class="control-label">{{ __('Adultos') }}</label>
+                            <label class="control-label">{{ __('Adultos e Crianças acima de 6 anos') }}</label>
                             <input type="text" class="form-control boxed @error('adultos') is-invalid @enderror" value="{{ $consulta->adultos }}" name="adultos" id="adultos" required maxlength="10" readonly="" style="touch-action: none; pointer-events: none;">
                             @error('adultos')
                                 <span class="has-error" role="alert">
@@ -101,24 +101,24 @@
                                 </span>
                             @enderror
             </div>
-            
-            
 
-            
+
+
+
 
 
         </div>
 
-     
+
 
         <div class="row has-error">
-            
+
             <div class="form-group col-sm-12 col-md-12 col-lg-6">
                             <label class="control-label">{{ __('Hospedará Portador de Necessidade Especial (PNE)?') }}</label>
-                
+
                                 <select name="pne" id="pne" required class="custom-select mr-sm-2 @error('pne') is-invalid @enderror" readonly autocomplete="off">
                                      <option value="">Selecione Sala</option>
-                                        @if($consulta->pne == 1) 
+                                        @if($consulta->pne == 1)
                                             <option value="1" selected="">Sim</option>
                                             <option value="0">Não</option>
                                         @else
@@ -136,19 +136,19 @@
 
             <div class="form-group col-sm-12 col-md-12 col-lg-6">
                             <label class="control-label">{{ __('Hospedará PET?') }}</label>
-                
+
                                 <select name="pet" id="pet" required class="custom-select mr-sm-2 @error('pet') is-invalid @enderror" readonly autocomplete="off">
                                      <option value="">Selecione Sala</option>
-                                        @if($consulta->pet == 1) 
+                                        @if($consulta->pet == 1)
                                         <option value="1" selected="">Sim</option>
                                         <option value="0">Não</option>
-                                        
+
                                         @else
                                         <option value="1">Sim</option>
                                         <option value="0" selected="">Não</option>
-                                        
+
                                         @endif
-                                      
+
 
 
                             </select>
@@ -159,11 +159,11 @@
                             @enderror
             </div>
            </div>
-            
-            
 
 
-           
+
+
+
             <div class="row has-error">
             <div class="form-group col-sm-12 col-md-12 col-lg-12">
                             <label class="control-label">{{ __('Observação') }}</label>
@@ -243,11 +243,11 @@ window.addEventListener('pageshow', function (evento) {
     }
 });
 </script>
-                               
+
                             </div>
                             <div class="form-group row">
                                 <div class="col-sm-10 col-sm-offset-2">
-                                   
+
                                 </div>
                             </div>
                         </section>
@@ -265,8 +265,8 @@ window.addEventListener('pageshow', function (evento) {
 <script>
 
 
-   
-  
+
+
   $('#peridoinicial').daterangepicker({
     "minYear": 2021,
     "maxYear": 2022,
@@ -307,15 +307,15 @@ window.addEventListener('pageshow', function (evento) {
         ],
         "firstDay": 1
     },
-    
-   
+
+
     "opens": "center",
     "drops": "auto"
 });
 
- 
 
-  
+
+
 
 </script>
 -->

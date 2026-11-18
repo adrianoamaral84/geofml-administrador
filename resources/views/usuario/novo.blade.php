@@ -5,7 +5,7 @@
     <h3 class="title"> Novo Usuário </h3>
     <p class="title-description"> Cadastra novo usuário no sistema!</p>
 </div>
-                         
+
 <section class="section">
     <div class="row sameheight-container">
         <div class="col-12">
@@ -18,8 +18,8 @@
                         <div class="form-group col-sm-8 col-md-8 col-lg-8">
                             <label class="control-label">{{ __('Nome') }}</label>
                             <input type="text" class="form-control boxed @error('nome') is-invalid @enderror" value="{{ old('nome') }}" name="nome" id="nome" autofocus required maxlength="100" onpaste="return false;" style="text-transform: uppercase;">
-                           
-                            
+
+
                             @error('nome')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -36,7 +36,7 @@
                                 </span>
                             @enderror
                         </div>
-              
+
                     </div>
 
 
@@ -77,11 +77,11 @@
                             <label class="control-label">{{ __('Perfil') }}</label>
                             <select name="perfil_id" id="perfil_id" required autocomplete="off" class="custom-select mr-sm-2 @error('perfil_id') is-invalid @enderror">
                                 <option value="" disabled="">Selecione Perfil</option>
-                                
+
                                 @foreach($perfis as $perfil)
 
                                 <option value="{{$perfil->id}}">{{$perfil->display_name}}</option>
-                                                
+
                                 @endforeach
 
                             </select>
@@ -101,8 +101,8 @@
     </select>
 </div>
                     </div>
-                   
-               
+
+
                    <div class="row has-error milReserva align-items-start">
 
     <div class="col-sm-6 col-md-6 col-lg-6 form-group">
@@ -162,10 +162,10 @@
         @enderror
     </div>
 
-</div>     
-                
+</div>
 
-               
+
+
 
                     <div class="row has-error">
 
@@ -189,7 +189,7 @@
         class="custom-select mr-sm-2 @error('posto') is-invalid @enderror"
         autocomplete="off"
     >
-        <option value="">Selecione Posto / Graduação</option>
+        <option value="">Selecione Posto / Graduação!</option>
     </select>
 
     @error('posto')
@@ -199,7 +199,7 @@
     @enderror
 
 </div>
-                        
+
 
 
                         <div class="col-sm-4 col-md-4 col-lg-4 form-group militarAtiva">
@@ -221,28 +221,28 @@
                                 </span>
                             @enderror
                         </div>
-                  
 
-                     
 
-                          
 
-                   
+
+
+
+
 
                         <div class="col-sm-4 col-md-4 col-lg-4 form-group nivelescola">
                             <label class="control-label">{{ __('Nivel') }}</label>
-                
+
                                 <select name="nivel" id="nivel" class="custom-select mr-sm-2 @error('nivel') is-invalid @enderror" autocomplete="off">
                                      <option value="">Nivel </option>
-                                
+
                                     @foreach($nivels as $nivel)
 
                                          <option value="{{$nivel->id}}">{{$nivel->nivel}}</option>
 
                                     @endforeach
 
-                                         
-                                    
+
+
                             </select>
                             @error('nivel')
                                 <span class="has-error" role="alert">
@@ -252,7 +252,7 @@
                         </div>
 
 
-                      
+
                         <div class="col-sm-4 col-md-4 col-lg-4 form-group siape">
                             <label class="control-label">{{ __('Siape') }}</label>
                                 <input type="text" class="form-control boxed @error('siape') is-invalid @enderror" value="{{ old('siape') }}" name="siape" id="siape" autofocus maxlength="14" onpaste="return false;">
@@ -265,7 +265,7 @@
                         </div>
 
                 </div>
-               
+
 <div class="row has-error">
 
     {{-- UF --}}
@@ -378,7 +378,7 @@
 
 </div>
 
-                     
+
                  <div class="row form-group has-error">
                          <div class="col-sm-6 col-md-8 col-lg-8 form-group">
                             <label class="control-label">{{ __('Email') }}</label>
@@ -389,10 +389,10 @@
                                 </span>
                             @enderror
                         </div>
-                        
+
                         <div class="col-sm-6 col-md-4 col-lg-4 form-group">
                             <label class="control-label">{{ __('Telefone C/ WhatsApp') }}</label>
-                            <input type="text" class="form-control boxed @error('telefone') is-invalid @enderror" 
+                            <input type="text" class="form-control boxed @error('telefone') is-invalid @enderror"
                             value="{{ old('telefone') }}" name="telefone" id="telefone" maxlength="11" onpaste="return false;" required="required" data-mask="(00) 00000-0000" autocomplete="off">
                             @error('telefone')
                                 <span class="has-error" role="alert">
@@ -405,8 +405,8 @@
 
 
 
-            
-                     
+
+
 
 
                 <div class="row form-group has-error">
@@ -437,22 +437,22 @@
                         <strong>{{ $message }}</strong>
                         </span>
                         @enderror
-                       </div>        
+                       </div>
 
-                </div>              
-                    
+                </div>
+
 
                     <hr>
                     <div class="form-group row">
                         <div class="col-sm-12 col-xl-12">
-                            <p class="title-description"> 
+                            <p class="title-description">
 
                              </p><br>
                              <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-check-circle fa-sm"></i>  
+                                <i class="fas fa-check-circle fa-sm"></i>
                                     Cadastrar
                             </button>
-                           
+
                         </div>
                     </div>
 
@@ -462,7 +462,7 @@
                 <p></p>
                 <p></p>
                 <p></p>
-                
+
                 <p></p>
                 <p></p>
 
@@ -475,11 +475,55 @@
         </div>
     </div>
 </section>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const inputMesAno = document.getElementById('mesAnoFinal');
+
+    if (inputMesAno) {
+        inputMesAno.addEventListener('input', function(e) {
+            // Remove tudo o que não for número
+            let valor = e.target.value.replace(/\D/g, '');
+
+            // Validação do Mês (Primeiros 2 dígitos)
+            if (valor.length >= 2) {
+                const mes = parseInt(valor.substring(0, 2), 10);
+
+                // Se o mês for maior que 12 ou for '00', reseta o campo para os primeiros dígitos válidos
+                if (mes > 12 || valor.substring(0, 2) === '00') {
+                    // Mantém apenas o primeiro dígito digitado para o usuário corrigir
+                    valor = valor.substring(0, 1);
+                }
+            } else if (valor.length === 1) {
+                // Se o primeiro dígito for maior que 1 (ex: 2, 3... 9), assume que é o mês limpo (ex: 02, 03)
+                // Isso ajuda na usabilidade, mas se preferir rígido, pode deixar passar para validar com 2 dígitos
+                if (parseInt(valor, 10) > 1) {
+                    valor = '0' + valor;
+                }
+            }
+
+            // Aplica a máscara de separação por barra (MM/AAAA)
+            if (valor.length > 2) {
+                valor = valor.substring(0, 2) + '/' + valor.substring(2, 6);
+            }
+
+            // Atualiza o valor do campo na tela
+            e.target.value = valor;
+        });
+
+        // Tratamento para a tecla Backspace não ficar presa na barra
+        inputMesAno.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && e.target.value.length === 4) {
+                e.target.value = e.target.value.substring(0, 2);
+            }
+        });
+    }
+});
+</script>
 
 
 @push('javascript')
 <script src="{{ asset('lib/jquery-mask-plugin/dist/jquery.mask.min.js') }}"></script>
 <script src="{{ asset('js/script_cadastro.js') }}?v={{ time() }}"></script>
-    
+
 @endpush
 @endsection

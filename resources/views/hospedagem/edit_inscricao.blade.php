@@ -3,7 +3,7 @@
 @section('content')
 <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
   <link rel="stylesheet" href="/resources/demos/style.css">
-  
+
 <link rel="stylesheet" href="{{ asset('css/litepicker.css') }}"/>
 <article class="items-list-page">
     <div class="title-search-block">
@@ -23,7 +23,7 @@
             </div>
         </div>
         <div class="items-search">
-            
+
         </div>
     </div>
     <section class="section">
@@ -36,18 +36,18 @@
 
                                 <form id="password-form" action="{{ route('hospede.edita.confirmar') }}" method="POST">
                                     @csrf
-                               
+
                                 <input type="hidden" id="id" name="id" value="{{ old('id',$hospedagem->id) }}">
-                                
+
 
         <div class="row has-error">
  <div class="form-group col-sm-12 col-md-12 col-lg-6">
-               
-                 <label class="control-label">{{ __('Período de Entrada e Saída') }}</label>
-                
-                
 
-        
+                 <label class="control-label">{{ __('Período de Entrada e Saída') }}</label>
+
+
+
+
                   <input
     type="text"
     name="peridoinicial"
@@ -71,16 +71,16 @@
                             @enderror
 
             </div>
-           
+
 
 
 
             <div class="form-group col-sm-12 col-md-12 col-lg-6">
                             <label class="control-label">{{ __('Tipo Unidade Habitacional') }}</label>
-                
+
                                 <select name="tipo" id="tipo" required class="custom-select mr-sm-2 @error('tipo') is-invalid @enderror" autocomplete="off">
                                      <option value="">Selecione</option>
-                                
+
 
                                 @foreach($unidadess as $unidade)
 
@@ -88,7 +88,7 @@
 
                                 @endforeach
 
-                                    
+
                             </select>
                             @error('tipo')
                                 <span class="has-error" role="alert">
@@ -100,8 +100,8 @@
 
 
 
-           
-           
+
+
         </div>
 
         <div id="capacidade-info" class="alert alert-info" role="alert" style="display:none;"></div>
@@ -110,10 +110,10 @@
         <div class="row form-group has-error">
 
                <div class="form-group col-sm-12 col-md-12 col-lg-6">
-                            <label class="control-label">{{ __('Adultos') }}</label>
-                             <small>Quantidade de pessoas que ocuparão a UH</small>
+                            <label class="control-label">{{ __('Adultos e Crianças acima de 6 anos') }}</label>
+                             <small>que ocuparão a UH</small>
                             <input type="number" min="1" class="form-control boxed @error('adultos') is-invalid @enderror" value="{{ old('adultos', $hospedagem->adulto) }}" name="adultos" id="adultos" autofocus required maxlength="10" onpaste="return false;">
-                            
+
                             @error('adultos')
                                 <span class="has-error" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -123,7 +123,7 @@
 
            <div class="form-group col-sm-12 col-md-12 col-lg-6">
                             <label class="control-label">{{ __('Crianças até 6 anos') }}</label>
-                            <small>Quantidade de crianças que ocuparão a UH</small>
+                            <small>que ocuparão a UH</small>
                             <input type="number" min="0" class="form-control boxed @error('criancas') is-invalid @enderror" value="{{ old('criancas', $hospedagem->crianca) }}" name="criancas" id="criancas" autofocus required maxlength="10" onpaste="return false;">
                             @error('criancas')
                                 <span class="has-error" role="alert">
@@ -131,21 +131,21 @@
                                 </span>
                             @enderror
             </div>
-            
-            
 
-            
+
+
+
 
 
         </div>
 
-     
+
 
         <div class="row has-error">
-            
+
             <div class="form-group col-sm-12 col-md-12 col-lg-12">
                             <label class="control-label">{{ __('Hospedará Portador de Necessidade Especial (PNE)?') }}</label>
-                
+
                                 <select name="pne" id="pne" required class="custom-select mr-sm-2 @error('pne') is-invalid @enderror" autocomplete="off">
                                      <option value="">Selecione Sala</option>
 
@@ -154,7 +154,7 @@
 
 
 
-                                         
+
                             </select>
                             @error('pne')
                                 <span class="has-error" role="alert">
@@ -163,12 +163,12 @@
                             @enderror
             </div>
            </div>
-            
+
              <div class="row has-error">
-            
+
             <div class="form-group col-sm-12 col-md-12 col-lg-12">
                             <label class="control-label">{{ __('Hospedará PET?') }}</label>
-                
+
                                 <select name="pet" id="pet" required class="custom-select mr-sm-2 @error('pet') is-invalid @enderror" autocomplete="off">
                                      <option value="">Selecione Sala</option>
                                         <option value="1" @if($hospedagem->pet == 1) selected @endif>Sim</option>
@@ -205,7 +205,7 @@
                                 </form>
 
                             </div>
-                            
+
 
                         </section>
                     </div>
@@ -262,7 +262,7 @@ $(document).ready(function(){
 
 <script>
     window.disableLitepickerStyles = true;
-    const picker = new Litepicker({ 
+    const picker = new Litepicker({
         element: document.getElementById('peridoinicial'),
         plugins: ['mobilefriendly','keyboardnav'],
         keyboardnav: {
@@ -307,13 +307,13 @@ $(document).ready(function(){
 
 
     }
-    
+
 
 $('#pet').on('change', ()=>{
     var pet = $('select[name="pet"] option:selected').val();
     if(pet == 1){
     $('#petmsg').show();
-    
+
     }else{
     $('#petmsg').hide();
 
